@@ -267,37 +267,119 @@
     </div>
   </div>
 
+  <!-- Resumen del día -->
+  <div class="card" id="meal-summary-card">
+    <div class="card-title"><i class="ti ti-calculator"></i> Total del día</div>
+    <div class="lbl"><span>Proteína</span><span id="ms-prot">0 / 175 g</span></div>
+    <div class="prog-wrap"><div class="prog-fill" id="ms-prot-bar" style="width:0%;background:var(--green)"></div></div>
+    <div class="lbl"><span>Calorías</span><span id="ms-kcal">0 / 2500 kcal</span></div>
+    <div class="prog-wrap"><div class="prog-fill" id="ms-kcal-bar" style="width:0%;background:var(--blue)"></div></div>
+    <div style="font-size:11px;color:var(--text2);margin-top:4px">Marca los alimentos que hayas comido para sumar automáticamente</div>
+  </div>
+
   <div class="card">
     <div class="card-title"><i class="ti ti-coffee"></i> Desayuno</div>
-    <div class="row"><div><div class="row-name">Tortilla 3 huevos + tostadas + fruta</div></div><span class="tag">~30g prot</span></div>
-    <div class="row"><div><div class="row-name">Yogur griego + avena + whey + plátano</div></div><span class="tag">~40g prot</span></div>
+    <div class="meal-row row" data-prot="30" data-kcal="420" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Tortilla 3 huevos + tostadas + fruta</div></div>
+      <div style="text-align:right"><span class="tag">30g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~420 kcal</div></div>
+    </div>
+    <div class="meal-row row" data-prot="40" data-kcal="480" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Yogur griego + avena + whey + plátano</div></div>
+      <div style="text-align:right"><span class="tag">40g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~480 kcal</div></div>
+    </div>
   </div>
+
   <div class="card">
     <div class="card-title"><i class="ti ti-soup"></i> Comida</div>
-    <div class="row"><div class="row-name">Arroz + pollo</div><span class="tag">~45g</span></div>
-    <div class="row"><div class="row-name">Pasta + carne magra</div><span class="tag">~40g</span></div>
-    <div class="row"><div class="row-name">Salmón + patata</div><span class="tag">~42g</span></div>
-    <div class="row"><div class="row-name">Lentejas + huevos</div><span class="tag">~35g</span></div>
+    <div class="meal-row row" data-prot="45" data-kcal="550" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Arroz + pollo</div></div>
+      <div style="text-align:right"><span class="tag">45g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~550 kcal</div></div>
+    </div>
+    <div class="meal-row row" data-prot="40" data-kcal="580" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Pasta + carne magra</div></div>
+      <div style="text-align:right"><span class="tag">40g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~580 kcal</div></div>
+    </div>
+    <div class="meal-row row" data-prot="42" data-kcal="520" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Salmón + patata</div></div>
+      <div style="text-align:right"><span class="tag">42g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~520 kcal</div></div>
+    </div>
+    <div class="meal-row row" data-prot="35" data-kcal="480" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Lentejas + huevos</div></div>
+      <div style="text-align:right"><span class="tag">35g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~480 kcal</div></div>
+    </div>
   </div>
+
   <div class="card">
     <div class="card-title"><i class="ti ti-apple"></i> Merienda</div>
-    <div class="row"><div class="row-name">Fruta + yogur proteico</div><span class="tag">~20g</span></div>
-    <div class="row"><div class="row-name">Sandwich de pavo</div><span class="tag">~25g</span></div>
-    <div class="row"><div class="row-name">Frutos secos moderados</div><span class="tag">grasas sanas</span></div>
+    <div class="meal-row row" data-prot="20" data-kcal="220" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Fruta + yogur proteico</div></div>
+      <div style="text-align:right"><span class="tag">20g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~220 kcal</div></div>
+    </div>
+    <div class="meal-row row" data-prot="25" data-kcal="280" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Sandwich de pavo</div></div>
+      <div style="text-align:right"><span class="tag">25g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~280 kcal</div></div>
+    </div>
+    <div class="meal-row row" data-prot="8" data-kcal="200" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Frutos secos moderados</div></div>
+      <div style="text-align:right"><span class="tag">8g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~200 kcal</div></div>
+    </div>
   </div>
+
   <div class="card">
     <div class="card-title"><i class="ti ti-moon"></i> Cena</div>
-    <div class="row"><div class="row-name">Tortilla + queso fresco</div><span class="tag">~30g</span></div>
-    <div class="row"><div class="row-name">Pollo + arroz</div><span class="tag">~40g</span></div>
-    <div class="row"><div class="row-name">Pescado + patata</div><span class="tag">~35g</span></div>
-    <div class="row"><div class="row-name">Hamburguesa casera + ensalada</div><span class="tag">~38g</span></div>
+    <div class="meal-row row" data-prot="30" data-kcal="380" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Tortilla + queso fresco</div></div>
+      <div style="text-align:right"><span class="tag">30g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~380 kcal</div></div>
+    </div>
+    <div class="meal-row row" data-prot="40" data-kcal="520" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Pollo + arroz</div></div>
+      <div style="text-align:right"><span class="tag">40g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~520 kcal</div></div>
+    </div>
+    <div class="meal-row row" data-prot="35" data-kcal="440" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Pescado + patata</div></div>
+      <div style="text-align:right"><span class="tag">35g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~440 kcal</div></div>
+    </div>
+    <div class="meal-row row" data-prot="38" data-kcal="500" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Hamburguesa casera + ensalada</div></div>
+      <div style="text-align:right"><span class="tag">38g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~500 kcal</div></div>
+    </div>
   </div>
+
   <div class="card">
     <div class="card-title"><i class="ti ti-pill"></i> Suplementación diaria</div>
-    <div class="row"><div class="row-name">Creatina</div><span class="tag">5g/día siempre</span></div>
-    <div class="row"><div class="row-name">Proteína whey</div><span class="tag">según necesidad</span></div>
-    <div class="row"><div class="row-name">Magnesio glicinato</div><span class="tag">por la noche</span></div>
-    <div class="row"><div class="row-name">Omega 3</div><span class="tag">antiinflamatorio</span></div>
+    <div class="meal-row row" data-prot="0" data-kcal="0" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Creatina</div></div>
+      <span class="tag">5g/día siempre</span>
+    </div>
+    <div class="meal-row row" data-prot="24" data-kcal="110" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Proteína whey</div></div>
+      <div style="text-align:right"><span class="tag">24g prot</span><div style="font-size:10px;color:var(--text2);margin-top:2px">~110 kcal</div></div>
+    </div>
+    <div class="meal-row row" data-prot="0" data-kcal="0" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Magnesio glicinato</div></div>
+      <span class="tag">por la noche</span>
+    </div>
+    <div class="meal-row row" data-prot="0" data-kcal="10" onclick="toggleMeal(this)">
+      <button class="check-btn" aria-label="Marcar"></button>
+      <div style="flex:1;margin-left:10px"><div class="row-name">Omega 3</div></div>
+      <span class="tag">antiinflamatorio</span>
+    </div>
   </div>
   <div class="card">
     <div class="card-title"><i class="ti ti-x" style="color:var(--red)"></i> Reducir / eliminar</div>
@@ -578,6 +660,29 @@ function renderChecklist(){
   }).join('');
 }
 function toggleCheck(k){S.checklist[k]=!S.checklist[k];renderChecklist();}
+
+function toggleMeal(row){
+  const btn=row.querySelector('.check-btn');
+  const on=btn.classList.toggle('on');
+  btn.textContent=on?'✓':'';
+  row.style.opacity=on?'1':'0.5';
+  updateMealTotals();
+}
+
+function updateMealTotals(){
+  let tp=0,tk=0;
+  document.querySelectorAll('.meal-row').forEach(r=>{
+    if(r.querySelector('.check-btn').classList.contains('on')){
+      tp+=parseInt(r.dataset.prot)||0;
+      tk+=parseInt(r.dataset.kcal)||0;
+    }
+  });
+  document.getElementById('ms-prot').textContent=`${tp} / 175 g`;
+  document.getElementById('ms-kcal').textContent=`${tk} / 2500 kcal`;
+  document.getElementById('ms-prot-bar').style.width=Math.min(100,Math.round(tp/175*100))+'%';
+  document.getElementById('ms-kcal-bar').style.width=Math.min(100,Math.round(tk/2500*100))+'%';
+  document.getElementById('d-prot').textContent=tp+'g';
+}
 
 function renderDaySel(){
   document.getElementById('day-sel').innerHTML=DAYS.map((d,i)=>
