@@ -714,7 +714,10 @@ window.createClient = async function() {
     plan_start_date: new Date().toISOString().split('T')[0],
   }
 
-  // Crear usuario con signUp (no requiere Edge Function)
+  // Guardar sesión del trainer antes de signUp (signUp cambia la sesión activa)
+  const { data: { session: trainerSession } } = await supabase.auth.getSession()
+
+  // Crear usuario con signUp
   const { data, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
@@ -728,6 +731,12 @@ window.createClient = async function() {
     btn.disabled = false
     return
   }
+
+  // Restaurar sesión del trainer inmediatamente
+  await supabase.auth.setSession({
+    access_token: trainerSession.access_token,
+    refresh_token: trainerSession.refresh_token
+  })
 
   if (!data.user) {
     errEl.textContent = 'No se pudo crear el usuario'

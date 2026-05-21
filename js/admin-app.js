@@ -114,7 +114,10 @@ window.createTrainer = async function() {
   btn.disabled = true
   errEl.style.display = 'none'
 
-  // Crear usuario con signUp (no requiere Edge Function)
+  // Guardar sesión del admin antes de signUp
+  const { data: { session: adminSession } } = await supabase.auth.getSession()
+
+  // Crear usuario con signUp
   const { data, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
@@ -131,7 +134,12 @@ window.createTrainer = async function() {
     return
   }
 
-  // Asegurarse de que el perfil tiene role=trainer y crear entrada en trainers
+  // Restaurar sesión del admin inmediatamente
+  await supabase.auth.setSession({
+    access_token: adminSession.access_token,
+    refresh_token: adminSession.refresh_token
+  })
+
   if (data.user) {
     await supabase.from('profiles').upsert({
       id: data.user.id, role: 'trainer', full_name: name, email
