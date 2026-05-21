@@ -114,23 +114,33 @@ window.createTrainer = async function() {
   btn.disabled = true
   errEl.style.display = 'none'
 
-  const { data: { session } } = await supabase.auth.getSession()
-  const res = await fetch(`${supabase.supabaseUrl}/functions/v1/create-user`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`
-    },
-    body: JSON.stringify({ email, password, fullName: name, role: 'trainer', specialty })
+  // Crear usuario con signUp (no requiere Edge Function)
+  const { data, error: signUpError } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { role: 'trainer', full_name: name }
+    }
   })
 
-  const result = await res.json()
-  if (!res.ok || result.error) {
-    errEl.textContent = result.error || 'Error al crear el preparador'
+  if (signUpError) {
+    errEl.textContent = signUpError.message
     errEl.style.display = 'block'
     btn.textContent = 'Crear preparador'
     btn.disabled = false
     return
+  }
+
+  // Asegurarse de que el perfil tiene role=trainer y crear entrada en trainers
+  if (data.user) {
+    await supabase.from('profiles').upsert({
+      id: data.user.id, role: 'trainer', full_name: name, email
+    })
+    await supabase.from('trainers').upsert({
+      id: data.user.id, specialty: specialty || null
+    })
+    // Confirmar email automáticamente via update
+    await supabase.auth.admin?.updateUserById?.(data.user.id, { email_confirm: true })
   }
 
   closeNewTrainerModal()

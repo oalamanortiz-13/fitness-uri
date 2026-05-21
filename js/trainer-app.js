@@ -702,37 +702,43 @@ window.createClient = async function() {
   btn.disabled = true
   errEl.style.display = 'none'
 
-  // Llamar Edge Function para crear el usuario
-  const { data: { session } } = await supabase.auth.getSession()
-  const res = await fetch(`${getSupabaseUrl()}/functions/v1/create-client`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`
-    },
-    body: JSON.stringify({
-      email, password, fullName: name, trainerId: TRAINER_ID,
-      clientData: {
-        age: parseInt(document.getElementById('nc-age').value) || null,
-        height_cm: parseFloat(document.getElementById('nc-height').value) || null,
-        weight_start: parseFloat(document.getElementById('nc-weight').value) || null,
-        weight_goal: document.getElementById('nc-weight-goal').value,
-        kcal_goal: parseInt(document.getElementById('nc-kcal').value) || 2500,
-        protein_goal: parseInt(document.getElementById('nc-protein').value) || 175,
-        notes: document.getElementById('nc-notes').value,
-        plan_weeks: parseInt(document.getElementById('nc-weeks').value) || 12,
-        plan_start_date: new Date().toISOString().split('T')[0],
-      }
-    })
+  const clientData = {
+    age: parseInt(document.getElementById('nc-age').value) || null,
+    height_cm: parseFloat(document.getElementById('nc-height').value) || null,
+    weight_start: parseFloat(document.getElementById('nc-weight').value) || null,
+    weight_goal: document.getElementById('nc-weight-goal').value,
+    kcal_goal: parseInt(document.getElementById('nc-kcal').value) || 2500,
+    protein_goal: parseInt(document.getElementById('nc-protein').value) || 175,
+    notes: document.getElementById('nc-notes').value,
+    plan_weeks: parseInt(document.getElementById('nc-weeks').value) || 12,
+    plan_start_date: new Date().toISOString().split('T')[0],
+  }
+
+  // Crear usuario con signUp (no requiere Edge Function)
+  const { data, error: signUpError } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { role: 'client', full_name: name } }
   })
 
-  const result = await res.json()
-  if (!res.ok || result.error) {
-    errEl.textContent = result.error || 'Error al crear el cliente'
+  if (signUpError) {
+    errEl.textContent = signUpError.message
     errEl.style.display = 'block'
     btn.textContent = 'Crear cliente'
     btn.disabled = false
     return
+  }
+
+  if (data.user) {
+    // Asegurar perfil y crear entrada en clients
+    await supabase.from('profiles').upsert({
+      id: data.user.id, role: 'client', full_name: name, email
+    })
+    await supabase.from('clients').upsert({
+      id: data.user.id,
+      trainer_id: TRAINER_ID,
+      ...clientData
+    })
   }
 
   closeNewClientModal()
