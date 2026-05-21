@@ -729,16 +729,32 @@ window.createClient = async function() {
     return
   }
 
-  if (data.user) {
-    // Asegurar perfil y crear entrada en clients
-    await supabase.from('profiles').upsert({
-      id: data.user.id, role: 'client', full_name: name, email
-    })
-    await supabase.from('clients').upsert({
-      id: data.user.id,
-      trainer_id: TRAINER_ID,
-      ...clientData
-    })
+  if (!data.user) {
+    errEl.textContent = 'No se pudo crear el usuario'
+    errEl.style.display = 'block'
+    btn.textContent = 'Crear cliente'
+    btn.disabled = false
+    return
+  }
+
+  // Confirmar email del nuevo usuario via SQL (requiere que el trainer tenga permisos)
+  // y crear entradas en profiles + clients
+  const { error: profileError } = await supabase.from('profiles').upsert({
+    id: data.user.id, role: 'client', full_name: name, email
+  })
+
+  const { error: clientError } = await supabase.from('clients').upsert({
+    id: data.user.id,
+    trainer_id: TRAINER_ID,
+    ...clientData
+  })
+
+  if (clientError) {
+    errEl.textContent = 'Usuario creado pero error al guardar perfil: ' + clientError.message + '. El admin puede vincularlo manualmente.'
+    errEl.style.display = 'block'
+    btn.textContent = 'Crear cliente'
+    btn.disabled = false
+    return
   }
 
   closeNewClientModal()
