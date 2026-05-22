@@ -93,10 +93,14 @@ import { supabase } from './js/supabase-client.js'
 
 const token = new URLSearchParams(window.location.search).get('token')
 
-if (!token) {
-  showInvalid('Link inválido', 'No se encontró el código de invitación en la URL.')
-} else {
-  await loadInvitation(token)
+try {
+  if (!token) {
+    showInvalid('Link inválido', 'No se encontró el código de invitación en la URL.')
+  } else {
+    await loadInvitation(token)
+  }
+} catch (e) {
+  showInvalid('Error inesperado', e.message || 'Recarga la página e inténtalo de nuevo.')
 }
 
 document.getElementById('inv-password2')?.addEventListener('keydown', e => {
@@ -115,7 +119,10 @@ async function loadInvitation(token) {
   document.getElementById('loading-view').style.display = 'none'
 
   if (error || !data) {
-    showInvalid('Link inválido', 'Esta invitación no existe. Pide a tu preparador que te envíe un nuevo link.')
+    const msg = error?.code === 'PGRST301' || error?.code === '42P01'
+      ? 'La base de datos no está configurada correctamente. Contacta con el administrador.'
+      : 'Esta invitación no existe o ha expirado. Pide a tu preparador un nuevo link.'
+    showInvalid('Link inválido', msg)
     return
   }
 
