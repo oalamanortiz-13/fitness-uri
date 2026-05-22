@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Fitness URI — Registro de preparador</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  .register-wrap{width:100%;max-width:380px}
+  .logo{text-align:center;margin-bottom:32px}
+  .logo i{font-size:48px;color:var(--blue);display:block;margin-bottom:8px}
+  .logo h1{font-size:24px;font-weight:700}
+  .logo p{font-size:13px;color:var(--text2);margin-top:4px}
+  .register-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+  .error-msg{background:#E24B4A22;border:1px solid #E24B4A44;color:#F09595;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:12px;display:none}
+  .success-box{text-align:center;padding:24px 16px;display:none}
+  .success-box i{font-size:48px;color:var(--green);display:block;margin-bottom:12px}
+  .success-box h2{font-size:18px;font-weight:700;margin-bottom:8px}
+  .success-box p{font-size:13px;color:var(--text2);line-height:1.5}
+  .divider{text-align:center;font-size:12px;color:var(--text3);margin:16px 0}
+  .link-btn{background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline}
+  .trial-badge{background:var(--green)22;border:1px solid var(--green)44;color:#6fcfa8;border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;text-align:center;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:6px}
+</style>
+</head>
+<body>
+
+<div class="register-wrap">
+  <div class="logo">
+    <i class="ti ti-barbell"></i>
+    <h1>Fitness URI</h1>
+    <p>Registro de preparador físico</p>
+  </div>
+
+  <div class="register-card">
+    <!-- Formulario de registro -->
+    <div id="form-view">
+      <div class="trial-badge">
+        <i class="ti ti-gift" style="font-size:14px"></i>
+        14 días gratis · Sin tarjeta de crédito
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Nombre completo</label>
+        <input type="text" id="name" placeholder="Tu nombre completo" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email profesional</label>
+        <input type="email" id="email" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Especialidad <span style="color:var(--text3)">(opcional)</span></label>
+        <input type="text" id="specialty" placeholder="Ej: Pérdida de grasa, Hipertrofia...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input type="password" id="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirmar contraseña</label>
+        <input type="password" id="password2" placeholder="Repite la contraseña" autocomplete="new-password">
+      </div>
+
+      <div class="error-msg" id="error-msg"></div>
+
+      <button class="btn btn-primary" id="register-btn" onclick="doRegister()" style="width:100%;margin-top:4px">
+        Crear cuenta gratis
+      </button>
+
+      <div class="divider">¿Ya tienes cuenta?</div>
+      <button class="link-btn" onclick="window.location.href='index.html'" style="width:100%;text-align:center">
+        Iniciar sesión
+      </button>
+    </div>
+
+    <!-- Estado de éxito -->
+    <div class="success-box" id="success-view">
+      <i class="ti ti-circle-check"></i>
+      <h2>¡Cuenta creada!</h2>
+      <p id="success-msg">Redirigiendo a tu portal...</p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase } from './js/supabase-client.js'
+import { getRole, redirectByRole } from './js/auth.js'
+
+// Si ya hay sesión activa, redirigir
+const { data: { session } } = await supabase.auth.getSession()
+if (session) {
+  const profile = await getRole(session.user.id)
+  if (profile) { redirectByRole(profile.role) }
+}
+
+document.getElementById('password2').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doRegister()
+})
+
+window.doRegister = async function() {
+  const name     = document.getElementById('name').value.trim()
+  const email    = document.getElementById('email').value.trim()
+  const specialty = document.getElementById('specialty').value.trim()
+  const password = document.getElementById('password').value
+  const password2 = document.getElementById('password2').value
+  const btn      = document.getElementById('register-btn')
+  const errEl    = document.getElementById('error-msg')
+
+  errEl.style.display = 'none'
+
+  if (!name)     { showError('Introduce tu nombre completo.'); return }
+  if (!email)    { showError('Introduce tu email profesional.'); return }
+  if (!password) { showError('Elige una contraseña.'); return }
+  if (password.length < 8) { showError('La contraseña debe tener al menos 8 caracteres.'); return }
+  if (password !== password2) { showError('Las contraseñas no coinciden.'); return }
+
+  btn.textContent = 'Creando cuenta...'
+  btn.disabled = true
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { role: 'trainer', full_name: name }
+    }
+  })
+
+  if (error) {
+    showError(error.message === 'User already registered'
+      ? 'Este email ya está registrado. ¿Quieres iniciar sesión?'
+      : error.message)
+    btn.textContent = 'Crear cuenta gratis'
+    btn.disabled = false
+    return
+  }
+
+  if (data.user) {
+    // Upsert profile (el trigger lo crea pero nos aseguramos de tener todo)
+    await supabase.from('profiles').upsert({
+      id: data.user.id,
+      role: 'trainer',
+      full_name: name,
+      email,
+    })
+
+    // Insertar registro de trainer
+    await supabase.from('trainers').upsert({
+      id: data.user.id,
+      specialty: specialty || null,
+    })
+  }
+
+  // Si hay sesión activa (email confirm desactivado), redirigir directo
+  if (data.session) {
+    document.getElementById('form-view').style.display = 'none'
+    document.getElementById('success-view').style.display = 'block'
+    setTimeout(() => window.location.href = 'trainer.html', 1500)
+  } else {
+    // Email confirm activado: mostrar mensaje de revisión de email
+    document.getElementById('form-view').style.display = 'none'
+    const sv = document.getElementById('success-view')
+    sv.style.display = 'block'
+    document.getElementById('success-msg').innerHTML =
+      `Hemos enviado un email de confirmación a <strong>${email}</strong>.<br><br>Confírmalo y después <a href="index.html" style="color:var(--blue)">inicia sesión aquí</a>.`
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg')
+  el.textContent = msg
+  el.style.display = 'block'
+}
+</script>
+</body>
+</html>
