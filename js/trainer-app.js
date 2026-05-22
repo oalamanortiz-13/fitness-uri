@@ -807,7 +807,12 @@ window.createInvite = async function() {
 
   const { data, error } = await supabase
     .from('invitations')
-    .insert({ trainer_id: TRAINER_ID, client_name: name, client_email: email })
+    .insert({
+      trainer_id: TRAINER_ID,
+      client_name: name,
+      client_email: email,
+      trainer_name: document.getElementById('trainer-name').textContent.trim(),
+    })
     .select('token')
     .single()
 

@@ -112,7 +112,7 @@ let INVITATION = null
 async function loadInvitation(token) {
   const { data, error } = await supabase
     .from('invitations')
-    .select('*, trainers(profiles(full_name))')
+    .select('id, client_name, client_email, trainer_id, trainer_name, expires_at, used_at')
     .eq('token', token)
     .single()
 
@@ -137,7 +137,7 @@ async function loadInvitation(token) {
   }
 
   INVITATION = data
-  const trainerName = data.trainers?.profiles?.full_name || 'Tu preparador'
+  const trainerName = data.trainer_name || 'Tu preparador'
   const initials = trainerName.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 
   document.getElementById('trainer-initials').textContent = initials
