@@ -57,33 +57,26 @@ fitness-uri/
 - **Producto Stripe:** por crear en dashboard (price_...)
 - **Flujo:** trainer ve banner en sidebar → botón → Stripe Checkout → webhook actualiza BD
 
-### Columnas añadidas a `trainers` (migration 003, PENDIENTE ejecutar en Supabase SQL Editor)
-```sql
-ALTER TABLE trainers ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
-ALTER TABLE trainers ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
-ALTER TABLE trainers ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'trial'
-  CHECK (subscription_status IN ('trial', 'active', 'past_due', 'canceled', 'unpaid'));
-ALTER TABLE trainers ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ
-  DEFAULT NOW() + INTERVAL '14 days';
-```
+### Columnas añadidas a `trainers` (migration 003)
+✅ **EJECUTADA** — columnas stripe_customer_id, stripe_subscription_id, subscription_status, trial_ends_at ya existen en producción.
 
-### Variables de entorno necesarias en Supabase Edge Functions
-```
-STRIPE_SECRET_KEY       = sk_live_...
-STRIPE_PRICE_ID         = price_...
-STRIPE_WEBHOOK_SECRET   = whsec_...
-APP_URL                 = https://fitness-uri.vercel.app
-```
+### Variables de entorno en Supabase Edge Functions
+✅ **CONFIGURADAS** — STRIPE_SECRET_KEY, STRIPE_PRICE_ID, APP_URL añadidas.
+⏳ **PENDIENTE** — STRIPE_WEBHOOK_SECRET (se obtiene al crear el webhook en Stripe).
 
-### Pasos pendientes para activar Stripe
-1. Ejecutar migration 003 en Supabase → SQL Editor
-2. Crear producto en Stripe dashboard → €9,90/mes/unidad → copiar price_...
-3. Añadir variables de entorno en Supabase → Edge Functions → Manage secrets
-4. Desplegar funciones: `supabase functions deploy create-checkout-session` y `stripe-webhook`
-5. Crear webhook en Stripe → URL: `https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/stripe-webhook`
+### Pasos para activar Stripe — estado actual
+1. ✅ Ejecutar migration 003 — HECHO
+2. ✅ Crear producto en Stripe dashboard (€9,90/mes) — HECHO
+3. ✅ Añadir variables de entorno (excepto STRIPE_WEBHOOK_SECRET) — HECHO
+4. ⏳ Desplegar Edge Functions — PENDIENTE (usar MCP Supabase en próxima sesión)
+5. ⏳ Crear webhook en Stripe → `https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/stripe-webhook`
    - Eventos: `customer.subscription.created`, `customer.subscription.updated`,
      `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.payment_succeeded`
-6. Copiar Signing secret del webhook → ponerlo como STRIPE_WEBHOOK_SECRET
+6. ⏳ Copiar Signing secret del webhook → añadir como STRIPE_WEBHOOK_SECRET en Supabase secrets
+
+### Próxima sesión — continuar aquí
+- Usar MCP Supabase para desplegar `create-checkout-session` y `stripe-webhook`
+- Código de las funciones está en `supabase/functions/`
 
 ## Problemas resueltos
 1. Clave Supabase — usar JWT anon key (eyJ...) no la publishable key (sb_publishable_...)
@@ -93,7 +86,7 @@ APP_URL                 = https://fitness-uri.vercel.app
 5. Políticas clients — WITH CHECK necesario para INSERT/UPDATE
 
 ## Pendiente (producto)
-- [ ] Ejecutar migration 003 y activar Stripe (ver pasos arriba)
+- [ ] Desplegar Edge Functions y completar activación Stripe (ver pasos arriba)
 - [ ] Confirmar emails automáticamente (Supabase → Auth → Sign In/Providers → desactivar "Confirm email")
 - [ ] Probar que el cliente (Estefania) puede entrar y ver su dashboard
 - [ ] Migrar datos de Uri (el cliente original hardcodeado) a la base de datos
