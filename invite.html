@@ -92,6 +92,7 @@
 import { supabase } from './js/supabase-client.js'
 
 const token = new URLSearchParams(window.location.search).get('token')
+let INVITATION = null
 
 try {
   if (!token) {
@@ -106,8 +107,6 @@ try {
 document.getElementById('inv-password2')?.addEventListener('keydown', e => {
   if (e.key === 'Enter') doActivate()
 })
-
-let INVITATION = null
 
 async function loadInvitation(token) {
   const { data, error } = await supabase
