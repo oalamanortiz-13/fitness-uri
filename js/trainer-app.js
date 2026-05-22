@@ -12,6 +12,7 @@ let ACTIVE_TAB = 'profile'
 let ACTIVE_DAY = 0
 let ACTIVE_MEAL_ID = null
 let EDITING_EX_ID = null
+let SUBSCRIPTION_STATUS = 'trial'
 
 document.addEventListener('DOMContentLoaded', async () => {
   const auth = await requireRole('trainer')
@@ -19,14 +20,98 @@ document.addEventListener('DOMContentLoaded', async () => {
   TRAINER_ID = auth.session.user.id
   document.getElementById('trainer-name').textContent = auth.profile.full_name || auth.session.user.email
 
+  await loadSubscriptionStatus()
   await loadClients()
   document.getElementById('loading-screen').style.display = 'none'
   document.getElementById('app').style.display = 'flex'
+
+  // Mostrar banner si viene de pago exitoso
+  const params = new URLSearchParams(window.location.search)
+  if (params.get('payment') === 'success') {
+    showNotif('¡Suscripción activada correctamente! ✓')
+    history.replaceState({}, '', 'trainer.html')
+  }
 })
 
 window.doLogout = logout
 
-// ─── CLIENTS ──────────────────────────────────────────────────────────────────
+// ─── SUSCRIPCIÓN ──────────────────────────────────────────────────────────────
+
+async function loadSubscriptionStatus() {
+  const { data } = await supabase
+    .from('trainers')
+    .select('subscription_status, trial_ends_at')
+    .eq('id', TRAINER_ID)
+    .single()
+
+  if (!data) return
+
+  SUBSCRIPTION_STATUS = data.subscription_status || 'trial'
+  const trialEnds = data.trial_ends_at ? new Date(data.trial_ends_at) : null
+  const now = new Date()
+  const trialExpired = trialEnds && trialEnds < now
+
+  if (SUBSCRIPTION_STATUS === 'trial' && !trialExpired) {
+    const daysLeft = trialEnds ? Math.ceil((trialEnds - now) / 86400000) : 14
+    showSubscriptionBanner('trial', daysLeft)
+  } else if (SUBSCRIPTION_STATUS === 'past_due') {
+    showSubscriptionBanner('past_due')
+  } else if (SUBSCRIPTION_STATUS === 'canceled' || (SUBSCRIPTION_STATUS === 'trial' && trialExpired)) {
+    showSubscriptionBanner('expired')
+    SUBSCRIPTION_STATUS = 'expired'
+  }
+}
+
+function showSubscriptionBanner(type, daysLeft = 0) {
+  const sidebar = document.querySelector('.sidebar')
+  const existing = document.getElementById('sub-banner')
+  if (existing) existing.remove()
+
+  const banner = document.createElement('div')
+  banner.id = 'sub-banner'
+
+  if (type === 'trial') {
+    banner.style.cssText = 'background:#1D9E7522;border:1px solid #1D9E7544;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px'
+    banner.innerHTML = `<div style="color:#6fcfa8;font-weight:600;margin-bottom:4px">Prueba gratuita · ${daysLeft} día${daysLeft !== 1 ? 's' : ''} restante${daysLeft !== 1 ? 's' : ''}</div>
+      <div style="color:var(--text2);margin-bottom:8px">€9,90/cliente/mes al finalizar</div>
+      <button onclick="startCheckout()" class="btn btn-primary" style="width:100%;font-size:12px;padding:7px">Activar suscripción</button>`
+  } else if (type === 'past_due') {
+    banner.style.cssText = 'background:#BA751722;border:1px solid #BA751744;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px'
+    banner.innerHTML = `<div style="color:#e8a83e;font-weight:600;margin-bottom:4px">Pago fallido</div>
+      <div style="color:var(--text2);margin-bottom:8px">Actualiza tu método de pago para continuar</div>
+      <button onclick="startCheckout()" class="btn" style="width:100%;font-size:12px;padding:7px;border-color:#BA7517;color:#e8a83e">Actualizar pago</button>`
+  } else {
+    banner.style.cssText = 'background:#E24B4A22;border:1px solid #E24B4A44;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px'
+    banner.innerHTML = `<div style="color:#F09595;font-weight:600;margin-bottom:4px">Suscripción inactiva</div>
+      <div style="color:var(--text2);margin-bottom:8px">Activa tu plan para gestionar clientes</div>
+      <button onclick="startCheckout()" class="btn btn-primary" style="width:100%;font-size:12px;padding:7px">Activar plan · €9,90/cliente</button>`
+  }
+
+  sidebar.insertBefore(banner, sidebar.querySelector('.search-input'))
+}
+
+window.startCheckout = async function() {
+  const btn = document.querySelector('#sub-banner button')
+  if (btn) { btn.textContent = 'Redirigiendo...'; btn.disabled = true }
+
+  const { data: { session } } = await supabase.auth.getSession()
+  const res = await fetch(`${supabase.supabaseUrl}/functions/v1/create-checkout-session`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      successUrl: `${window.location.origin}/trainer.html?payment=success`,
+      cancelUrl: `${window.location.origin}/trainer.html`,
+    }),
+  })
+
+  const { url, error } = await res.json()
+  if (error) { showNotif('Error: ' + error); return }
+  window.location.href = url
+}
+
 
 async function loadClients() {
   const { data } = await supabase
