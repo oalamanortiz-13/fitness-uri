@@ -18,12 +18,16 @@ fitness-uri/
 │   ├── supabase-client.js  # Init Supabase (credenciales ya configuradas)
 │   ├── auth.js             # Login, logout, redirección por rol
 │   ├── client-app.js       # Lógica portal cliente
-│   ├── trainer-app.js      # Lógica portal trainer
+│   ├── trainer-app.js      # Lógica portal trainer (tiene lógica de suscripción Stripe)
 │   └── admin-app.js        # Lógica panel admin
 └── supabase/
     ├── schema.sql          # Schema completo (ya ejecutado en Supabase)
     ├── policies-only.sql   # Solo policies + trigger (ya ejecutado)
-    └── functions/          # Edge Functions (NO desplegadas, no necesarias)
+    ├── migrations/
+    │   └── 003_subscription_columns.sql  # Columnas Stripe en trainers (PENDIENTE ejecutar)
+    └── functions/
+        ├── create-checkout-session/  # Edge Function Stripe Checkout (PENDIENTE desplegar)
+        └── stripe-webhook/           # Edge Function webhook Stripe (PENDIENTE desplegar)
 ```
 
 ## Roles y acceso
@@ -40,22 +44,57 @@ fitness-uri/
 
 ## Supabase — tablas principales
 - `profiles` — todos los usuarios (role: admin/trainer/client)
-- `trainers` — datos del preparador
+- `trainers` — datos del preparador + columnas Stripe (pendiente migración 003)
 - `clients` — datos del cliente + trainer_id
 - `workout_days` + `workout_exercises` — plan de entreno (7 días)
 - `diet_plans` + `diet_meals` + `diet_foods` — plan de dieta
 - `supplements` — suplementos del cliente
 - `daily_logs` — registro diario (peso, pasos, cardio, checklist)
 
-## Problemas resueltos en esta sesión
+## Modelo de negocio Stripe (implementado, pendiente activar)
+- **Precio:** €9,90 por cliente activo / mes
+- **Trial:** 14 días gratis al crear cuenta trainer
+- **Producto Stripe:** por crear en dashboard (price_...)
+- **Flujo:** trainer ve banner en sidebar → botón → Stripe Checkout → webhook actualiza BD
+
+### Columnas añadidas a `trainers` (migration 003, PENDIENTE ejecutar en Supabase SQL Editor)
+```sql
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'trial'
+  CHECK (subscription_status IN ('trial', 'active', 'past_due', 'canceled', 'unpaid'));
+ALTER TABLE trainers ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ
+  DEFAULT NOW() + INTERVAL '14 days';
+```
+
+### Variables de entorno necesarias en Supabase Edge Functions
+```
+STRIPE_SECRET_KEY       = sk_live_...
+STRIPE_PRICE_ID         = price_...
+STRIPE_WEBHOOK_SECRET   = whsec_...
+APP_URL                 = https://fitness-uri.vercel.app
+```
+
+### Pasos pendientes para activar Stripe
+1. Ejecutar migration 003 en Supabase → SQL Editor
+2. Crear producto en Stripe dashboard → €9,90/mes/unidad → copiar price_...
+3. Añadir variables de entorno en Supabase → Edge Functions → Manage secrets
+4. Desplegar funciones: `supabase functions deploy create-checkout-session` y `stripe-webhook`
+5. Crear webhook en Stripe → URL: `https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/stripe-webhook`
+   - Eventos: `customer.subscription.created`, `customer.subscription.updated`,
+     `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.payment_succeeded`
+6. Copiar Signing secret del webhook → ponerlo como STRIPE_WEBHOOK_SECRET
+
+## Problemas resueltos
 1. Clave Supabase — usar JWT anon key (eyJ...) no la publishable key (sb_publishable_...)
 2. RLS profiles — añadir policy para que trainer lea perfiles de sus clientes
 3. signUp cambia sesión activa — guardar y restaurar sesión del trainer/admin tras signUp
 4. Trigger handle_new_user — añadir EXCEPTION WHEN OTHERS para que no bloquee creación de usuarios
 5. Políticas clients — WITH CHECK necesario para INSERT/UPDATE
 
-## Pendiente para próxima sesión
-- [ ] Confirmar emails automáticamente (ir a Supabase → Auth → Sign In/Providers → desactivar "Confirm email")
+## Pendiente (producto)
+- [ ] Ejecutar migration 003 y activar Stripe (ver pasos arriba)
+- [ ] Confirmar emails automáticamente (Supabase → Auth → Sign In/Providers → desactivar "Confirm email")
 - [ ] Probar que el cliente (Estefania) puede entrar y ver su dashboard
 - [ ] Migrar datos de Uri (el cliente original hardcodeado) a la base de datos
 - [ ] Probar flujo completo: trainer asigna plan → cliente lo ve en su portal
@@ -77,6 +116,12 @@ SELECT p.id, '53ef0bfc-df61-4904-8a4e-fb24b3040874'
 FROM profiles p
 WHERE p.role = 'client'
 AND p.id NOT IN (SELECT id FROM clients);
+
+-- Ver estado suscripciones trainers
+SELECT t.id, p.full_name, p.email,
+       t.subscription_status, t.trial_ends_at,
+       t.stripe_customer_id, t.stripe_subscription_id
+FROM trainers t JOIN profiles p ON p.id = t.id;
 ```
 
 ## Design system (CSS variables en shared.css)
