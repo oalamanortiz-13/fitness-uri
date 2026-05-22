@@ -39,9 +39,14 @@
       <button class="btn" onclick="doLogout()" style="font-size:11px;padding:6px 10px"><i class="ti ti-logout"></i></button>
     </div>
     <input type="text" class="search-input" placeholder="Buscar cliente..." oninput="filterClients(this.value)">
-    <button class="btn btn-primary" onclick="openNewClientModal()" style="width:100%;margin-bottom:12px;font-size:13px">
-      <i class="ti ti-user-plus"></i> Nuevo cliente
-    </button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button class="btn btn-primary" onclick="openNewClientModal()" style="font-size:12px">
+        <i class="ti ti-user-plus"></i> Nuevo
+      </button>
+      <button class="btn" onclick="openInviteModal()" style="font-size:12px;border-color:var(--blue);color:var(--blue)">
+        <i class="ti ti-link"></i> Invitar
+      </button>
+    </div>
     <div id="client-list"></div>
   </div>
 
@@ -112,6 +117,47 @@
     </div>
     <div id="nc-error" style="color:var(--red);font-size:13px;margin-bottom:10px;display:none"></div>
     <button class="btn btn-primary" onclick="createClient()" style="width:100%" id="nc-btn">Crear cliente</button>
+  </div>
+</div>
+
+<!-- MODAL INVITAR CLIENTE -->
+<div class="modal-overlay" id="invite-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Invitar cliente por link</div>
+      <button class="modal-close" onclick="closeInviteModal()">×</button>
+    </div>
+
+    <div id="invite-form-view">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">
+        Introduce el nombre y email de tu cliente. Le enviarás un link para que cree su propia contraseña.
+      </p>
+      <div class="form-group">
+        <label class="form-label">Nombre completo *</label>
+        <input type="text" id="inv-name" placeholder="Nombre Apellido">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input type="email" id="inv-email-input" placeholder="cliente@email.com">
+      </div>
+      <div id="inv-error" style="color:var(--red);font-size:13px;margin-bottom:10px;display:none"></div>
+      <button class="btn btn-primary" onclick="createInvite()" style="width:100%" id="inv-btn">
+        Generar link de invitación
+      </button>
+    </div>
+
+    <div id="invite-link-view" style="display:none">
+      <div style="text-align:center;margin-bottom:16px">
+        <i class="ti ti-circle-check" style="font-size:40px;color:var(--green);display:block;margin-bottom:8px"></i>
+        <div style="font-size:14px;font-weight:600">¡Link generado!</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">Válido durante 7 días</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:12px;word-break:break-all;color:var(--text2);margin-bottom:12px" id="invite-link-text"></div>
+      <button class="btn btn-primary" onclick="copyInviteLink()" style="width:100%;margin-bottom:8px" id="copy-btn">
+        <i class="ti ti-copy"></i> Copiar link
+      </button>
+      <button class="btn" onclick="closeInviteModal()" style="width:100%">Cerrar</button>
+    </div>
   </div>
 </div>
 

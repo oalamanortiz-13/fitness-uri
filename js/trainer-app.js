@@ -773,11 +773,66 @@ window.createClient = async function() {
   btn.disabled = false
 }
 
-function getSupabaseUrl() {
-  // Obtener la URL base de Supabase desde el cliente ya inicializado
-  const url = document.querySelector('script[src*="supabase"]')?.src || ''
-  // Fallback: leer del supabase-client.js — el trainer-app importa supabase que ya tiene la URL
-  return supabase.supabaseUrl || ''
+// ─── INVITACIONES ─────────────────────────────────────────────────────────────
+
+let CURRENT_INVITE_LINK = ''
+
+window.openInviteModal = function() {
+  document.getElementById('invite-form-view').style.display = 'block'
+  document.getElementById('invite-link-view').style.display = 'none'
+  document.getElementById('inv-name').value = ''
+  document.getElementById('inv-email-input').value = ''
+  document.getElementById('inv-error').style.display = 'none'
+  document.getElementById('inv-btn').textContent = 'Generar link de invitación'
+  document.getElementById('inv-btn').disabled = false
+  document.getElementById('invite-modal').classList.add('open')
+}
+
+window.closeInviteModal = function() {
+  document.getElementById('invite-modal').classList.remove('open')
+}
+
+window.createInvite = async function() {
+  const name  = document.getElementById('inv-name').value.trim()
+  const email = document.getElementById('inv-email-input').value.trim()
+  const errEl = document.getElementById('inv-error')
+  const btn   = document.getElementById('inv-btn')
+
+  errEl.style.display = 'none'
+  if (!name)  { errEl.textContent = 'Introduce el nombre del cliente.'; errEl.style.display = 'block'; return }
+  if (!email) { errEl.textContent = 'Introduce el email del cliente.';  errEl.style.display = 'block'; return }
+
+  btn.textContent = 'Generando...'
+  btn.disabled = true
+
+  const { data, error } = await supabase
+    .from('invitations')
+    .insert({ trainer_id: TRAINER_ID, client_name: name, client_email: email })
+    .select('token')
+    .single()
+
+  if (error) {
+    errEl.textContent = 'Error al generar el link: ' + error.message
+    errEl.style.display = 'block'
+    btn.textContent = 'Generar link de invitación'
+    btn.disabled = false
+    return
+  }
+
+  const base = window.location.origin + window.location.pathname.replace('trainer.html', '')
+  CURRENT_INVITE_LINK = `${base}invite.html?token=${data.token}`
+
+  document.getElementById('invite-link-text').textContent = CURRENT_INVITE_LINK
+  document.getElementById('invite-form-view').style.display = 'none'
+  document.getElementById('invite-link-view').style.display = 'block'
+}
+
+window.copyInviteLink = function() {
+  navigator.clipboard.writeText(CURRENT_INVITE_LINK).then(() => {
+    const btn = document.getElementById('copy-btn')
+    btn.textContent = '✓ Copiado'
+    setTimeout(() => { btn.innerHTML = '<i class="ti ti-copy"></i> Copiar link' }, 2000)
+  })
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────

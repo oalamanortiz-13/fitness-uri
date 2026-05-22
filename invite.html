@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0a">
+<title>Fitness URI — Activa tu cuenta</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  .wrap{width:100%;max-width:380px}
+  .logo{text-align:center;margin-bottom:24px}
+  .logo i{font-size:40px;color:var(--blue);display:block;margin-bottom:8px}
+  .logo h1{font-size:22px;font-weight:700}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+  .error-msg{background:#E24B4A22;border:1px solid #E24B4A44;color:#F09595;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:12px;display:none}
+  .invite-header{text-align:center;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+  .invite-header .avatar{width:56px;height:56px;border-radius:50%;background:var(--blue);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+  .invite-header h2{font-size:16px;font-weight:700;margin-bottom:4px}
+  .invite-header p{font-size:13px;color:var(--text2)}
+  .success-box{text-align:center;padding:20px 0;display:none}
+  .success-box i{font-size:48px;color:var(--green);display:block;margin-bottom:12px}
+  .invalid-box{text-align:center;padding:20px 0;display:none}
+  .invalid-box i{font-size:48px;color:var(--red);display:block;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="logo">
+    <i class="ti ti-barbell"></i>
+    <h1>Fitness URI</h1>
+  </div>
+
+  <div class="card">
+
+    <!-- Cargando -->
+    <div id="loading-view" style="text-align:center;padding:24px 0">
+      <div class="spinner" style="margin:0 auto 12px"></div>
+      <div style="font-size:13px;color:var(--text2)">Verificando invitación...</div>
+    </div>
+
+    <!-- Formulario de activación -->
+    <div id="form-view" style="display:none">
+      <div class="invite-header">
+        <div class="avatar" id="trainer-initials">—</div>
+        <h2 id="welcome-title">Bienvenido/a</h2>
+        <p id="invite-subtitle">Tu preparador te ha invitado a la plataforma</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tu email</label>
+        <input type="email" id="inv-email" disabled style="opacity:.6">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Elige tu contraseña</label>
+        <input type="password" id="inv-password" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirmar contraseña</label>
+        <input type="password" id="inv-password2" placeholder="Repite la contraseña" autocomplete="new-password">
+      </div>
+
+      <div class="error-msg" id="error-msg"></div>
+
+      <button class="btn btn-primary" id="activate-btn" onclick="doActivate()" style="width:100%">
+        Activar mi cuenta
+      </button>
+    </div>
+
+    <!-- Éxito -->
+    <div class="success-box" id="success-view">
+      <i class="ti ti-circle-check"></i>
+      <div style="font-size:17px;font-weight:700;margin-bottom:6px">¡Cuenta activada!</div>
+      <div style="font-size:13px;color:var(--text2)">Accediendo a tu portal...</div>
+    </div>
+
+    <!-- Invitación inválida o expirada -->
+    <div class="invalid-box" id="invalid-view">
+      <i class="ti ti-link-off"></i>
+      <div style="font-size:17px;font-weight:700;margin-bottom:6px" id="invalid-title">Link inválido</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px" id="invalid-msg">Este link de invitación no existe o ya ha sido utilizado.</div>
+      <a href="index.html" class="btn btn-primary" style="display:inline-block;text-decoration:none">Ir al inicio</a>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { supabase } from './js/supabase-client.js'
+
+const token = new URLSearchParams(window.location.search).get('token')
+
+if (!token) {
+  showInvalid('Link inválido', 'No se encontró el código de invitación en la URL.')
+} else {
+  await loadInvitation(token)
+}
+
+document.getElementById('inv-password2')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') doActivate()
+})
+
+let INVITATION = null
+
+async function loadInvitation(token) {
+  const { data, error } = await supabase
+    .from('invitations')
+    .select('*, trainers(profiles(full_name))')
+    .eq('token', token)
+    .single()
+
+  document.getElementById('loading-view').style.display = 'none'
+
+  if (error || !data) {
+    showInvalid('Link inválido', 'Esta invitación no existe. Pide a tu preparador que te envíe un nuevo link.')
+    return
+  }
+
+  if (data.used_at) {
+    showInvalid('Ya activada', 'Esta invitación ya fue utilizada. Si es tu cuenta, inicia sesión directamente.')
+    return
+  }
+
+  if (new Date(data.expires_at) < new Date()) {
+    showInvalid('Link expirado', 'Esta invitación ha caducado (7 días). Pide a tu preparador que te envíe un nuevo link.')
+    return
+  }
+
+  INVITATION = data
+  const trainerName = data.trainers?.profiles?.full_name || 'Tu preparador'
+  const initials = trainerName.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+
+  document.getElementById('trainer-initials').textContent = initials
+  document.getElementById('welcome-title').textContent = `Hola, ${data.client_name.split(' ')[0]}`
+  document.getElementById('invite-subtitle').textContent = `${trainerName} te ha invitado a la plataforma`
+  document.getElementById('inv-email').value = data.client_email
+
+  document.getElementById('form-view').style.display = 'block'
+}
+
+window.doActivate = async function() {
+  const password  = document.getElementById('inv-password').value
+  const password2 = document.getElementById('inv-password2').value
+  const btn = document.getElementById('activate-btn')
+  const errEl = document.getElementById('error-msg')
+
+  errEl.style.display = 'none'
+
+  if (!password) { showError('Elige una contraseña.'); return }
+  if (password.length < 8) { showError('La contraseña debe tener al menos 8 caracteres.'); return }
+  if (password !== password2) { showError('Las contraseñas no coinciden.'); return }
+
+  btn.textContent = 'Activando...'
+  btn.disabled = true
+
+  const { data, error } = await supabase.auth.signUp({
+    email: INVITATION.client_email,
+    password,
+    options: { data: { role: 'client', full_name: INVITATION.client_name } }
+  })
+
+  if (error) {
+    showError(error.message === 'User already registered'
+      ? 'Este email ya tiene una cuenta. Inicia sesión desde la pantalla principal.'
+      : error.message)
+    btn.textContent = 'Activar mi cuenta'
+    btn.disabled = false
+    return
+  }
+
+  if (data.user) {
+    await supabase.from('profiles').upsert({
+      id: data.user.id,
+      role: 'client',
+      full_name: INVITATION.client_name,
+      email: INVITATION.client_email,
+    })
+
+    await supabase.from('clients').upsert({
+      id: data.user.id,
+      trainer_id: INVITATION.trainer_id,
+      plan_start_date: new Date().toISOString().split('T')[0],
+    })
+
+    await supabase.from('invitations')
+      .update({ used_at: new Date().toISOString() })
+      .eq('token', token)
+  }
+
+  document.getElementById('form-view').style.display = 'none'
+  document.getElementById('success-view').style.display = 'block'
+
+  setTimeout(() => window.location.href = 'client.html', 1800)
+}
+
+function showInvalid(title, msg) {
+  document.getElementById('loading-view').style.display = 'none'
+  document.getElementById('invalid-title').textContent = title
+  document.getElementById('invalid-msg').textContent = msg
+  document.getElementById('invalid-view').style.display = 'block'
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg')
+  el.textContent = msg
+  el.style.display = 'block'
+}
+</script>
+</body>
+</html>
