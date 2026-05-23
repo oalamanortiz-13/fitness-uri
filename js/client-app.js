@@ -263,12 +263,18 @@ function calcDayScore() {
   const doneEx = S.exDone[key]?.length || 0
   const trainingScore = totalEx > 0 ? Math.round(doneEx / totalEx * 100) : 100
 
-  // Nutrition score (40%): foods checked vs total plan foods
+  // Nutrition score (40%): foods + protein supplements checked vs total
   const totalFoods = DIET_MEALS.reduce((a, m) => a + m.diet_foods.length, 0)
+  const totalProtSupls = SUPPLEMENTS.filter(s => s.protein_g > 0).length
   const checkedFoods = S.foodsChecked.filter(id =>
     DIET_MEALS.some(m => m.diet_foods.some(f => f.id === id))
   ).length
-  const nutritionScore = totalFoods > 0 ? Math.round(checkedFoods / totalFoods * 100) : 100
+  const checkedProtSupls = S.foodsChecked.filter(id =>
+    SUPPLEMENTS.some(s => s.protein_g > 0 && s.id === id)
+  ).length
+  const totalNut = totalFoods + totalProtSupls
+  const checkedNut = checkedFoods + checkedProtSupls
+  const nutritionScore = totalNut > 0 ? Math.round(checkedNut / totalNut * 100) : 100
 
   // Cardio score (20%): steps 60% + cardio 40%
   const stepsGoal = CLIENT?.steps_goal || 9000
@@ -568,17 +574,17 @@ function renderNutrition() {
     document.getElementById('supls-card').style.display = 'none'
   } else {
     suplsEl.innerHTML = SUPPLEMENTS.map(s => {
-      const checked = s.protein_g > 0 ? S.foodsChecked.includes(s.id) : false
-      return `<div class="meal-row row" data-food-id="${s.id}" data-prot="${s.protein_g}" data-kcal="${s.kcal}" onclick="toggleMeal(this)">
+      const checked = S.foodsChecked.includes(s.id)
+      return `<div class="meal-row row" data-food-id="${s.id}" data-prot="${s.protein_g || 0}" data-kcal="${s.kcal || 0}" onclick="toggleMeal(this)">
         <button class="check-btn${checked ? ' on' : ''}" aria-label="Marcar">${checked ? '✓' : ''}</button>
         <div style="flex:1;margin-left:10px"><div class="row-name">${s.name}</div></div>
-        <span class="tag">${s.dose || ''}</span>
+        ${s.protein_g > 0 ? `<span class="tag" style="margin-right:4px">${s.protein_g}g prot</span>` : ''}
+        ${s.dose ? `<span class="tag">${s.dose}</span>` : ''}
       </div>`
     }).join('')
   }
 
-  updateMealTotals()
-  // Restore checked state
+  // Restore checked state primero, luego actualizar totales
   document.querySelectorAll('.meal-row').forEach(row => {
     const id = row.dataset.foodId
     if (id && S.foodsChecked.includes(id)) {
@@ -587,6 +593,7 @@ function renderNutrition() {
       row.style.opacity = '1'
     }
   })
+  updateMealTotals()
 }
 
 window.toggleMeal = function(row) {
