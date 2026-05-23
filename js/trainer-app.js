@@ -902,6 +902,10 @@ async function renderMeasuresTab(el) {
     </div>`
   }
 
+  function histTag(label, field, r) {
+    return r[field] != null ? `<span class="tag">${label} ${r[field]}</span>` : ''
+  }
+
   el.innerHTML = `
     <div class="card">
       <div class="card-title"><i class="ti ti-plus"></i> Añadir medición</div>
@@ -915,9 +919,14 @@ async function renderMeasuresTab(el) {
         <div class="form-group"><label class="form-label">Cintura (cm)</label><input type="number" id="m-waist" placeholder="78" step="0.5"></div>
         <div class="form-group"><label class="form-label">Cadera (cm)</label><input type="number" id="m-hips" placeholder="96" step="0.5"></div>
         <div class="form-group"><label class="form-label">Pecho (cm)</label><input type="number" id="m-chest" placeholder="90" step="0.5"></div>
-        <div class="form-group"><label class="form-label">Brazo (cm)</label><input type="number" id="m-arm" placeholder="32" step="0.5"></div>
-        <div class="form-group"><label class="form-label">Muslo (cm)</label><input type="number" id="m-thigh" placeholder="55" step="0.5"></div>
-        <div class="form-group" style="grid-column:span 2"><label class="form-label">Notas</label><input type="text" id="m-notes" placeholder="Ej: en ayunas, por la mañana"></div>
+        <div class="form-group"><label class="form-label">Hombros (cm)</label><input type="number" id="m-shoulder" placeholder="110" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Brazo D (cm)</label><input type="number" id="m-arm-r" placeholder="32" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Brazo I (cm)</label><input type="number" id="m-arm-l" placeholder="32" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Muslo D (cm)</label><input type="number" id="m-thigh-r" placeholder="55" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Muslo I (cm)</label><input type="number" id="m-thigh-l" placeholder="55" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Gemelo D (cm)</label><input type="number" id="m-calf-r" placeholder="36" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Gemelo I (cm)</label><input type="number" id="m-calf-l" placeholder="36" step="0.5"></div>
+        <div class="form-group" style="grid-column:span 3"><label class="form-label">Notas</label><input type="text" id="m-notes" placeholder="Ej: en ayunas, por la mañana"></div>
       </div>
       <button class="btn btn-primary" onclick="saveMeasurement()" style="width:100%;margin-top:4px">
         <i class="ti ti-plus"></i> Guardar medición
@@ -935,8 +944,13 @@ async function renderMeasuresTab(el) {
         ${metricRow('Cintura', 'waist_cm')}
         ${metricRow('Cadera', 'hips_cm')}
         ${metricRow('Pecho', 'chest_cm')}
-        ${metricRow('Brazo', 'arm_cm')}
-        ${metricRow('Muslo', 'thigh_cm')}
+        ${metricRow('Hombros', 'shoulder_cm')}
+        ${metricRow('Brazo D', 'arm_r_cm')}
+        ${metricRow('Brazo I', 'arm_l_cm')}
+        ${metricRow('Muslo D', 'thigh_r_cm')}
+        ${metricRow('Muslo I', 'thigh_l_cm')}
+        ${metricRow('Gemelo D', 'calf_r_cm')}
+        ${metricRow('Gemelo I', 'calf_l_cm')}
       </div>
     </div>` : ''}
 
@@ -949,11 +963,16 @@ async function renderMeasuresTab(el) {
           <div style="flex:1;display:flex;flex-wrap:wrap;gap:5px">
             ${r.weight_kg != null ? `<span class="tag">${r.weight_kg} kg</span>` : ''}
             ${r.body_fat_pct != null ? `<span class="tag">${r.body_fat_pct}% grasa</span>` : ''}
-            ${r.waist_cm != null ? `<span class="tag">Cin ${r.waist_cm}</span>` : ''}
-            ${r.hips_cm != null ? `<span class="tag">Cad ${r.hips_cm}</span>` : ''}
-            ${r.chest_cm != null ? `<span class="tag">Pec ${r.chest_cm}</span>` : ''}
-            ${r.arm_cm != null ? `<span class="tag">Bra ${r.arm_cm}</span>` : ''}
-            ${r.thigh_cm != null ? `<span class="tag">Mus ${r.thigh_cm}</span>` : ''}
+            ${histTag('Cin', 'waist_cm', r)}
+            ${histTag('Cad', 'hips_cm', r)}
+            ${histTag('Pec', 'chest_cm', r)}
+            ${histTag('Hom', 'shoulder_cm', r)}
+            ${histTag('BraD', 'arm_r_cm', r)}
+            ${histTag('BraI', 'arm_l_cm', r)}
+            ${histTag('MusD', 'thigh_r_cm', r)}
+            ${histTag('MusI', 'thigh_l_cm', r)}
+            ${histTag('GemD', 'calf_r_cm', r)}
+            ${histTag('GemI', 'calf_l_cm', r)}
             ${r.notes ? `<span style="font-size:11px;color:var(--text2);align-self:center">${r.notes}</span>` : ''}
           </div>
           <button onclick="deleteMeasurement('${r.id}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 4px">×</button>
@@ -975,8 +994,13 @@ window.saveMeasurement = async function() {
     waist_cm: val('m-waist'),
     hips_cm: val('m-hips'),
     chest_cm: val('m-chest'),
-    arm_cm: val('m-arm'),
-    thigh_cm: val('m-thigh'),
+    shoulder_cm: val('m-shoulder'),
+    arm_r_cm: val('m-arm-r'),
+    arm_l_cm: val('m-arm-l'),
+    thigh_r_cm: val('m-thigh-r'),
+    thigh_l_cm: val('m-thigh-l'),
+    calf_r_cm: val('m-calf-r'),
+    calf_l_cm: val('m-calf-l'),
     notes: document.getElementById('m-notes').value.trim() || null,
   }
   if (!entry.measured_at) { showNotif('Elige una fecha.'); return }
