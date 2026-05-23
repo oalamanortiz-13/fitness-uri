@@ -259,7 +259,8 @@ function renderClientDetail() {
 window.switchTab = function(tab) {
   ACTIVE_TAB = tab
   document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.toggle('active', b.textContent.toLowerCase().includes(tab === 'profile' ? 'perfil' : tab === 'workout' ? 'entreno' : tab === 'diet' ? 'dieta' : tab === 'supplements' ? 'supls' : 'progreso'))
+    const onclick = b.getAttribute('onclick') || ''
+    b.classList.toggle('active', onclick.includes(`'${tab}'`))
   })
   renderTab()
 }
