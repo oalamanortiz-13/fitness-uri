@@ -1,34 +1,35 @@
-# fitness-uri — Estado del proyecto
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Qué es esto
 Plataforma multi-tenant de fitness para preparadores físicos y sus clientes.
 - **URL producción:** fitness-uri.vercel.app
 - **Supabase proyecto:** cwwvwrzqlavuyqhyeepu
-- **Stack:** Vanilla HTML/CSS/JS + Supabase (Auth + PostgreSQL) + Vercel
+- **Stack:** Vanilla HTML/CSS/JS + Supabase (Auth + PostgreSQL) + Vercel (estático)
+- **Deploy:** push a `main` → Vercel despliega automáticamente. Desarrollar en `claude/exciting-maxwell-3GNsG`, mergear a `main` para ver cambios en producción.
 
 ## Estructura de archivos
 ```
 fitness-uri/
 ├── index.html              # Login + recuperación de contraseña (vista inline)
 ├── reset-password.html     # Nueva contraseña tras link de email
-├── client.html             # Portal del cliente
-├── trainer.html            # Portal del preparador
+├── client.html             # Portal del cliente (mobile-first, max-width 480px)
+├── trainer.html            # Portal del preparador (desktop, max-width 900px, sidebar + main)
 ├── admin.html              # Panel admin
-├── css/shared.css          # Design system completo
+├── css/shared.css          # Design system completo — NO tocar sin revisar qué usa
 ├── js/
 │   ├── supabase-client.js  # Init Supabase (credenciales ya configuradas)
-│   ├── auth.js             # Login, logout, redirección por rol
-│   ├── client-app.js       # Lógica portal cliente
-│   ├── trainer-app.js      # Lógica portal trainer (tiene lógica de suscripción Stripe)
+│   ├── auth.js             # requireRole(), redirectByRole(), logout()
+│   ├── client-app.js       # ~1300 líneas — lógica portal cliente
+│   ├── trainer-app.js      # Lógica portal trainer + suscripción Stripe
 │   └── admin-app.js        # Lógica panel admin
 └── supabase/
-    ├── schema.sql          # Schema completo (ya ejecutado en Supabase)
-    ├── policies-only.sql   # Solo policies + trigger (ya ejecutado)
-    ├── migrations/
-    │   └── 003_subscription_columns.sql  # Columnas Stripe en trainers (YA EJECUTADO)
+    ├── schema.sql          # Schema original (referencia)
+    ├── migrations/         # Migraciones ejecutadas en producción
     └── functions/
-        ├── create-checkout-session/  # Edge Function Stripe Checkout (YA DESPLEGADA)
-        └── stripe-webhook/           # Edge Function webhook Stripe (YA DESPLEGADA)
+        ├── create-checkout-session/  # Edge Function Stripe Checkout (desplegada)
+        └── stripe-webhook/           # Edge Function webhook Stripe (desplegada)
 ```
 
 ## Roles y acceso
@@ -36,101 +37,105 @@ fitness-uri/
 |-----|--------|-------------|
 | admin | admin.html | Crear trainers, ver stats globales |
 | trainer | trainer.html | Crear/gestionar clientes, asignar planes |
-| client | client.html | Ver su plan, registrar progreso |
+| client | client.html | Ver su plan, registrar progreso diario |
 
-## Usuarios creados en producción
-- **Admin:** oalamanortiz@gmail.com
-- **Trainer:** U BODY COACH — oalaman@icloud.com (ID: 53ef0bfc-df61-4904-8a4e-fb24b3040874)
-- **Trainer:** I LOVE MUSCLE — ilovemusclenutrition@gmail.com
-- **Trainer:** ruben rodriguez — ruben@gmail.com
-- **Cliente:** Estefania Padron Henao — info.estefaniapadron@gmail.com (vinculada a U BODY COACH)
-- **Cliente:** jaime ruiz — jaimeruiz@gmail.com (vinculado a U BODY COACH)
-- **Cliente:** marina — marina@emedemarina.com
+Cada portal llama a `requireRole('rol')` al inicio. Si la sesión no coincide redirige al portal correcto.
 
-## Datos de Estefania (ya en BD)
-- **Perfil:** 31 años, 159 cm, 58 kg → objetivo 60 kg, 2050 kcal/día, 110g proteína, 8000 pasos
-- **Entreno:** 5 días (Lun-Vie) + 2 descanso. Lun: Tren Sup Empuje, Mar: Tren Inf, Mié: Cardio+Movilidad, Jue: Tren Sup Tirón, Vie: Full Body
-- **Dieta:** 5 comidas · ~2005 kcal · ~158g proteína (Desayuno, Media mañana, Comida, Merienda, Cena)
+## Supabase — tablas y columnas relevantes
 
-## Supabase — tablas principales
-- `profiles` — todos los usuarios (role: admin/trainer/client)
-- `trainers` — datos del preparador + columnas Stripe (pendiente migración 003)
-- `clients` — datos del cliente + trainer_id
-- `workout_days` + `workout_exercises` — plan de entreno (7 días)
-- `diet_plans` + `diet_meals` + `diet_foods` — plan de dieta
-- `supplements` — suplementos del cliente
-- `daily_logs` — registro diario (peso, pasos, cardio, checklist)
+### `profiles`
+`id` (= auth.uid), `role` (admin/trainer/client), `full_name`, `email`
+
+### `trainers`
+`id`, `bio`, `specialty`, `max_clients`, `logo_url`, `subscription_status`, `trial_ends_at`, `stripe_customer_id`, `stripe_subscription_id`
+
+### `clients`
+`id`, `trainer_id`, `age`, `height_cm`, `weight_start`, `weight_goal`, `kcal_goal`, `protein_goal`, `steps_goal`, `cardio_goal_min`, `plan_start_date`, `plan_weeks`, `phase_name`, `notes`, `golden_rules` (TEXT[]), `active`, `avatar_url`, `goal_label`, `reminder_interval_min`
+
+### `daily_logs`
+`client_id`, `log_date`, `steps`, `cardio_min`, `weight_kg`, `rpe`, `checklist` (JSONB), `exercises_done` (UUID[]), `loads` (JSONB: `{exId: [kg_s1, kg_s2, ...]}`), `foods_checked` (UUID[]), `calendar_status` (done/miss), `score`, `score_training`, `score_nutrition`, `score_cardio`
+
+### Storage
+- Bucket `avatars` (público): `client-{USER_ID}` para avatares de clientes, `trainer-{TRAINER_ID}.ext` para logos de trainers
+
+### RLS crítico
+- `clients`: trainer lee/escribe sus propios clientes; cliente hace SELECT y UPDATE de su propia fila
+- `trainers`: trainer hace SELECT/UPDATE de su propia fila; cliente hace SELECT del trainer asignado (`id IN (SELECT trainer_id FROM clients WHERE id = auth.uid())`)
+- `profiles`: trainer lee perfiles de sus clientes; cliente lee el suyo
+
+## Arquitectura client-app.js
+
+Estado global en objeto `S` (línea ~23). Funciones clave:
+- `loadClientData()` — carga CLIENT, TRAINER_PROFILE, WORKOUT_DAYS, DIET_PLAN, SUPPLEMENTS
+- `loadTodayLog()` — carga estado del día actual en S (pasos, cargas, foodsChecked, flags done)
+- `loadWeekCardio()` / `loadMonthLogs()` — datos de calendario y scores
+- `saveLog()` — upsert debounced de daily_logs (scheduleSave() lo llama con 2s delay)
+- `saveScoreComponent(field, value)` — guarda score parcial y recalcula total; field = 'training'|'nutrition'|'cardio'
+- `finishWorkout()` / `finishNutrition()` / `finishCardio()` — botones de completado, one-per-day
+- `renderWorkout(dayIdx)` — renderiza ejercicios + botón finalizar
+- `applyClientConfig()` — aplica todos los datos CLIENT al DOM
+- `applyClientProfile(myProfile)` — nombre, avatar, logo trainer, tags objetivo
+
+`loads` en daily_logs usa formato JSONB `{exId: [kg_s1, kg_s2, kg_s3]}`. La función `getSetLoads()` tiene compatibilidad hacia atrás con el formato antiguo `{exId: "45"}`.
+
+## Sistema de puntuación diaria
+- Entrenamiento 40%: ejercicios completados / total
+- Nutrición 40%: alimentos del plan marcados / total
+- Cardio 20%: pasos (60%) + minutos cardio (40%) vs objetivos
+- Score total se recalcula al guardar cualquier componente, conservando los demás en `S.calScores`
+- Calendario muestra el % bajo el número de día, coloreado: verde ≥80%, ámbar ≥50%, rojo <50%
+
+## Trainer portal (trainer-app.js)
+
+Layout: sidebar fijo (260px) + main scrollable. En mobile se apila verticalmente.
+
+Flujo principal:
+1. `loadClients()` → `renderClientList()` → click → `selectClient(id)`
+2. `loadClientFullData(id)` carga workouts, dieta, suplementos, logs
+3. Tabs: Perfil / Entreno / Dieta / Suplementos / Progreso → cada uno tiene `render*Tab()`
+4. `saveProfile()` actualiza tabla `clients` con todos los campos del formulario
+
+Sidebar superior muestra logo del trainer (uploadable) + nombre.
 
 ## Modelo de negocio Stripe (implementado, pendiente activar)
-- **Precio:** €9,90 por cliente activo / mes
-- **Trial:** 14 días gratis al crear cuenta trainer
-- **Producto Stripe:** por crear en dashboard (price_...)
-- **Flujo:** trainer ve banner en sidebar → botón → Stripe Checkout → webhook actualiza BD
+- €9,90 por cliente activo / mes, trial 14 días
+- Edge Functions desplegadas: `create-checkout-session`, `stripe-webhook`
+- Variables de entorno pendientes en Supabase: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `APP_URL`
 
-### Edge Functions desplegadas en Supabase
-- `create-checkout-session` — crea sesión de Stripe Checkout para el trainer
-- `stripe-webhook` — recibe eventos de Stripe y actualiza subscription_status en BD
-
-### Variables de entorno necesarias en Supabase Edge Functions (PENDIENTE añadir)
+## Design system
+```css
+--bg: #0f0f0f   --bg2: #1a1a1a   --bg3: #242424
+--blue: #378ADD  --green: #1D9E75  --amber: #BA7517  --red: #E24B4A
 ```
-STRIPE_SECRET_KEY       = sk_live_...
-STRIPE_PRICE_ID         = price_...
-STRIPE_WEBHOOK_SECRET   = whsec_...
-APP_URL                 = https://fitness-uri.vercel.app
-```
+Componentes: `.card`, `.btn`, `.btn-primary`, `.metric`, `.pill`, `.pill-s`, `.pill-i`, `.tag`, `.form-group`, `.form-label`, `.prog-wrap` + `.prog-fill`, `.cal-day`, `.modal-overlay` + `.modal`
+Iconos: Tabler Icons (`ti ti-*`)
 
-### Pasos pendientes para activar Stripe
-1. Crear producto en Stripe dashboard → €9,90/mes/unidad → copiar price_...
-2. Añadir variables de entorno en Supabase → Edge Functions → Manage secrets
-3. Crear webhook en Stripe → URL: `https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/stripe-webhook`
-   - Eventos: `customer.subscription.created`, `customer.subscription.updated`,
-     `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.payment_succeeded`
-4. Copiar Signing secret del webhook → ponerlo como STRIPE_WEBHOOK_SECRET
+## Usuarios en producción
+- **Admin:** oalamanortiz@gmail.com
+- **Trainer U BODY COACH:** oalaman@icloud.com (ID: `53ef0bfc-df61-4904-8a4e-fb24b3040874`)
+- **Trainer I LOVE MUSCLE:** ilovemusclenutrition@gmail.com
+- **Clientes:** info.estefaniapadron@gmail.com, jaimeruiz@gmail.com, marina@emedemarina.com
 
-## Problemas resueltos
-1. Clave Supabase — usar JWT anon key (eyJ...) no la publishable key (sb_publishable_...)
-2. RLS profiles — añadir policy para que trainer lea perfiles de sus clientes
-3. signUp cambia sesión activa — guardar y restaurar sesión del trainer/admin tras signUp
-4. Trigger handle_new_user — añadir EXCEPTION WHEN OTHERS para que no bloquee creación de usuarios
-5. Políticas clients — WITH CHECK necesario para INSERT/UPDATE
-6. Migration 003 (columnas Stripe) — ya ejecutada en producción
-7. Edge functions Stripe — ya desplegadas (create-checkout-session + stripe-webhook)
-8. Recuperación de contraseña — flujo completo con email en español y reset-password.html
-   - Redirect URL añadida en Supabase Auth: https://fitness-uri.vercel.app/reset-password.html
-   - Plantilla de email personalizada en español con diseño oscuro
-
-## Pendiente (producto)
-- [ ] Activar Stripe (añadir secrets en Supabase Edge Functions + crear webhook en Stripe)
-- [ ] Confirmar emails automáticamente (Supabase → Auth → Sign In/Providers → desactivar "Confirm email")
-- [ ] Probar que Estefania puede entrar y ver su dashboard (entreno + dieta ya cargados)
-- [ ] Probar flujo completo: trainer modifica plan → cliente lo ve actualizado
-- [ ] Chat IA del cliente — falta configurar API key de Anthropic (actualmente sin autenticación)
-
-## SQL útil para troubleshooting
+## SQL útil
 ```sql
--- Ver todos los usuarios y sus roles
+-- Ver usuarios y roles
 SELECT p.full_name, p.email, p.role, c.trainer_id
-FROM profiles p
-LEFT JOIN clients c ON c.id = p.id;
+FROM profiles p LEFT JOIN clients c ON c.id = p.id;
 
 -- Confirmar emails pendientes
 UPDATE auth.users SET email_confirmed_at = NOW() WHERE email_confirmed_at IS NULL;
 
--- Vincular cliente huérfano a trainer
-INSERT INTO clients (id, trainer_id)
-SELECT p.id, '53ef0bfc-df61-4904-8a4e-fb24b3040874'
-FROM profiles p
-WHERE p.role = 'client'
-AND p.id NOT IN (SELECT id FROM clients);
-
--- Ver estado suscripciones trainers
-SELECT t.id, p.full_name, p.email,
-       t.subscription_status, t.trial_ends_at,
-       t.stripe_customer_id, t.stripe_subscription_id
+-- Estado suscripciones trainers
+SELECT t.id, p.full_name, t.subscription_status, t.trial_ends_at
 FROM trainers t JOIN profiles p ON p.id = t.id;
+
+-- Ver scores del mes
+SELECT log_date, score, score_training, score_nutrition, score_cardio
+FROM daily_logs WHERE client_id = '<uuid>' ORDER BY log_date DESC LIMIT 30;
 ```
 
-## Design system (CSS variables en shared.css)
-- `--bg: #0f0f0f` / `--bg2: #1a1a1a` / `--bg3: #242424`
-- `--blue: #378ADD` (primario) / `--green: #1D9E75` / `--amber: #BA7517` / `--red: #E24B4A`
-- Max-width: 480px, mobile-first
+## Pendiente
+- [ ] Activar Stripe (añadir secrets en Supabase Edge Functions + crear webhook)
+- [ ] Confirmar emails automáticamente (Supabase → Auth → desactivar "Confirm email")
+- [ ] Chat IA — API key de Anthropic expuesta en cliente, mover a Edge Function proxy
+- [ ] Perfil del preparador — sección "Mi perfil" en trainer.html
