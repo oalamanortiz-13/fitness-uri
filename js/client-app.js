@@ -31,6 +31,9 @@ let S = {
   loads: {},
   calDays: {},
   calScores: {},
+  trainingDone: false,
+  nutDone: false,
+  cardioDone: false,
   rpe: 0,
   checklist: {},
   foodsChecked: [],
@@ -71,6 +74,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderNutrition()
   renderCalendar()
   setAIGreeting()
+  updateNutriFinishBtn()
+  updateCardioFinishBtn()
 
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'})
 
@@ -165,6 +170,12 @@ async function loadTodayLog() {
   S.exDone[`d${getTodayIdx()}`] = log.exercises_done || []
   S.loads[getTodayIdx()] = log.loads || {}
   S.foodsChecked = log.foods_checked || []
+  S.trainingDone = log.score_training != null
+  S.nutDone = log.score_nutrition != null
+  S.cardioDone = log.score_cardio != null
+  if (log.score != null) {
+    S.calScores[getToday()] = { total: log.score, training: log.score_training, nutrition: log.score_nutrition, cardio: log.score_cardio }
+  }
 
   if (log.weight_kg) {
     document.getElementById('d-peso').textContent = log.weight_kg.toFixed(1) + ' kg'
@@ -578,6 +589,7 @@ function updateMealTotals() {
   document.getElementById('ms-prot-bar').style.width = Math.min(100, Math.round(tp / protGoal * 100)) + '%'
   document.getElementById('ms-kcal-bar').style.width = Math.min(100, Math.round(tk / kcalGoal * 100)) + '%'
   document.getElementById('d-prot').textContent = tp + 'g'
+  updateNutriFinishBtn()
 }
 
 window.addFood = function() {
@@ -658,7 +670,7 @@ function renderWorkout(dayIdx) {
   })
 
   const isToday = dayIdx === getTodayIdx()
-  const alreadyDone = S.calDays[getToday()] === 'done' && isToday
+  const alreadyDone = S.trainingDone && isToday
   h += `<div style="margin-top:10px">
     <div class="lbl"><span>${dc}/${tot} completados</span><span>${tot > 0 ? Math.round(dc / tot * 100) : 0}%</span></div>
     <div class="prog-wrap"><div class="prog-fill" style="width:${tot > 0 ? Math.round(dc / tot * 100) : 0}%;background:var(--green)"></div></div>
@@ -676,33 +688,192 @@ function renderWorkout(dayIdx) {
   renderLoads(wo, dayIdx)
 }
 
+// ─── SCORE HELPERS ────────────────────────────────────────────────────────────
+
+async function saveScoreComponent(field, value) {
+  const today = getToday()
+  const sc = S.calScores[today] || {}
+  const training  = field === 'training'  ? value : (sc.training  ?? null)
+  const nutrition = field === 'nutrition' ? value : (sc.nutrition ?? null)
+  const cardio    = field === 'cardio'    ? value : (sc.cardio    ?? null)
+  const total = Math.round((training || 0) * 0.4 + (nutrition || 0) * 0.4 + (cardio || 0) * 0.2)
+  S.calScores[today] = { total, training, nutrition, cardio }
+
+  await supabase.from('daily_logs').upsert({
+    client_id: USER_ID, log_date: today,
+    score: total,
+    score_training: training,
+    score_nutrition: nutrition,
+    score_cardio: cardio,
+  }, { onConflict: 'client_id,log_date' })
+
+  return { total, training, nutrition, cardio }
+}
+
+function finishModal({ emoji, title, subtitle, scorePct, scoreColor, extraRows, streak }) {
+  const streakRow = streak != null
+    ? `<div style="background:var(--bg3);border-radius:8px;padding:10px">
+        <div style="font-size:16px;font-weight:700;color:var(--blue)">${streak}</div>
+        <div style="font-size:10px;color:var(--text2)">días racha</div>
+       </div>` : ''
+  const rows = (extraRows || []).map(r =>
+    `<div style="background:var(--bg3);border-radius:8px;padding:10px">
+      <div style="font-size:16px;font-weight:700;color:${r.color}">${r.val}</div>
+      <div style="font-size:10px;color:var(--text2)">${r.label}</div>
+     </div>`
+  ).join('')
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="finish-modal" onclick="if(event.target===this)this.remove()" style="
+      position:fixed;inset:0;background:#000a;display:flex;align-items:center;
+      justify-content:center;z-index:1000;padding:20px">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+        padding:28px;max-width:340px;width:100%;text-align:center">
+        <div style="font-size:48px;margin-bottom:8px">${emoji}</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px">${title}</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:20px">${subtitle}</div>
+        <div style="background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:16px">
+          <div style="font-size:38px;font-weight:800;color:${scoreColor};line-height:1">${scorePct}%</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:4px">Puntuación</div>
+        </div>
+        ${rows || streakRow ? `<div style="display:grid;grid-template-columns:${streakRow ? 'repeat(' + ((extraRows?.length||0)+1) + ',1fr)' : 'repeat(' + (extraRows?.length||1) + ',1fr)'};gap:8px;margin-bottom:20px">${rows}${streakRow}</div>` : ''}
+        <button onclick="document.getElementById('finish-modal').remove()" class="btn btn-primary" style="width:100%">Cerrar</button>
+      </div>
+    </div>`)
+}
+
+function updateNutriFinishBtn() {
+  const btn = document.getElementById('nutri-finish-btn')
+  if (!btn) return
+  const totalFoods = DIET_MEALS.reduce((a, m) => a + m.diet_foods.length, 0)
+  const checked = S.foodsChecked.filter(id => DIET_MEALS.some(m => m.diet_foods.some(f => f.id === id))).length
+  const pct = totalFoods > 0 ? Math.round(checked / totalFoods * 100) : 100
+  const sc = S.calScores[getToday()]
+
+  if (S.nutDone) {
+    btn.style.background = 'var(--bg3)'
+    btn.style.color = 'var(--green)'
+    btn.style.borderColor = 'var(--green)'
+    btn.textContent = `✅ Nutrición guardada — ${sc?.nutrition ?? pct}%`
+  } else if (pct >= 80) {
+    btn.style.background = 'var(--green)'
+    btn.style.color = '#fff'
+    btn.style.borderColor = 'var(--green)'
+    btn.textContent = `🥗 ¡Plan completado! Guardar nutrición`
+  } else {
+    btn.style.background = 'var(--bg3)'
+    btn.style.color = 'var(--text2)'
+    btn.style.borderColor = 'var(--border2)'
+    btn.textContent = `🥗 Guardar nutrición del día (${checked}/${totalFoods} alimentos)`
+  }
+}
+
+function updateCardioFinishBtn() {
+  const btn = document.getElementById('cardio-finish-btn')
+  if (!btn) return
+  const stepsGoal = CLIENT?.steps_goal || 9000
+  const dailyCardioGoal = Math.round((CLIENT?.cardio_goal_min || 185) / 7)
+  const stepsPct = Math.min(100, Math.round(S.steps / stepsGoal * 100))
+  const cardioPct = Math.min(100, Math.round(S.cardioDay / dailyCardioGoal * 100))
+  const pct = Math.round(stepsPct * 0.6 + cardioPct * 0.4)
+  const sc = S.calScores[getToday()]
+
+  if (S.cardioDone) {
+    btn.style.background = 'var(--bg3)'
+    btn.style.color = 'var(--green)'
+    btn.style.borderColor = 'var(--green)'
+    btn.textContent = `✅ Cardio guardado — ${sc?.cardio ?? pct}%`
+  } else if (pct >= 80) {
+    btn.style.background = 'var(--amber)'
+    btn.style.color = '#fff'
+    btn.style.borderColor = 'var(--amber)'
+    btn.textContent = `👟 ¡Objetivo conseguido! Guardar cardio`
+  } else {
+    btn.style.background = 'var(--bg3)'
+    btn.style.color = 'var(--text2)'
+    btn.style.borderColor = 'var(--border2)'
+    btn.textContent = `👟 Guardar cardio del día (${S.steps.toLocaleString('es-ES')} pasos · ${S.cardioDay} min)`
+  }
+}
+
+window.finishNutrition = async function() {
+  if (S.nutDone) {
+    const sc = S.calScores[getToday()]
+    finishModal({ emoji: '✅', title: 'Ya guardaste la nutrición', subtitle: 'Los datos de hoy ya están registrados.',
+      scorePct: sc?.nutrition ?? '—', scoreColor: 'var(--green)' })
+    return
+  }
+
+  clearTimeout(saveTimeout)
+  await saveLog()
+
+  const totalFoods = DIET_MEALS.reduce((a, m) => a + m.diet_foods.length, 0)
+  const checked = S.foodsChecked.filter(id => DIET_MEALS.some(m => m.diet_foods.some(f => f.id === id))).length
+  const nutritionScore = totalFoods > 0 ? Math.round(checked / totalFoods * 100) : 100
+
+  const score = await saveScoreComponent('nutrition', nutritionScore)
+  S.nutDone = true
+  updateNutriFinishBtn()
+
+  const color = nutritionScore >= 80 ? 'var(--green)' : nutritionScore >= 50 ? 'var(--amber)' : 'var(--red)'
+  const emoji = nutritionScore >= 80 ? '🥗' : nutritionScore >= 50 ? '👍' : '📝'
+  finishModal({
+    emoji, scoreColor: color,
+    title: nutritionScore >= 80 ? '¡Nutrición completada!' : 'Nutrición guardada',
+    subtitle: `${checked} de ${totalFoods} alimentos · Puntuación total del día: ${score.total}%`,
+    scorePct: nutritionScore,
+    extraRows: [{ val: score.total + '%', label: 'Score día', color: 'var(--blue)' }]
+  })
+}
+
+window.finishCardio = async function() {
+  if (S.cardioDone) {
+    const sc = S.calScores[getToday()]
+    finishModal({ emoji: '✅', title: 'Ya guardaste el cardio', subtitle: 'Los datos de hoy ya están registrados.',
+      scorePct: sc?.cardio ?? '—', scoreColor: 'var(--amber)' })
+    return
+  }
+
+  clearTimeout(saveTimeout)
+  await saveLog()
+
+  const stepsGoal = CLIENT?.steps_goal || 9000
+  const dailyCardioGoal = (CLIENT?.cardio_goal_min || 185) / 7
+  const stepsPct = Math.min(100, Math.round(S.steps / stepsGoal * 100))
+  const cardioPct = Math.min(100, Math.round(S.cardioDay / dailyCardioGoal * 100))
+  const cardioScore = Math.round(stepsPct * 0.6 + cardioPct * 0.4)
+
+  const score = await saveScoreComponent('cardio', cardioScore)
+  S.cardioDone = true
+  updateCardioFinishBtn()
+
+  const color = cardioScore >= 80 ? 'var(--green)' : cardioScore >= 50 ? 'var(--amber)' : 'var(--red)'
+  const emoji = cardioScore >= 80 ? '🏃' : cardioScore >= 50 ? '👟' : '🚶'
+  finishModal({
+    emoji, scoreColor: color,
+    title: cardioScore >= 80 ? '¡Objetivo cardio!' : 'Cardio guardado',
+    subtitle: `${S.steps.toLocaleString('es-ES')} pasos · ${S.cardioDay} min cardio · Score día: ${score.total}%`,
+    scorePct: cardioScore,
+    extraRows: [
+      { val: stepsPct + '%', label: 'Pasos', color: 'var(--blue)' },
+      { val: cardioPct + '%', label: 'Cardio', color: 'var(--amber)' },
+    ]
+  })
+}
+
 window.finishWorkout = async function() {
   const dayIdx = S.curDay
   const today = getToday()
   const todayIdx = getTodayIdx()
 
-  // Solo permitir completar el día actual
   if (dayIdx !== todayIdx) {
     showNotif('Solo puedes completar el entrenamiento de hoy.')
     return
   }
 
-  // Prevenir duplicado
-  if (S.calDays[today] === 'done') {
+  if (S.trainingDone) {
     const sc = S.calScores[today]
-    const modalHtml = `
-      <div id="finish-modal" onclick="if(event.target===this)this.remove()" style="
-        position:fixed;inset:0;background:#000a;display:flex;align-items:center;
-        justify-content:center;z-index:1000;padding:20px">
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
-          padding:28px;max-width:340px;width:100%;text-align:center">
-          <div style="font-size:48px;margin-bottom:8px">✅</div>
-          <div style="font-size:17px;font-weight:700;margin-bottom:6px">Ya completaste hoy</div>
-          <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Puntuación del día: <b>${sc?.total ?? '—'}%</b></div>
-          <button onclick="document.getElementById('finish-modal').remove()" class="btn btn-primary" style="width:100%">Cerrar</button>
-        </div>
-      </div>`
-    document.body.insertAdjacentHTML('beforeend', modalHtml)
+    finishModal({ emoji: '✅', title: 'Ya guardaste el entrenamiento', subtitle: 'Los datos de hoy ya están registrados.',
+      scorePct: sc?.training ?? '—', scoreColor: 'var(--green)' })
     return
   }
 
@@ -711,67 +882,33 @@ window.finishWorkout = async function() {
   const doneEx = S.exDone[key]?.length || 0
   const tot = wo?.workout_exercises?.length || 0
 
-  // Guardar log inmediatamente
   clearTimeout(saveTimeout)
   await saveLog()
 
-  // Calcular puntuación
-  const score = calcDayScore()
-  S.calDays[today] = 'done'
-  S.calScores[today] = score
+  const trainingScore = tot > 0 ? Math.round(doneEx / tot * 100) : 100
+  const score = await saveScoreComponent('training', trainingScore)
 
+  S.trainingDone = true
+  S.calDays[today] = 'done'
   const prev = new Date(); prev.setDate(prev.getDate() - 1)
-  const pk = prev.toISOString().split('T')[0]
-  S.streak = S.calDays[pk] === 'done' ? S.streak + 1 : 1
+  S.streak = S.calDays[prev.toISOString().split('T')[0]] === 'done' ? S.streak + 1 : 1
 
   await supabase.from('daily_logs').upsert({
-    client_id: USER_ID,
-    log_date: today,
-    calendar_status: 'done',
-    score: score.total,
-    score_training: score.training,
-    score_nutrition: score.nutrition,
-    score_cardio: score.cardio,
+    client_id: USER_ID, log_date: today, calendar_status: 'done',
   }, { onConflict: 'client_id,log_date' })
 
-  // Elegir emoji/título según puntuación
-  const emoji = score.total >= 90 ? '🏆' : score.total >= 70 ? '💪' : score.total >= 50 ? '👍' : '📝'
-  const title = score.total >= 90 ? '¡Día perfecto!' : score.total >= 70 ? '¡Gran día!' : score.total >= 50 ? 'Buen trabajo' : 'Día registrado'
-  const scoreColor = score.total >= 80 ? 'var(--green)' : score.total >= 50 ? 'var(--amber)' : 'var(--red)'
-
-  const modalHtml = `
-    <div id="finish-modal" onclick="if(event.target===this)this.remove()" style="
-      position:fixed;inset:0;background:#000a;display:flex;align-items:center;
-      justify-content:center;z-index:1000;padding:20px">
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
-        padding:28px;max-width:340px;width:100%;text-align:center">
-        <div style="font-size:48px;margin-bottom:8px">${emoji}</div>
-        <div style="font-size:18px;font-weight:700;margin-bottom:4px">${title}</div>
-        <div style="font-size:13px;color:var(--text2);margin-bottom:20px">
-          ${wo?.title || 'Entreno'} · ${doneEx}/${tot} ejercicios · Racha: ${S.streak} 🔥
-        </div>
-        <div style="background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:16px">
-          <div style="font-size:38px;font-weight:800;color:${scoreColor};line-height:1">${score.total}%</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:4px">Puntuación del día</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px">
-          <div style="background:var(--bg3);border-radius:8px;padding:10px">
-            <div style="font-size:16px;font-weight:700;color:var(--green)">${score.training}%</div>
-            <div style="font-size:10px;color:var(--text2)">Entreno</div>
-          </div>
-          <div style="background:var(--bg3);border-radius:8px;padding:10px">
-            <div style="font-size:16px;font-weight:700;color:var(--blue)">${score.nutrition}%</div>
-            <div style="font-size:10px;color:var(--text2)">Nutrición</div>
-          </div>
-          <div style="background:var(--bg3);border-radius:8px;padding:10px">
-            <div style="font-size:16px;font-weight:700;color:var(--amber)">${score.cardio}%</div>
-            <div style="font-size:10px;color:var(--text2)">Cardio</div>
-          </div>
-        </div>
-        <button onclick="document.getElementById('finish-modal').remove()" class="btn btn-primary" style="width:100%">Cerrar</button>
-      </div>
-    </div>`
-  document.body.insertAdjacentHTML('beforeend', modalHtml)
+  const totalColor = score.total >= 80 ? 'var(--green)' : score.total >= 50 ? 'var(--amber)' : 'var(--red)'
+  const emoji = trainingScore === 100 ? '🏆' : trainingScore >= 70 ? '💪' : '📝'
+  finishModal({
+    emoji, scoreColor: 'var(--green)',
+    title: trainingScore === 100 ? '¡Entrenamiento completado!' : 'Entrenamiento guardado',
+    subtitle: `${wo?.title || 'Entreno'} · ${doneEx}/${tot} ejercicios · Racha: ${S.streak} 🔥`,
+    scorePct: trainingScore,
+    extraRows: [
+      { val: score.total + '%', label: 'Score día', color: totalColor },
+      { val: S.streak + ' 🔥', label: 'Racha', color: 'var(--amber)' },
+    ]
+  })
   renderWorkout(dayIdx)
   renderCalendar()
 }
@@ -919,6 +1056,7 @@ function updateStepsUI(v) {
   document.getElementById('steps-sl').value = v
   document.getElementById('steps-bar').style.width = Math.min(100, Math.round(v / goal * 100)) + '%'
   document.getElementById('d-steps').textContent = v.toLocaleString('es-ES')
+  updateCardioFinishBtn()
 }
 
 window.updateCardio = function(v) {
@@ -932,6 +1070,7 @@ function updateCardioUI(v) {
   S.cardioDay = v
   document.getElementById('cardio-big').textContent = v + ' min'
   document.getElementById('cardio-bar').style.width = Math.min(100, Math.round(v / 60 * 100)) + '%'
+  updateCardioFinishBtn()
 }
 
 function renderWkBars() {
