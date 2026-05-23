@@ -158,6 +158,8 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - `004_avatar_logo_columns` — `avatar_url` en clients, `logo_url` en trainers, `goal_label` en clients, bucket `avatars`
 - `005_body_measurements` — tabla `body_measurements` con RLS
 - `006_measurements_split_fields` — `shoulder_cm`, `arm_r_cm`, `arm_l_cm`, `thigh_r_cm`, `thigh_l_cm`, `calf_r_cm`, `calf_l_cm`
+- `007_cardio_types` — `cardio_types TEXT[]` en clients
+- `008_supplement_timing` — `timing TEXT` en supplements
 
 ## Funcionalidades implementadas (producción)
 - [x] Sistema de puntuación diaria (entrenamiento 40% + nutrición 40% + cardio 20%)
@@ -169,9 +171,19 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - [x] Recordatorio anti-sedentarismo configurable (por cliente o por trainer en pestaña Cardio)
 - [x] Pestaña Cardio en portal trainer (objetivos, gráfica, historial)
 - [x] Pestaña Medidas en portal trainer (hombros, pecho, brazos D/I, cintura, cadera, muslos D/I, gemelos D/I)
+- [x] Mi Perfil del trainer — bio, especialidad, máx. clientes; botón "Descartar cambios" (snapshot del último guardado)
+- [x] Tipos de cardio asignables por cliente (14 opciones); visibles en portal cliente agrupados con iconos
+- [x] Suplementos suman proteína a totales de nutrición al marcarlos; score de nutrición los incluye
+- [x] Edición inline/modal de ejercicios, alimentos de dieta y suplementos (botón ✎)
+- [x] Drag & drop para reordenar bloques de comida en pestaña Nutrición del trainer (handle ⠿, persiste order_index)
+- [x] Horario de suplementos (mañana/tarde/noche/pre-workout/post-workout) con tag de color en trainer y agrupación en cliente
+
+## Notas de arquitectura (sesión 23/05)
+- `SUPL_TIMINGS` y `CARDIO_TYPES` son constantes definidas en `trainer-app.js`; los mismos valores están duplicados inline en `client-app.js` (candidato a extraer a un módulo compartido)
+- Drag & drop de comidas usa HTML5 nativo (`draggable`), activado solo desde el handle `.drag-handle` vía `mousedown` para evitar conflictos con inputs
+- El snapshot de "Mi Perfil" se guarda en `TRAINER_PROFILE_SNAPSHOT`; al guardar se actualiza el snapshot y el nombre en sidebar
 
 ## Pendiente
 - [ ] Activar Stripe (añadir secrets en Supabase Edge Functions + crear webhook)
 - [ ] Confirmar emails automáticamente (Supabase → Auth → desactivar "Confirm email")
 - [ ] Chat IA — API key de Anthropic expuesta en cliente, mover a Edge Function proxy
-- [ ] Perfil del preparador — sección "Mi perfil" en trainer.html
