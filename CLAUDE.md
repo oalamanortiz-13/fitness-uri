@@ -55,11 +55,15 @@ Cada portal llama a `requireRole('rol')` al inicio. Si la sesión no coincide re
 ### `daily_logs`
 `client_id`, `log_date`, `steps`, `cardio_min`, `weight_kg`, `rpe`, `checklist` (JSONB), `exercises_done` (UUID[]), `loads` (JSONB: `{exId: [kg_s1, kg_s2, ...]}`), `foods_checked` (UUID[]), `calendar_status` (done/miss), `score`, `score_training`, `score_nutrition`, `score_cardio`
 
+### `body_measurements`
+`id` (UUID PK), `client_id` (UUID FK), `measured_at` (DATE), `weight_kg`, `body_fat_pct`, `waist_cm`, `hips_cm`, `chest_cm`, `shoulder_cm`, `arm_r_cm`, `arm_l_cm`, `thigh_r_cm`, `thigh_l_cm`, `calf_r_cm`, `calf_l_cm`, `notes`, `created_at`
+- RLS: trainer lee/escribe medidas de sus clientes; cliente lee/escribe las suyas
+
 ### Storage
-- Bucket `avatars` (público): `client-{USER_ID}` para avatares de clientes, `trainer-{TRAINER_ID}.ext` para logos de trainers
+- Bucket `avatars` (público): `client-{USER_ID}` para avatares de clientes (sin extensión, siempre sobreescribe), `trainer-{TRAINER_ID}.ext` para logos de trainers
 
 ### RLS crítico
-- `clients`: trainer lee/escribe sus propios clientes; cliente hace SELECT y UPDATE de su propia fila
+- `clients`: trainer lee/escribe sus propios clientes; cliente hace SELECT y UPDATE de su propia fila (`id = auth.uid()`)
 - `trainers`: trainer hace SELECT/UPDATE de su propia fila; cliente hace SELECT del trainer asignado (`id IN (SELECT trainer_id FROM clients WHERE id = auth.uid())`)
 - `profiles`: trainer lee perfiles de sus clientes; cliente lee el suyo
 
@@ -67,14 +71,18 @@ Cada portal llama a `requireRole('rol')` al inicio. Si la sesión no coincide re
 
 Estado global en objeto `S` (línea ~23). Funciones clave:
 - `loadClientData()` — carga CLIENT, TRAINER_PROFILE, WORKOUT_DAYS, DIET_PLAN, SUPPLEMENTS
-- `loadTodayLog()` — carga estado del día actual en S (pasos, cargas, foodsChecked, flags done)
+- `loadTodayLog()` — carga estado del día actual en S (pasos, cargas, foodsChecked, flags done; `trainingDone`, `nutDone`, `cardioDone`)
 - `loadWeekCardio()` / `loadMonthLogs()` — datos de calendario y scores
 - `saveLog()` — upsert debounced de daily_logs (scheduleSave() lo llama con 2s delay)
-- `saveScoreComponent(field, value)` — guarda score parcial y recalcula total; field = 'training'|'nutrition'|'cardio'
-- `finishWorkout()` / `finishNutrition()` / `finishCardio()` — botones de completado, one-per-day
+- `saveScoreComponent(field, value)` — guarda score parcial y recalcula total; field = 'training'|'nutrition'|'cardio'. Preserva los otros componentes desde `S.calScores[today]`
+- `finishWorkout()` / `finishNutrition()` / `finishCardio()` — botones de completado one-per-day, muestran modal con resumen de puntuación
+- `finishModal({emoji, title, subtitle, scorePct, scoreColor, extraRows})` — modal compartido de resultado
+- `updateNutriFinishBtn()` / `updateCardioFinishBtn()` — actualizan estado/color del botón en tiempo real
 - `renderWorkout(dayIdx)` — renderiza ejercicios + botón finalizar
-- `applyClientConfig()` — aplica todos los datos CLIENT al DOM
-- `applyClientProfile(myProfile)` — nombre, avatar, logo trainer, tags objetivo
+- `applyClientConfig()` — aplica todos los datos CLIENT al DOM (incluye `setSedInterval`)
+- `applyClientProfile(myProfile)` — nombre, avatar (con cache-bust `?t=Date.now()`), logo trainer, tags objetivo
+- `uploadAvatar(e)` — FileReader preview instantáneo → upload a `client-{USER_ID}` en Storage → update clients.avatar_url
+- `setSedInterval(min)` / `startSedTimer()` / `resetSedTimer()` — recordatorio anti-sedentarismo configurable
 
 `loads` en daily_logs usa formato JSONB `{exId: [kg_s1, kg_s2, kg_s3]}`. La función `getSetLoads()` tiene compatibilidad hacia atrás con el formato antiguo `{exId: "45"}`.
 
@@ -92,10 +100,17 @@ Layout: sidebar fijo (260px) + main scrollable. En mobile se apila verticalmente
 Flujo principal:
 1. `loadClients()` → `renderClientList()` → click → `selectClient(id)`
 2. `loadClientFullData(id)` carga workouts, dieta, suplementos, logs
-3. Tabs: Perfil / Entreno / Dieta / Suplementos / Progreso → cada uno tiene `render*Tab()`
+3. **Tabs: Perfil / Entreno / Nutrición / Cardio / Supls / Medidas / Progreso** → cada uno tiene `render*Tab()`
+   - Los botones de tab usan `data-tab="..."` para detección fiable del activo: `b.dataset.tab === tab`
 4. `saveProfile()` actualiza tabla `clients` con todos los campos del formulario
+5. `renderCardioTab()` — objetivos pasos/cardio, selector reminder, gráfica de barras pasos (verde=alcanzado), historial cardio
+6. `saveCardioConfig()` — guarda `steps_goal`, `cardio_goal_min`, `reminder_interval_min` en clients
+7. `renderMeasuresTab()` — formulario de medidas corporales, tarjeta última medición con deltas vs anterior, historial completo
+8. `saveMeasurement()` — inserta en `body_measurements`; orden de campos: hombros, pecho, brazos D/I, cintura, cadera, muslos D/I, gemelos D/I
+9. `deleteMeasurement(id)` — borra fila de body_measurements
+10. `loadTrainerLogo()` / `applyTrainerLogo(url)` / `uploadTrainerLogo(e)` — logo del trainer en sidebar (72px), sube a `trainer-{ID}.ext` en bucket avatars
 
-Sidebar superior muestra logo del trainer (uploadable) + nombre.
+Sidebar superior: logo 72px (clickable para subir imagen, camera overlay), nombre del trainer en `#trainer-name-logo`.
 
 ## Modelo de negocio Stripe (implementado, pendiente activar)
 - €9,90 por cliente activo / mes, trial 14 días
@@ -132,7 +147,28 @@ FROM trainers t JOIN profiles p ON p.id = t.id;
 -- Ver scores del mes
 SELECT log_date, score, score_training, score_nutrition, score_cardio
 FROM daily_logs WHERE client_id = '<uuid>' ORDER BY log_date DESC LIMIT 30;
+
+-- Ver medidas de un cliente
+SELECT measured_at, weight_kg, body_fat_pct, shoulder_cm, chest_cm,
+  arm_r_cm, arm_l_cm, waist_cm, hips_cm, thigh_r_cm, thigh_l_cm, calf_r_cm, calf_l_cm
+FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 ```
+
+## Migraciones aplicadas en producción
+- `004_avatar_logo_columns` — `avatar_url` en clients, `logo_url` en trainers, `goal_label` en clients, bucket `avatars`
+- `005_body_measurements` — tabla `body_measurements` con RLS
+- `006_measurements_split_fields` — `shoulder_cm`, `arm_r_cm`, `arm_l_cm`, `thigh_r_cm`, `thigh_l_cm`, `calf_r_cm`, `calf_l_cm`
+
+## Funcionalidades implementadas (producción)
+- [x] Sistema de puntuación diaria (entrenamiento 40% + nutrición 40% + cardio 20%)
+- [x] Botón "completado" en entrenamiento, nutrición y cardio (one-per-day)
+- [x] Calendario mensual con % coloreado (verde ≥80%, ámbar ≥50%, rojo <50%)
+- [x] Perfil de cliente en dashboard (foto, nombre, logo trainer, etiqueta objetivo)
+- [x] Upload de avatar del cliente con preview instantáneo y persistencia
+- [x] Upload de logo del trainer desde la sidebar
+- [x] Recordatorio anti-sedentarismo configurable (por cliente o por trainer en pestaña Cardio)
+- [x] Pestaña Cardio en portal trainer (objetivos, gráfica, historial)
+- [x] Pestaña Medidas en portal trainer (hombros, pecho, brazos D/I, cintura, cadera, muslos D/I, gemelos D/I)
 
 ## Pendiente
 - [ ] Activar Stripe (añadir secrets en Supabase Edge Functions + crear webhook)
