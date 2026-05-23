@@ -20,7 +20,10 @@
 <!-- DASHBOARD -->
 <div class="sec active" id="dash">
   <div class="page-header" style="padding-top:8px">
-    <div class="phase-pill" id="phase-pill"><i class="ti ti-target"></i> <span id="phase-label">Cargando...</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div class="phase-pill" id="phase-pill"><i class="ti ti-target"></i> <span id="phase-label">Cargando...</span></div>
+      <button class="btn" onclick="doLogout()" style="font-size:11px;padding:5px 10px;color:var(--text2)"><i class="ti ti-logout"></i> Salir</button>
+    </div>
     <h1 id="dash-day-title">Cargando...</h1>
     <p id="dash-date"></p>
   </div>
@@ -60,9 +63,6 @@
     <div id="golden-rules" style="font-size:13px;color:var(--text2);line-height:2"></div>
   </div>
 
-  <div style="text-align:right;padding:8px 0">
-    <button class="btn" onclick="doLogout()" style="font-size:11px;padding:6px 12px"><i class="ti ti-logout"></i> Salir</button>
-  </div>
 </div>
 
 <!-- ENTRENAMIENTO -->
