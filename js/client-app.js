@@ -29,6 +29,7 @@ let S = {
   exDone: {},
   loads: {},
   calDays: {},
+  calScores: {},
   rpe: 0,
   checklist: {},
   foodsChecked: [],
@@ -161,7 +162,7 @@ async function loadWeekCardio() {
 
   const { data: logs } = await supabase
     .from('daily_logs')
-    .select('log_date, cardio_min, calendar_status')
+    .select('log_date, cardio_min, calendar_status, score, score_training, score_nutrition, score_cardio')
     .eq('client_id', USER_ID)
     .gte('log_date', monday.toISOString().split('T')[0])
     .lte('log_date', sunday.toISOString().split('T')[0])
@@ -174,6 +175,9 @@ async function loadWeekCardio() {
     if (log.calendar_status) {
       S.calDays[log.log_date] = log.calendar_status
     }
+    if (log.score != null) {
+      S.calScores[log.log_date] = { total: log.score, training: log.score_training, nutrition: log.score_nutrition, cardio: log.score_cardio }
+    }
   }
 
   // Calcular racha
@@ -185,6 +189,58 @@ async function loadWeekCardio() {
     check.setDate(check.getDate() - 1)
   }
   S.streak = streak
+}
+
+async function loadMonthLogs() {
+  const now = new Date()
+  const yr = now.getFullYear(), mo = now.getMonth()
+  const from = `${yr}-${String(mo + 1).padStart(2, '0')}-01`
+  const lastDay = new Date(yr, mo + 1, 0).getDate()
+  const to = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+  const { data: logs } = await supabase
+    .from('daily_logs')
+    .select('log_date, calendar_status, score, score_training, score_nutrition, score_cardio')
+    .eq('client_id', USER_ID)
+    .gte('log_date', from)
+    .lte('log_date', to)
+
+  if (!logs) return
+  for (const log of logs) {
+    if (log.calendar_status) S.calDays[log.log_date] = log.calendar_status
+    if (log.score != null) {
+      S.calScores[log.log_date] = { total: log.score, training: log.score_training, nutrition: log.score_nutrition, cardio: log.score_cardio }
+    }
+  }
+}
+
+function calcDayScore() {
+  const todayIdx = getTodayIdx()
+  const wo = WORKOUT_DAYS.find(d => d.day_index === todayIdx)
+  const key = `d${todayIdx}`
+
+  // Training score (40%)
+  const totalEx = wo?.workout_exercises?.length || 0
+  const doneEx = S.exDone[key]?.length || 0
+  const trainingScore = totalEx > 0 ? Math.round(doneEx / totalEx * 100) : 100
+
+  // Nutrition score (40%): foods checked vs total plan foods
+  const totalFoods = DIET_MEALS.reduce((a, m) => a + m.diet_foods.length, 0)
+  const checkedFoods = S.foodsChecked.filter(id =>
+    DIET_MEALS.some(m => m.diet_foods.some(f => f.id === id))
+  ).length
+  const nutritionScore = totalFoods > 0 ? Math.round(checkedFoods / totalFoods * 100) : 100
+
+  // Cardio score (20%): steps 60% + cardio 40%
+  const stepsGoal = CLIENT?.steps_goal || 9000
+  const dailyCardioGoal = (CLIENT?.cardio_goal_min || 185) / 7
+  const stepsScore = Math.min(100, Math.round(S.steps / stepsGoal * 100))
+  const cardioScore = Math.min(100, Math.round(S.cardioDay / dailyCardioGoal * 100))
+  const cardioTotal = Math.round(stepsScore * 0.6 + cardioScore * 0.4)
+
+  const total = Math.round(trainingScore * 0.4 + nutritionScore * 0.4 + cardioTotal * 0.2)
+
+  return { total, training: trainingScore, nutrition: nutritionScore, cardio: cardioTotal }
 }
 
 async function loadPesoHistory() {
@@ -306,7 +362,7 @@ window.show = function(id, btn) {
   if (btn) btn.classList.add('active')
   if (id === 'train') { renderDaySel(); renderWorkout(S.curDay) }
   if (id === 'prog') renderProg()
-  if (id === 'cal') renderCalendar()
+  if (id === 'cal') loadMonthLogs().then(renderCalendar)
   if (id === 'cardio') renderWkBars()
 }
 
@@ -494,16 +550,18 @@ function renderWorkout(dayIdx) {
     </div>`
   })
 
+  const isToday = dayIdx === getTodayIdx()
+  const alreadyDone = S.calDays[getToday()] === 'done' && isToday
   h += `<div style="margin-top:10px">
     <div class="lbl"><span>${dc}/${tot} completados</span><span>${tot > 0 ? Math.round(dc / tot * 100) : 0}%</span></div>
     <div class="prog-wrap"><div class="prog-fill" style="width:${tot > 0 ? Math.round(dc / tot * 100) : 0}%;background:var(--green)"></div></div>
   </div>
   <button onclick="finishWorkout()" style="width:100%;margin-top:14px;padding:14px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:15px;font-weight:600;
-    background:${dc===tot && tot>0 ? 'var(--green)' : 'var(--bg3)'};
-    color:${dc===tot && tot>0 ? '#fff' : 'var(--text2)'};
-    border:2px solid ${dc===tot && tot>0 ? 'var(--green)' : 'var(--border2)'};
+    background:${alreadyDone ? 'var(--bg3)' : (dc===tot && tot>0 && isToday) ? 'var(--green)' : 'var(--bg3)'};
+    color:${alreadyDone ? 'var(--green)' : (dc===tot && tot>0 && isToday) ? '#fff' : 'var(--text2)'};
+    border:2px solid ${alreadyDone ? 'var(--green)' : (dc===tot && tot>0 && isToday) ? 'var(--green)' : 'var(--border2)'};
     transition:all .2s">
-    ${dc===tot && tot>0 ? '🏆 ¡Entrenamiento completado! Guardar' : `💪 Finalizar entrenamiento (${dc}/${tot})`}
+    ${alreadyDone ? `✅ Día completado — ${S.calScores[getToday()]?.total ?? '—'}% hoy` : !isToday ? `👁️ Vista previa (${DAYS[dayIdx]})` : (dc===tot && tot>0 ? '🏆 ¡Listo! Guardar entrenamiento' : `💪 Finalizar entrenamiento (${dc}/${tot})`)}
   </button>
   </div>`
 
@@ -513,18 +571,48 @@ function renderWorkout(dayIdx) {
 
 window.finishWorkout = async function() {
   const dayIdx = S.curDay
+  const today = getToday()
+  const todayIdx = getTodayIdx()
+
+  // Solo permitir completar el día actual
+  if (dayIdx !== todayIdx) {
+    showNotif('Solo puedes completar el entrenamiento de hoy.')
+    return
+  }
+
+  // Prevenir duplicado
+  if (S.calDays[today] === 'done') {
+    const sc = S.calScores[today]
+    const modalHtml = `
+      <div id="finish-modal" onclick="if(event.target===this)this.remove()" style="
+        position:fixed;inset:0;background:#000a;display:flex;align-items:center;
+        justify-content:center;z-index:1000;padding:20px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+          padding:28px;max-width:340px;width:100%;text-align:center">
+          <div style="font-size:48px;margin-bottom:8px">✅</div>
+          <div style="font-size:17px;font-weight:700;margin-bottom:6px">Ya completaste hoy</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Puntuación del día: <b>${sc?.total ?? '—'}%</b></div>
+          <button onclick="document.getElementById('finish-modal').remove()" class="btn btn-primary" style="width:100%">Cerrar</button>
+        </div>
+      </div>`
+    document.body.insertAdjacentHTML('beforeend', modalHtml)
+    return
+  }
+
   const wo = WORKOUT_DAYS.find(d => d.day_index === dayIdx)
   const key = `d${dayIdx}`
-  const done = S.exDone[key]?.length || 0
+  const doneEx = S.exDone[key]?.length || 0
   const tot = wo?.workout_exercises?.length || 0
 
   // Guardar log inmediatamente
   clearTimeout(saveTimeout)
   await saveLog()
 
-  // Marcar día como completado en el calendario
-  const today = getToday()
+  // Calcular puntuación
+  const score = calcDayScore()
   S.calDays[today] = 'done'
+  S.calScores[today] = score
+
   const prev = new Date(); prev.setDate(prev.getDate() - 1)
   const pk = prev.toISOString().split('T')[0]
   S.streak = S.calDays[pk] === 'done' ? S.streak + 1 : 1
@@ -533,31 +621,44 @@ window.finishWorkout = async function() {
     client_id: USER_ID,
     log_date: today,
     calendar_status: 'done',
+    score: score.total,
+    score_training: score.training,
+    score_nutrition: score.nutrition,
+    score_cardio: score.cardio,
   }, { onConflict: 'client_id,log_date' })
 
-  // Mostrar modal de resumen
-  const pct = tot > 0 ? Math.round(done / tot * 100) : 0
+  // Elegir emoji/título según puntuación
+  const emoji = score.total >= 90 ? '🏆' : score.total >= 70 ? '💪' : score.total >= 50 ? '👍' : '📝'
+  const title = score.total >= 90 ? '¡Día perfecto!' : score.total >= 70 ? '¡Gran día!' : score.total >= 50 ? 'Buen trabajo' : 'Día registrado'
+  const scoreColor = score.total >= 80 ? 'var(--green)' : score.total >= 50 ? 'var(--amber)' : 'var(--red)'
+
   const modalHtml = `
     <div id="finish-modal" onclick="if(event.target===this)this.remove()" style="
       position:fixed;inset:0;background:#000a;display:flex;align-items:center;
       justify-content:center;z-index:1000;padding:20px">
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
         padding:28px;max-width:340px;width:100%;text-align:center">
-        <div style="font-size:48px;margin-bottom:8px">${pct===100 ? '🏆' : '💪'}</div>
-        <div style="font-size:18px;font-weight:700;margin-bottom:6px">
-          ${pct===100 ? '¡Entrenamiento completado!' : 'Entrenamiento guardado'}
-        </div>
+        <div style="font-size:48px;margin-bottom:8px">${emoji}</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px">${title}</div>
         <div style="font-size:13px;color:var(--text2);margin-bottom:20px">
-          ${wo?.title || 'Entreno'} · ${done}/${tot} ejercicios · Racha: ${S.streak} día${S.streak!==1?'s':''}  🔥
+          ${wo?.title || 'Entreno'} · ${doneEx}/${tot} ejercicios · Racha: ${S.streak} 🔥
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
-          <div style="background:var(--bg3);border-radius:8px;padding:12px">
-            <div style="font-size:22px;font-weight:700;color:var(--green)">${pct}%</div>
-            <div style="font-size:11px;color:var(--text2)">completado</div>
+        <div style="background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:16px">
+          <div style="font-size:38px;font-weight:800;color:${scoreColor};line-height:1">${score.total}%</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:4px">Puntuación del día</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px">
+          <div style="background:var(--bg3);border-radius:8px;padding:10px">
+            <div style="font-size:16px;font-weight:700;color:var(--green)">${score.training}%</div>
+            <div style="font-size:10px;color:var(--text2)">Entreno</div>
           </div>
-          <div style="background:var(--bg3);border-radius:8px;padding:12px">
-            <div style="font-size:22px;font-weight:700;color:var(--blue)">${S.streak}</div>
-            <div style="font-size:11px;color:var(--text2)">días de racha</div>
+          <div style="background:var(--bg3);border-radius:8px;padding:10px">
+            <div style="font-size:16px;font-weight:700;color:var(--blue)">${score.nutrition}%</div>
+            <div style="font-size:10px;color:var(--text2)">Nutrición</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:10px">
+            <div style="font-size:16px;font-weight:700;color:var(--amber)">${score.cardio}%</div>
+            <div style="font-size:10px;color:var(--text2)">Cardio</div>
           </div>
         </div>
         <button onclick="document.getElementById('finish-modal').remove()" class="btn btn-primary" style="width:100%">Cerrar</button>
@@ -565,6 +666,7 @@ window.finishWorkout = async function() {
     </div>`
   document.body.insertAdjacentHTML('beforeend', modalHtml)
   renderWorkout(dayIdx)
+  renderCalendar()
 }
 
 window.toggleEx = function(woDayId, exId, dayIdx) {
@@ -847,8 +949,14 @@ function renderCalendar() {
     const el = document.createElement('div')
     const key = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     const st = S.calDays[key]
+    const sc = S.calScores[key]
     el.className = 'cal-day' + (st === 'done' ? ' done' : st === 'miss' ? ' miss' : '') + (d === now.getDate() ? ' today-c' : '')
-    el.textContent = d
+    if (st === 'done' && sc?.total != null) {
+      const pctColor = sc.total >= 80 ? '#1D9E75' : sc.total >= 50 ? '#BA7517' : '#E24B4A'
+      el.innerHTML = `<span style="display:block;font-size:12px;font-weight:600">${d}</span><span style="display:block;font-size:9px;color:${pctColor};font-weight:700;line-height:1">${sc.total}%</span>`
+    } else {
+      el.textContent = d
+    }
     g.appendChild(el)
   }
 
