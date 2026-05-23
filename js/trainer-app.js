@@ -18,9 +18,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const auth = await requireRole('trainer')
   if (!auth) return
   TRAINER_ID = auth.session.user.id
-  document.getElementById('trainer-name').textContent = auth.profile.full_name || auth.session.user.email
+  const trainerName = auth.profile.full_name || auth.session.user.email
+  document.getElementById('trainer-name-logo').textContent = trainerName
 
   await loadSubscriptionStatus()
+  await loadTrainerLogo()
   await loadClients()
   document.getElementById('loading-screen').style.display = 'none'
   document.getElementById('app').style.display = 'flex'
@@ -112,6 +114,48 @@ window.startCheckout = async function() {
   window.location.href = url
 }
 
+
+// ─── LOGO DEL PREPARADOR ─────────────────────────────────────────────────────
+
+async function loadTrainerLogo() {
+  const { data } = await supabase
+    .from('trainers')
+    .select('logo_url')
+    .eq('id', TRAINER_ID)
+    .single()
+  if (data?.logo_url) applyTrainerLogo(data.logo_url)
+}
+
+function applyTrainerLogo(url) {
+  const img = document.getElementById('trainer-logo-img')
+  img.src = url
+  img.style.display = 'block'
+  document.getElementById('trainer-logo-icon').style.display = 'none'
+}
+
+window.uploadTrainerLogo = async function(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) { showNotif('Imagen demasiado grande (máx. 5 MB)'); return }
+
+  showNotif('Subiendo logo...')
+  const ext = file.name.split('.').pop()
+  const path = `trainer-${TRAINER_ID}.${ext}`
+
+  const { error: upErr } = await supabase.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true, contentType: file.type })
+
+  if (upErr) { showNotif('Error al subir el logo: ' + upErr.message); return }
+
+  const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+
+  await supabase.from('trainers').update({ logo_url: publicUrl }).eq('id', TRAINER_ID)
+
+  applyTrainerLogo(publicUrl)
+  showNotif('Logo actualizado ✓ — aparecerá en el perfil de tus clientes')
+  e.target.value = ''
+}
 
 async function loadClients() {
   const { data } = await supabase
@@ -896,7 +940,7 @@ window.createInvite = async function() {
       trainer_id: TRAINER_ID,
       client_name: name,
       client_email: email,
-      trainer_name: document.getElementById('trainer-name').textContent.trim(),
+      trainer_name: document.getElementById('trainer-name-logo').textContent.trim(),
     })
     .select('token')
     .single()
