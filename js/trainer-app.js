@@ -457,6 +457,7 @@ function renderExList(exercises) {
         ${ex.note ? `<div class="row-note">${ex.note}</div>` : ''}
       </div>
       <span class="tag" style="margin-right:8px">${ex.sets_reps}</span>
+      <button class="check-btn" onclick="openEditEx('${ex.id}')" title="Editar" style="font-size:13px;margin-right:4px">✎</button>
       <button class="check-btn" onclick="deleteExercise('${ex.id}')" title="Eliminar" style="font-size:12px">×</button>
     </div>`
   ).join('')
@@ -489,7 +490,6 @@ window.saveWorkoutDay = async function() {
 let currentWoDayId = null
 
 window.openAddEx = async function() {
-  // Get or create the workout day first
   const { workouts } = SELECTED_CLIENT_DATA
   let day = workouts.find(d => d.day_index === ACTIVE_DAY)
 
@@ -511,6 +511,21 @@ window.openAddEx = async function() {
   document.getElementById('ex-note').value = ''
   EDITING_EX_ID = null
   document.getElementById('ex-modal-title').textContent = 'Añadir ejercicio'
+  document.getElementById('ex-modal-save-btn').textContent = 'Guardar'
+  document.getElementById('ex-modal').classList.add('open')
+}
+
+window.openEditEx = function(exId) {
+  const day = SELECTED_CLIENT_DATA.workouts.find(d => d.day_index === ACTIVE_DAY)
+  const ex = day?.workout_exercises?.find(e => e.id === exId)
+  if (!ex) return
+  currentWoDayId = day.id
+  EDITING_EX_ID = exId
+  document.getElementById('ex-name').value = ex.name
+  document.getElementById('ex-sets').value = ex.sets_reps
+  document.getElementById('ex-note').value = ex.note || ''
+  document.getElementById('ex-modal-title').textContent = 'Editar ejercicio'
+  document.getElementById('ex-modal-save-btn').textContent = 'Guardar cambios'
   document.getElementById('ex-modal').classList.add('open')
 }
 
@@ -525,19 +540,32 @@ window.saveExercise = async function() {
   if (!name || !sets_reps) { showNotif('Nombre y series son obligatorios'); return }
 
   const day = SELECTED_CLIENT_DATA.workouts.find(d => d.day_index === ACTIVE_DAY)
-  const order_index = day?.workout_exercises?.length || 0
 
-  const { data: ex, error } = await supabase
-    .from('workout_exercises')
-    .insert({ workout_day_id: currentWoDayId, name, sets_reps, note: note || null, order_index })
-    .select()
-    .single()
-
-  if (!error && day) {
-    day.workout_exercises.push(ex)
-    document.getElementById('wo-ex-list').innerHTML = renderExList(day.workout_exercises)
-    closeExModal()
-    showNotif('Ejercicio añadido ✓')
+  if (EDITING_EX_ID) {
+    const { error } = await supabase
+      .from('workout_exercises')
+      .update({ name, sets_reps, note: note || null })
+      .eq('id', EDITING_EX_ID)
+    if (!error && day) {
+      const ex = day.workout_exercises.find(e => e.id === EDITING_EX_ID)
+      if (ex) { ex.name = name; ex.sets_reps = sets_reps; ex.note = note || null }
+      document.getElementById('wo-ex-list').innerHTML = renderExList(day.workout_exercises)
+      closeExModal()
+      showNotif('Ejercicio actualizado ✓')
+    }
+  } else {
+    const order_index = day?.workout_exercises?.length || 0
+    const { data: ex, error } = await supabase
+      .from('workout_exercises')
+      .insert({ workout_day_id: currentWoDayId, name, sets_reps, note: note || null, order_index })
+      .select()
+      .single()
+    if (!error && day) {
+      day.workout_exercises.push(ex)
+      document.getElementById('wo-ex-list').innerHTML = renderExList(day.workout_exercises)
+      closeExModal()
+      showNotif('Ejercicio añadido ✓')
+    }
   }
 }
 
@@ -600,6 +628,7 @@ function renderFoodRow(food, mealId) {
     <div style="flex:1"><div class="row-name" style="font-size:13px">${food.name}</div></div>
     ${food.protein_g ? `<span class="tag" style="margin-right:4px">${food.protein_g}g prot</span>` : ''}
     ${food.kcal ? `<span class="tag" style="margin-right:6px">${food.kcal}kcal</span>` : ''}
+    <button class="check-btn" onclick="openEditFood('${food.id}','${mealId}')" title="Editar" style="font-size:13px;margin-right:4px">✎</button>
     <button class="check-btn" onclick="deleteFood('${food.id}','${mealId}')" style="font-size:12px">×</button>
   </div>`
 }
@@ -651,11 +680,30 @@ window.deleteMeal = async function(mealId) {
 }
 
 // Food modal
+let EDITING_FOOD_ID = null
+
 window.openAddFood = function(mealId) {
   ACTIVE_MEAL_ID = mealId
+  EDITING_FOOD_ID = null
   document.getElementById('fd-name').value = ''
   document.getElementById('fd-prot').value = ''
   document.getElementById('fd-kcal').value = ''
+  document.querySelector('#food-modal .modal-title').textContent = 'Añadir alimento'
+  document.getElementById('fd-save-btn').textContent = 'Guardar'
+  document.getElementById('food-modal').classList.add('open')
+}
+
+window.openEditFood = function(foodId, mealId) {
+  const meal = SELECTED_CLIENT_DATA.diet?.diet_meals?.find(m => m.id === mealId)
+  const food = meal?.diet_foods?.find(f => f.id === foodId)
+  if (!food) return
+  ACTIVE_MEAL_ID = mealId
+  EDITING_FOOD_ID = foodId
+  document.getElementById('fd-name').value = food.name
+  document.getElementById('fd-prot').value = food.protein_g || ''
+  document.getElementById('fd-kcal').value = food.kcal || ''
+  document.querySelector('#food-modal .modal-title').textContent = 'Editar alimento'
+  document.getElementById('fd-save-btn').textContent = 'Guardar cambios'
   document.getElementById('food-modal').classList.add('open')
 }
 
@@ -670,20 +718,34 @@ window.saveFood = async function() {
   if (!name) { showNotif('El nombre es obligatorio'); return }
 
   const meal = SELECTED_CLIENT_DATA.diet?.diet_meals?.find(m => m.id === ACTIVE_MEAL_ID)
-  const order_index = meal?.diet_foods?.length || 0
 
-  const { data: food } = await supabase
-    .from('diet_foods')
-    .insert({ diet_meal_id: ACTIVE_MEAL_ID, name, protein_g, kcal, order_index })
-    .select()
-    .single()
-
-  if (meal) {
-    meal.diet_foods.push(food)
-    const foodsEl = document.getElementById(`foods-in-${ACTIVE_MEAL_ID}`)
-    if (foodsEl) foodsEl.innerHTML = meal.diet_foods.map(f => renderFoodRow(f, ACTIVE_MEAL_ID)).join('')
-    closeFoodModal()
-    showNotif('Alimento añadido ✓')
+  if (EDITING_FOOD_ID) {
+    const { error } = await supabase
+      .from('diet_foods')
+      .update({ name, protein_g, kcal })
+      .eq('id', EDITING_FOOD_ID)
+    if (!error && meal) {
+      const food = meal.diet_foods.find(f => f.id === EDITING_FOOD_ID)
+      if (food) { food.name = name; food.protein_g = protein_g; food.kcal = kcal }
+      const foodsEl = document.getElementById(`foods-in-${ACTIVE_MEAL_ID}`)
+      if (foodsEl) foodsEl.innerHTML = meal.diet_foods.map(f => renderFoodRow(f, ACTIVE_MEAL_ID)).join('')
+      closeFoodModal()
+      showNotif('Alimento actualizado ✓')
+    }
+  } else {
+    const order_index = meal?.diet_foods?.length || 0
+    const { data: food } = await supabase
+      .from('diet_foods')
+      .insert({ diet_meal_id: ACTIVE_MEAL_ID, name, protein_g, kcal, order_index })
+      .select()
+      .single()
+    if (meal) {
+      meal.diet_foods.push(food)
+      const foodsEl = document.getElementById(`foods-in-${ACTIVE_MEAL_ID}`)
+      if (foodsEl) foodsEl.innerHTML = meal.diet_foods.map(f => renderFoodRow(f, ACTIVE_MEAL_ID)).join('')
+      closeFoodModal()
+      showNotif('Alimento añadido ✓')
+    }
   }
 }
 
@@ -705,7 +767,7 @@ function renderSupplementsTab(el) {
     <div class="card">
       <div class="card-title"><i class="ti ti-pill"></i> Suplementación</div>
       <div id="supls-admin-list">
-        ${supplements.map((s, i) => renderSuplRow(s, i)).join('') || '<div style="font-size:12px;color:var(--text3)">Sin suplementos asignados</div>'}
+        ${supplements.map(s => renderSuplRow(s)).join('') || '<div style="font-size:12px;color:var(--text3)">Sin suplementos asignados</div>'}
       </div>
       <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:8px">
@@ -722,11 +784,30 @@ function renderSupplementsTab(el) {
   `
 }
 
-function renderSuplRow(s, i) {
-  return `<div class="row">
+function renderSuplRow(s) {
+  return `<div class="row" id="supl-row-${s.id}">
     <div style="flex:1"><div class="row-name">${s.name}</div>${s.dose ? `<div class="row-note">${s.dose}</div>` : ''}</div>
-    ${s.protein_g ? `<span class="tag" style="margin-right:4px">${s.protein_g}g</span>` : ''}
+    ${s.protein_g ? `<span class="tag" style="margin-right:4px">${s.protein_g}g prot</span>` : ''}
+    ${s.kcal ? `<span class="tag" style="margin-right:4px">${s.kcal}kcal</span>` : ''}
+    <button class="check-btn" onclick="openEditSupl('${s.id}')" title="Editar" style="font-size:13px;margin-right:4px">✎</button>
     <button class="check-btn" onclick="deleteSupplement('${s.id}')" style="font-size:12px">×</button>
+  </div>`
+}
+
+function renderSuplEditRow(s) {
+  return `<div class="row" id="supl-row-${s.id}" style="flex-wrap:wrap;gap:6px;align-items:flex-start">
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:6px;width:100%;margin-bottom:6px">
+      <input type="text" id="sedit-name-${s.id}" value="${s.name}" placeholder="Nombre" style="font-size:13px">
+      <input type="text" id="sedit-dose-${s.id}" value="${s.dose || ''}" placeholder="Dosis" style="font-size:13px">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;width:100%">
+      <input type="number" id="sedit-prot-${s.id}" value="${s.protein_g || ''}" placeholder="Proteína (g)" min="0" style="font-size:13px">
+      <input type="number" id="sedit-kcal-${s.id}" value="${s.kcal || ''}" placeholder="Kcal" min="0" style="font-size:13px">
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-primary" onclick="saveEditSupl('${s.id}')" style="flex:1;font-size:12px;padding:6px">✓</button>
+        <button class="btn" onclick="cancelEditSupl('${s.id}')" style="font-size:12px;padding:6px">✕</button>
+      </div>
+    </div>
   </div>`
 }
 
@@ -745,7 +826,7 @@ window.addSupplement = async function() {
 
   SELECTED_CLIENT_DATA.supplements.push(s)
   document.getElementById('supls-admin-list').innerHTML =
-    SELECTED_CLIENT_DATA.supplements.map((s, i) => renderSuplRow(s, i)).join('')
+    SELECTED_CLIENT_DATA.supplements.map(s => renderSuplRow(s)).join('')
   document.getElementById('s-name').value = ''
   document.getElementById('s-dose').value = ''
   document.getElementById('s-prot').value = ''
@@ -753,11 +834,42 @@ window.addSupplement = async function() {
   showNotif('Suplemento añadido ✓')
 }
 
+window.openEditSupl = function(id) {
+  const s = SELECTED_CLIENT_DATA.supplements.find(s => s.id === id)
+  if (!s) return
+  const row = document.getElementById(`supl-row-${id}`)
+  if (row) row.outerHTML = renderSuplEditRow(s)
+}
+
+window.cancelEditSupl = function(id) {
+  const s = SELECTED_CLIENT_DATA.supplements.find(s => s.id === id)
+  if (!s) return
+  const row = document.getElementById(`supl-row-${id}`)
+  if (row) row.outerHTML = renderSuplRow(s)
+}
+
+window.saveEditSupl = async function(id) {
+  const name = document.getElementById(`sedit-name-${id}`).value.trim()
+  const dose = document.getElementById(`sedit-dose-${id}`).value.trim()
+  const protein_g = parseInt(document.getElementById(`sedit-prot-${id}`).value) || 0
+  const kcal = parseInt(document.getElementById(`sedit-kcal-${id}`).value) || 0
+  if (!name) { showNotif('El nombre es obligatorio'); return }
+
+  const { error } = await supabase.from('supplements').update({ name, dose, protein_g, kcal }).eq('id', id)
+  if (error) { showNotif('Error al guardar: ' + error.message); return }
+
+  const s = SELECTED_CLIENT_DATA.supplements.find(s => s.id === id)
+  if (s) { s.name = name; s.dose = dose; s.protein_g = protein_g; s.kcal = kcal }
+  const row = document.getElementById(`supl-row-${id}`)
+  if (row) row.outerHTML = renderSuplRow(s)
+  showNotif('Suplemento actualizado ✓')
+}
+
 window.deleteSupplement = async function(id) {
   await supabase.from('supplements').delete().eq('id', id)
   SELECTED_CLIENT_DATA.supplements = SELECTED_CLIENT_DATA.supplements.filter(s => s.id !== id)
   document.getElementById('supls-admin-list').innerHTML =
-    SELECTED_CLIENT_DATA.supplements.map((s, i) => renderSuplRow(s, i)).join('')
+    SELECTED_CLIENT_DATA.supplements.map(s => renderSuplRow(s)).join('')
 }
 
 // ─── TAB: PROGRESO ────────────────────────────────────────────────────────────

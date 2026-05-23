@@ -204,11 +204,11 @@
         <input type="text" id="ex-note" placeholder="Ej: Lumbar protegida">
       </div>
     </div>
-    <button class="btn btn-primary" onclick="saveExercise()" style="width:100%">Guardar</button>
+    <button class="btn btn-primary" id="ex-modal-save-btn" onclick="saveExercise()" style="width:100%">Guardar</button>
   </div>
 </div>
 
-<!-- MODAL NUEVO ALIMENTO -->
+<!-- MODAL ALIMENTO (añadir / editar) -->
 <div class="modal-overlay" id="food-modal">
   <div class="modal">
     <div class="modal-header">
@@ -229,7 +229,7 @@
         <input type="number" id="fd-kcal" placeholder="0" min="0">
       </div>
     </div>
-    <button class="btn btn-primary" onclick="saveFood()" style="width:100%">Guardar</button>
+    <button class="btn btn-primary" id="fd-save-btn" onclick="saveFood()" style="width:100%">Guardar</button>
   </div>
 </div>
 
