@@ -245,7 +245,8 @@ function renderClientDetail() {
     <div class="tabs">
       <button class="tab-btn${ACTIVE_TAB==='profile'?' active':''}" onclick="switchTab('profile')"><i class="ti ti-user"></i> Perfil</button>
       <button class="tab-btn${ACTIVE_TAB==='workout'?' active':''}" onclick="switchTab('workout')"><i class="ti ti-barbell"></i> Entreno</button>
-      <button class="tab-btn${ACTIVE_TAB==='diet'?' active':''}" onclick="switchTab('diet')"><i class="ti ti-apple"></i> Dieta</button>
+      <button class="tab-btn${ACTIVE_TAB==='diet'?' active':''}" onclick="switchTab('diet')"><i class="ti ti-apple"></i> Nutrición</button>
+      <button class="tab-btn${ACTIVE_TAB==='cardio'?' active':''}" onclick="switchTab('cardio')"><i class="ti ti-run"></i> Cardio</button>
       <button class="tab-btn${ACTIVE_TAB==='supplements'?' active':''}" onclick="switchTab('supplements')"><i class="ti ti-pill"></i> Supls</button>
       <button class="tab-btn${ACTIVE_TAB==='progress'?' active':''}" onclick="switchTab('progress')"><i class="ti ti-chart-line"></i> Progreso</button>
     </div>
@@ -269,6 +270,7 @@ function renderTab() {
   if (ACTIVE_TAB === 'profile') renderProfileTab(el)
   else if (ACTIVE_TAB === 'workout') renderWorkoutTab(el)
   else if (ACTIVE_TAB === 'diet') renderDietTab(el)
+  else if (ACTIVE_TAB === 'cardio') renderCardioTab(el)
   else if (ACTIVE_TAB === 'supplements') renderSupplementsTab(el)
   else if (ACTIVE_TAB === 'progress') renderProgressTab(el)
 }
@@ -289,18 +291,7 @@ function renderProfileTab(el) {
         <div class="form-group"><label class="form-label">Semanas plan</label><input type="number" id="p-weeks" value="${c.plan_weeks || 12}" min="4" max="52"></div>
         <div class="form-group"><label class="form-label">Kcal objetivo</label><input type="number" id="p-kcal" value="${c.kcal_goal || 2500}"></div>
         <div class="form-group"><label class="form-label">Proteína objetivo (g)</label><input type="number" id="p-protein" value="${c.protein_goal || 175}"></div>
-        <div class="form-group"><label class="form-label">Pasos objetivo</label><input type="number" id="p-steps" value="${c.steps_goal || 9000}"></div>
         <div class="form-group"><label class="form-label">Fase</label><input type="text" id="p-phase" value="${c.phase_name || 'Fase 1'}"></div>
-        <div class="form-group">
-          <label class="form-label">Recordatorio movimiento</label>
-          <select id="p-reminder" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit">
-            <option value="">Sin recordatorio</option>
-            <option value="20" ${c.reminder_interval_min === 20 ? 'selected' : ''}>Cada 20 min</option>
-            <option value="30" ${c.reminder_interval_min === 30 ? 'selected' : ''}>Cada 30 min</option>
-            <option value="45" ${c.reminder_interval_min === 45 ? 'selected' : ''}>Cada 45 min</option>
-            <option value="60" ${c.reminder_interval_min === 60 ? 'selected' : ''}>Cada 60 min</option>
-          </select>
-        </div>
       </div>
       <div class="form-group"><label class="form-label">Inicio del plan</label><input type="date" id="p-start" value="${c.plan_start_date || ''}"></div>
     </div>
@@ -355,13 +346,11 @@ window.saveProfile = async function() {
     weight_goal: document.getElementById('p-weight-goal').value,
     kcal_goal: parseInt(document.getElementById('p-kcal').value) || 2500,
     protein_goal: parseInt(document.getElementById('p-protein').value) || 175,
-    steps_goal: parseInt(document.getElementById('p-steps').value) || 9000,
     plan_weeks: parseInt(document.getElementById('p-weeks').value) || 12,
     plan_start_date: document.getElementById('p-start').value || null,
     phase_name: document.getElementById('p-phase').value,
     notes: document.getElementById('p-notes').value,
     golden_rules: c.golden_rules || [],
-    reminder_interval_min: parseInt(document.getElementById('p-reminder').value) || null,
   }
 
   const { error } = await supabase.from('clients').update(profileUpdate).eq('id', SELECTED_CLIENT)
@@ -750,6 +739,135 @@ window.deleteSupplement = async function(id) {
 }
 
 // ─── TAB: PROGRESO ────────────────────────────────────────────────────────────
+
+// ─── TAB: CARDIO ──────────────────────────────────────────────────────────────
+
+async function renderCardioTab(el) {
+  const c = SELECTED_CLIENT_DATA.client
+
+  // Cargar últimos 30 días para el resumen
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>'
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const { data: logs } = await supabase
+    .from('daily_logs')
+    .select('log_date, steps, cardio_min')
+    .eq('client_id', SELECTED_CLIENT)
+    .gte('log_date', thirtyDaysAgo.toISOString().split('T')[0])
+    .order('log_date', { ascending: true })
+
+  const allLogs = logs || []
+  const avgSteps = allLogs.length ? Math.round(allLogs.reduce((a, l) => a + (l.steps || 0), 0) / allLogs.length) : 0
+  const totalCardio = allLogs.reduce((a, l) => a + (l.cardio_min || 0), 0)
+  const avgCardioWeek = Math.round(totalCardio / 4)
+  const stepsWithData = allLogs.filter(l => l.steps > 0)
+
+  el.innerHTML = `
+    <div class="metric-grid">
+      <div class="metric">
+        <div class="metric-label">Media pasos/día</div>
+        <div class="metric-val">${avgSteps.toLocaleString('es-ES')}</div>
+        <div class="metric-sub">objetivo: ${(c.steps_goal || 9000).toLocaleString('es-ES')}</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Cardio semanal</div>
+        <div class="metric-val">${avgCardioWeek} min</div>
+        <div class="metric-sub">objetivo: ${c.cardio_goal_min || 185} min</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-target"></i> Objetivos de cardio</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label class="form-label">Pasos diarios objetivo</label>
+          <input type="number" id="c-steps" value="${c.steps_goal || 9000}" min="1000" max="30000" step="500">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cardio semanal (min)</label>
+          <input type="number" id="c-cardio" value="${c.cardio_goal_min || 185}" min="0" max="600" step="15">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Recordatorio de movimiento</label>
+        <select id="c-reminder" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit">
+          <option value="">Sin recordatorio</option>
+          <option value="20" ${c.reminder_interval_min === 20 ? 'selected' : ''}>Cada 20 min</option>
+          <option value="30" ${c.reminder_interval_min === 30 ? 'selected' : ''}>Cada 30 min</option>
+          <option value="45" ${c.reminder_interval_min === 45 ? 'selected' : ''}>Cada 45 min</option>
+          <option value="60" ${c.reminder_interval_min === 60 ? 'selected' : ''}>Cada 60 min</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="saveCardioConfig()" style="width:100%">Guardar cardio</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-shoe"></i> Pasos últimos 30 días</div>
+      ${stepsWithData.length >= 2
+        ? `<div style="position:relative;height:140px"><canvas id="steps-chart"></canvas></div>`
+        : `<div style="font-size:12px;color:var(--text3)">Sin datos suficientes</div>`}
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-clock"></i> Cardio por día (últimos 30 días)</div>
+      ${allLogs.filter(l => l.cardio_min > 0).length
+        ? allLogs.filter(l => l.cardio_min > 0).slice(-10).reverse().map(l =>
+            `<div class="row">
+              <span style="font-size:12px;color:var(--text2)">${l.log_date}</span>
+              <div style="display:flex;gap:8px;align-items:center">
+                ${l.steps ? `<span class="tag"><i class="ti ti-shoe"></i> ${l.steps.toLocaleString('es-ES')} pasos</span>` : ''}
+                <span class="tag"><i class="ti ti-clock"></i> ${l.cardio_min} min</span>
+              </div>
+            </div>`
+          ).join('')
+        : `<div style="font-size:12px;color:var(--text3)">Sin registros de cardio</div>`}
+    </div>
+  `
+
+  if (stepsWithData.length >= 2) {
+    // @ts-ignore
+    new Chart(document.getElementById('steps-chart'), {
+      type: 'bar',
+      data: {
+        labels: stepsWithData.map(l => l.log_date.slice(5)),
+        datasets: [{
+          label: 'Pasos',
+          data: stepsWithData.map(l => l.steps),
+          backgroundColor: stepsWithData.map(l => l.steps >= (c.steps_goal || 9000) ? '#1D9E7588' : '#378ADD55'),
+          borderColor: stepsWithData.map(l => l.steps >= (c.steps_goal || 9000) ? '#1D9E75' : '#378ADD'),
+          borderWidth: 1, borderRadius: 4,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { color: '#a0a0a0' }, grid: { color: '#2a2a2a' } },
+          x: { ticks: { color: '#a0a0a0', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }, grid: { display: false } }
+        }
+      }
+    })
+  }
+}
+
+window.saveCardioConfig = async function() {
+  const steps = parseInt(document.getElementById('c-steps').value) || 9000
+  const cardio = parseInt(document.getElementById('c-cardio').value) || 185
+  const reminder = parseInt(document.getElementById('c-reminder').value) || null
+
+  const { error } = await supabase.from('clients').update({
+    steps_goal: steps,
+    cardio_goal_min: cardio,
+    reminder_interval_min: reminder,
+  }).eq('id', SELECTED_CLIENT)
+
+  if (!error) {
+    Object.assign(SELECTED_CLIENT_DATA.client, { steps_goal: steps, cardio_goal_min: cardio, reminder_interval_min: reminder })
+    showNotif('Cardio guardado ✓')
+  } else {
+    showNotif('Error: ' + error.message)
+  }
+}
 
 async function renderProgressTab(el) {
   el.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>'
