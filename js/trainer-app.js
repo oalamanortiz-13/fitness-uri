@@ -291,6 +291,16 @@ function renderProfileTab(el) {
         <div class="form-group"><label class="form-label">Proteína objetivo (g)</label><input type="number" id="p-protein" value="${c.protein_goal || 175}"></div>
         <div class="form-group"><label class="form-label">Pasos objetivo</label><input type="number" id="p-steps" value="${c.steps_goal || 9000}"></div>
         <div class="form-group"><label class="form-label">Fase</label><input type="text" id="p-phase" value="${c.phase_name || 'Fase 1'}"></div>
+        <div class="form-group">
+          <label class="form-label">Recordatorio movimiento</label>
+          <select id="p-reminder" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit">
+            <option value="">Sin recordatorio</option>
+            <option value="20" ${c.reminder_interval_min === 20 ? 'selected' : ''}>Cada 20 min</option>
+            <option value="30" ${c.reminder_interval_min === 30 ? 'selected' : ''}>Cada 30 min</option>
+            <option value="45" ${c.reminder_interval_min === 45 ? 'selected' : ''}>Cada 45 min</option>
+            <option value="60" ${c.reminder_interval_min === 60 ? 'selected' : ''}>Cada 60 min</option>
+          </select>
+        </div>
       </div>
       <div class="form-group"><label class="form-label">Inicio del plan</label><input type="date" id="p-start" value="${c.plan_start_date || ''}"></div>
     </div>
@@ -351,6 +361,7 @@ window.saveProfile = async function() {
     phase_name: document.getElementById('p-phase').value,
     notes: document.getElementById('p-notes').value,
     golden_rules: c.golden_rules || [],
+    reminder_interval_min: parseInt(document.getElementById('p-reminder').value) || null,
   }
 
   const { error } = await supabase.from('clients').update(profileUpdate).eq('id', SELECTED_CLIENT)

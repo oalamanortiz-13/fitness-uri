@@ -41,6 +41,10 @@ let S = {
   timerLeft: 90,
   timerRunning: false,
   timerInt: null,
+  sedIntervalMin: 45,
+  sedLeft: 2700,
+  sedRunning: false,
+  sedInt: null,
 
   streak: 0,
   photoSlot: 0,
@@ -435,6 +439,11 @@ function applyClientConfig() {
   document.getElementById('golden-rules').innerHTML = rules.length
     ? rules.map(r => `<div>${r}</div>`).join('')
     : '<div style="color:var(--text3)">Sin reglas asignadas</div>'
+
+  // Recordatorio de movimiento — intervalo configurado por trainer o por defecto 45 min
+  if (CLIENT.reminder_interval_min) {
+    setSedInterval(CLIENT.reminder_interval_min)
+  }
 
   // Chat quick buttons
   document.getElementById('quick-btns').innerHTML = `
@@ -1146,6 +1155,46 @@ window.resetTimer = function() {
   document.getElementById('timer-disp').textContent = fmt(S.timerSecs)
 }
 
+window.setSedInterval = function(min) {
+  clearInterval(S.sedInt); S.sedRunning = false
+  S.sedIntervalMin = min
+  S.sedLeft = min * 60
+  document.getElementById('sed-btn').textContent = '▶ Activar'
+  document.getElementById('sed-disp').textContent = fmt(S.sedLeft)
+  ;[20, 30, 45, 60].forEach(m => {
+    const btn = document.getElementById(`sed-pre-${m}`)
+    if (btn) btn.classList.toggle('active', m === min)
+  })
+}
+
+window.startSedTimer = function() {
+  if (S.sedRunning) {
+    clearInterval(S.sedInt); S.sedRunning = false
+    document.getElementById('sed-btn').textContent = '▶ Activar'
+    return
+  }
+  S.sedRunning = true
+  document.getElementById('sed-btn').textContent = '⏸ Pausar'
+  S.sedInt = setInterval(() => {
+    if (S.sedLeft <= 0) {
+      clearInterval(S.sedInt); S.sedRunning = false
+      S.sedLeft = S.sedIntervalMin * 60
+      document.getElementById('sed-btn').textContent = '▶ Activar'
+      document.getElementById('sed-disp').textContent = '🚶 ¡Levántate!'
+      showNotif(`¡${S.sedIntervalMin} min sentado! Levántate y camina un poco 🚶`)
+      return
+    }
+    S.sedLeft--
+    document.getElementById('sed-disp').textContent = fmt(S.sedLeft)
+  }, 1000)
+}
+
+window.resetSedTimer = function() {
+  clearInterval(S.sedInt); S.sedRunning = false
+  S.sedLeft = S.sedIntervalMin * 60
+  document.getElementById('sed-disp').textContent = fmt(S.sedLeft)
+  document.getElementById('sed-btn').textContent = '▶ Activar'
+}
 
 // ─── CALENDAR ─────────────────────────────────────────────────────────────────
 
