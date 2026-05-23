@@ -100,37 +100,32 @@
 <div class="sec" id="nutri">
   <div class="page-header" style="padding-top:8px"><h1>Nutrición</h1></div>
   <div class="metric-grid">
-    <div class="metric"><div class="metric-label">Kcal objetivo</div><div class="metric-val" id="nut-kcal">—</div><div class="metric-sub">déficit moderado</div></div>
+    <div class="metric"><div class="metric-label">Kcal objetivo</div><div class="metric-val" id="nut-kcal">—</div><div class="metric-sub">objetivo diario</div></div>
     <div class="metric"><div class="metric-label">Proteína</div><div class="metric-val" id="nut-prot">—</div><div class="metric-sub">prioridad absoluta</div></div>
-  </div>
-  <div class="card">
-    <div class="card-title"><i class="ti ti-plus"></i> Añadir alimento extra</div>
-    <div style="display:flex;gap:6px;margin-bottom:8px">
-      <input type="text" id="food-name" placeholder="Alimento (ej: pollo 150g)" style="flex:1">
-    </div>
-    <div style="display:flex;gap:6px;margin-bottom:8px">
-      <input type="number" id="food-prot" placeholder="Proteína (g)" style="flex:1">
-      <input type="number" id="food-kcal" placeholder="Kcal" style="flex:1">
-      <button class="btn btn-primary" onclick="addFood()" style="width:auto;white-space:nowrap">+ Añadir</button>
-    </div>
-    <div id="food-list"></div>
-    <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
-      <div class="lbl"><span>Proteína</span><span id="tot-prot-lbl">0 / — g</span></div>
-      <div class="prog-wrap"><div class="prog-fill" id="tot-prot-bar" style="width:0%;background:var(--green)"></div></div>
-      <div class="lbl"><span>Calorías</span><span id="tot-kcal-lbl">0 / — kcal</span></div>
-      <div class="prog-wrap"><div class="prog-fill" id="tot-kcal-bar" style="width:0%;background:var(--blue)"></div></div>
-    </div>
   </div>
 
   <div class="card" id="meal-summary-card">
     <div class="card-title"><i class="ti ti-calculator"></i> Total del día</div>
     <div class="lbl"><span>Proteína</span><span id="ms-prot">0 / — g</span></div>
     <div class="prog-wrap"><div class="prog-fill" id="ms-prot-bar" style="width:0%;background:var(--green)"></div></div>
-    <div class="lbl"><span>Calorías</span><span id="ms-kcal">0 / — kcal</span></div>
+    <div class="lbl" style="margin-top:6px"><span>Calorías</span><span id="ms-kcal">0 / — kcal</span></div>
     <div class="prog-wrap"><div class="prog-fill" id="ms-kcal-bar" style="width:0%;background:var(--blue)"></div></div>
   </div>
 
   <div id="diet-meals-container"></div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-plus"></i> Añadir alimento extra</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input type="text" id="food-name" placeholder="Alimento (ej: pollo 150g)" style="flex:1">
+    </div>
+    <div style="display:flex;gap:6px">
+      <input type="number" id="food-prot" placeholder="Prot (g)" style="flex:1">
+      <input type="number" id="food-kcal" placeholder="Kcal" style="flex:1">
+      <button class="btn btn-primary" onclick="addFood()" style="width:auto;white-space:nowrap">+ Añadir</button>
+    </div>
+    <div id="food-list" style="margin-top:8px"></div>
+  </div>
 
   <div class="card" id="supls-card">
     <div class="card-title"><i class="ti ti-pill"></i> Suplementación diaria</div>
@@ -143,9 +138,14 @@
   <div class="page-header" style="padding-top:8px"><h1>Cardio y pasos</h1></div>
   <div class="card">
     <div class="card-title"><i class="ti ti-shoe"></i> Pasos hoy</div>
-    <div style="font-size:36px;font-weight:600;margin-bottom:8px" id="steps-big">0</div>
-    <input type="range" min="0" max="15000" step="500" value="0" id="steps-sl" oninput="updateSteps(this.value)">
-    <div class="lbl"><span>0</span><span id="steps-goal-lbl" style="color:var(--green);font-weight:600">Obj: 9.000</span><span>15.000</span></div>
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+      <input type="number" id="steps-num" value="0" min="0" max="30000"
+        style="font-size:36px;font-weight:600;width:140px;background:transparent;border:none;border-bottom:2px solid var(--border2);border-radius:0;color:var(--text);padding:0;text-align:center"
+        oninput="syncStepsNum(this.value)">
+      <span style="font-size:13px;color:var(--text2)">pasos</span>
+    </div>
+    <input type="range" min="0" max="20000" step="100" value="0" id="steps-sl" oninput="updateSteps(this.value)">
+    <div class="lbl"><span>0</span><span id="steps-goal-lbl" style="color:var(--green);font-weight:600">Obj: 9.000</span><span>20.000</span></div>
     <div class="prog-wrap"><div class="prog-fill" id="steps-bar" style="width:0%;background:var(--blue)"></div></div>
   </div>
   <div class="card">

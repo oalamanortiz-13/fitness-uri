@@ -143,8 +143,7 @@ async function loadTodayLog() {
     document.getElementById('d-peso').textContent = log.weight_kg.toFixed(1) + ' kg'
   }
 
-  // Steps slider
-  document.getElementById('steps-sl').value = S.steps
+  // Steps
   updateStepsUI(S.steps)
 
   // Cardio slider
@@ -240,13 +239,23 @@ function applyClientConfig() {
   // Objetivo de peso
   document.getElementById('d-peso-sub').textContent = `Obj: ${CLIENT.weight_goal || '—'}`
 
-  // Proyección (pérdida de peso estimada)
-  const weightStart = CLIENT.weight_start
-  if (weightStart) {
-    const ratePerWeek = 0.5
-    document.getElementById('proj-4').textContent = `-${(ratePerWeek * 4).toFixed(0)} kg`
-    document.getElementById('proj-8').textContent = `-${(ratePerWeek * 8).toFixed(0)} kg`
-    document.getElementById('proj-12').textContent = `-${(ratePerWeek * 12).toFixed(0)} kg`
+  // Proyección (adaptada a ganancia o pérdida según objetivo)
+  const weightStart = parseFloat(CLIENT.weight_start)
+  const weightGoal = parseFloat(CLIENT.weight_goal)
+  if (weightStart && weightGoal) {
+    const isGain = weightGoal >= weightStart
+    const rate = isGain ? 0.25 : 0.5
+    const sign = isGain ? '+' : '-'
+    document.getElementById('proj-4').textContent = `${sign}${(rate * 4).toFixed(1)} kg`
+    document.getElementById('proj-8').textContent = `${sign}${(rate * 8).toFixed(1)} kg`
+    document.getElementById('proj-12').textContent = `${sign}${(rate * 12).toFixed(1)} kg`
+    if (isGain) {
+      document.getElementById('proj-grid').innerHTML = `
+        <div class="proj-item"><div class="proj-wk">4 semanas</div><div class="proj-val" id="proj-4">${sign}${(rate*4).toFixed(1)} kg</div><div class="proj-desc">Adaptación neuromuscular</div></div>
+        <div class="proj-item"><div class="proj-wk">8 semanas</div><div class="proj-val" id="proj-8">${sign}${(rate*8).toFixed(1)} kg</div><div class="proj-desc">Masa ganada visible</div></div>
+        <div class="proj-item"><div class="proj-wk">12 semanas</div><div class="proj-val" id="proj-12">${sign}${(rate*12).toFixed(1)} kg</div><div class="proj-desc">Objetivo conseguido</div></div>
+      `
+    }
   }
 
   // Reglas de oro
@@ -387,12 +396,17 @@ window.toggleMeal = function(row) {
 
 function updateMealTotals() {
   let tp = 0, tk = 0
+  // Alimentos del plan marcados
   document.querySelectorAll('.meal-row').forEach(r => {
     if (r.querySelector('.check-btn').classList.contains('on')) {
       tp += parseInt(r.dataset.prot) || 0
       tk += parseInt(r.dataset.kcal) || 0
     }
   })
+  // Extras manuales (siempre suman)
+  tp += S.foods.reduce((a, f) => a + (f.p || 0), 0)
+  tk += S.foods.reduce((a, f) => a + (f.k || 0), 0)
+
   const protGoal = CLIENT?.protein_goal || 175
   const kcalGoal = CLIENT?.kcal_goal || 2500
 
@@ -421,17 +435,12 @@ window.removeFood = function(i) {
 }
 
 function renderExtraFoods() {
-  const protGoal = CLIENT?.protein_goal || 175
-  const kcalGoal = CLIENT?.kcal_goal || 2500
-  const tp = S.foods.reduce((a, f) => a + f.p, 0)
-  const tk = S.foods.reduce((a, f) => a + f.k, 0)
-  document.getElementById('food-list').innerHTML = S.foods.map((f, i) =>
-    `<div class="row"><span style="font-size:13px;flex:1">${f.n}</span><span class="tag" style="margin-right:4px">${f.p}g</span><span class="tag" style="margin-right:6px">${f.k}kcal</span><button class="check-btn" onclick="removeFood(${i})" style="font-size:12px">×</button></div>`
-  ).join('')
-  document.getElementById('tot-prot-lbl').textContent = `${tp} / ${protGoal} g`
-  document.getElementById('tot-kcal-lbl').textContent = `${tk} / ${kcalGoal} kcal`
-  document.getElementById('tot-prot-bar').style.width = Math.min(100, Math.round(tp / protGoal * 100)) + '%'
-  document.getElementById('tot-kcal-bar').style.width = Math.min(100, Math.round(tk / kcalGoal * 100)) + '%'
+  document.getElementById('food-list').innerHTML = S.foods.length
+    ? S.foods.map((f, i) =>
+        `<div class="row"><span style="font-size:13px;flex:1">${f.n}</span>${f.p ? `<span class="tag" style="margin-right:4px">${f.p}g prot</span>` : ''}${f.k ? `<span class="tag" style="margin-right:6px">${f.k}kcal</span>` : ''}<button class="check-btn" onclick="removeFood(${i})" style="font-size:12px">×</button></div>`
+      ).join('')
+    : ''
+  updateMealTotals()
 }
 
 // ─── WORKOUT ──────────────────────────────────────────────────────────────────
@@ -503,22 +512,57 @@ window.toggleEx = function(woDayId, exId, dayIdx) {
   scheduleSave()
 }
 
+function parseSets(setsReps) {
+  const m = (setsReps || '').match(/^(\d+)x/)
+  return m ? parseInt(m[1]) : 3
+}
+
+function getSetLoads(dayIdx, exId, numSets) {
+  const v = S.loads[dayIdx]?.[exId]
+  if (Array.isArray(v)) return v
+  // compatibilidad con dato antiguo (valor único)
+  const single = v || ''
+  return Array(numSets).fill(single)
+}
+
+window.setSetLoad = function(dayIdx, exId, setIdx, value) {
+  if (!S.loads[dayIdx]) S.loads[dayIdx] = {}
+  const ex = Object.values(WORKOUT_DAYS.find(d => d.day_index === dayIdx)?.workout_exercises || []).find(e => e.id === exId)
+  const numSets = ex ? parseSets(ex.sets_reps) : 3
+  if (!Array.isArray(S.loads[dayIdx][exId])) {
+    S.loads[dayIdx][exId] = Array(numSets).fill('')
+  }
+  S.loads[dayIdx][exId][setIdx] = value
+  scheduleSave()
+}
+
 function renderLoads(wo, dayIdx) {
   if (!S.loads[dayIdx]) S.loads[dayIdx] = {}
   const filtered = wo.workout_exercises.filter(e =>
-    !['min', 's', '—'].some(x => (e.sets_reps || '').includes(x))
+    !['min', 's', '—', '/'].some(x => (e.sets_reps || '').toLowerCase().includes(x)) &&
+    /^\d+x/.test(e.sets_reps || '')
   )
-  document.getElementById('loads-list').innerHTML = filtered.length
-    ? filtered.map(ex => {
-        const v = S.loads[dayIdx][ex.id] || ''
-        return `<div class="row">
-          <span style="font-size:13px;flex:1">${ex.name}</span>
-          <span style="font-size:11px;color:var(--text2);margin-right:6px">${ex.sets_reps}</span>
-          <input class="load-input" type="number" placeholder="kg" value="${v}" min="0" max="500"
-            onchange="S.loads[${dayIdx}]['${ex.id}']=this.value;scheduleSave()">
-        </div>`
-      }).join('')
-    : '<div style="font-size:12px;color:var(--text2)">Sin cargas este día</div>'
+  if (!filtered.length) {
+    document.getElementById('loads-list').innerHTML = '<div style="font-size:12px;color:var(--text2)">Sin registro de cargas este día</div>'
+    return
+  }
+  document.getElementById('loads-list').innerHTML = filtered.map(ex => {
+    const numSets = parseSets(ex.sets_reps)
+    const setLoads = getSetLoads(dayIdx, ex.id, numSets)
+    const setInputs = Array.from({ length: numSets }, (_, i) => `
+      <div style="text-align:center;flex:1">
+        <div style="font-size:9px;color:var(--text2);margin-bottom:3px">S${i + 1}</div>
+        <input class="load-input" type="number" placeholder="kg" value="${setLoads[i] || ''}" min="0" max="500" style="width:100%;text-align:center"
+          onchange="setSetLoad(${dayIdx},'${ex.id}',${i},this.value)">
+      </div>`).join('')
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:6px">
+        ${ex.name}
+        <span style="font-size:11px;color:var(--text2);font-weight:400;margin-left:4px">${ex.sets_reps}</span>
+      </div>
+      <div style="display:flex;gap:6px">${setInputs}</div>
+    </div>`
+  }).join('')
 }
 
 // ─── PESO ─────────────────────────────────────────────────────────────────────
@@ -587,10 +631,19 @@ window.updateSteps = function(v) {
   scheduleSave()
 }
 
+window.syncStepsNum = function(v) {
+  const val = Math.max(0, Math.min(30000, parseInt(v) || 0))
+  document.getElementById('steps-sl').value = val
+  updateStepsUI(val)
+  scheduleSave()
+}
+
 function updateStepsUI(v) {
   S.steps = v
   const goal = CLIENT?.steps_goal || 9000
-  document.getElementById('steps-big').textContent = v.toLocaleString('es-ES')
+  const inp = document.getElementById('steps-num')
+  if (inp && document.activeElement !== inp) inp.value = v
+  document.getElementById('steps-sl').value = v
   document.getElementById('steps-bar').style.width = Math.min(100, Math.round(v / goal * 100)) + '%'
   document.getElementById('d-steps').textContent = v.toLocaleString('es-ES')
 }
