@@ -351,12 +351,13 @@ window.uploadAvatar = async function(e) {
 
   const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
 
-  await supabase.from('clients').update({ avatar_url: publicUrl }).eq('id', USER_ID)
+  const { error: dbErr } = await supabase.from('clients').update({ avatar_url: publicUrl }).eq('id', USER_ID)
+  if (dbErr) { showNotif('Error al guardar la foto.'); console.error(dbErr); return }
   if (CLIENT) CLIENT.avatar_url = publicUrl
 
   // Actualizar con URL real (ya con cache-bust)
   setAvatarImg(publicUrl)
-  showNotif('Foto actualizada ✓')
+  showNotif('Foto guardada ✓')
   e.target.value = ''
 }
 
