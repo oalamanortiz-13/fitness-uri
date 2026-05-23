@@ -440,6 +440,34 @@ function applyClientConfig() {
     ? rules.map(r => `<div>${r}</div>`).join('')
     : '<div style="color:var(--text3)">Sin reglas asignadas</div>'
 
+  // Tipos de cardio recomendados por el trainer
+  const CARDIO_TYPE_LABELS = {
+    correr:     { label: 'Correr',           icon: 'ti-run'              },
+    caminar:    { label: 'Caminar rápido',   icon: 'ti-walk'             },
+    cinta:      { label: 'Cinta',            icon: 'ti-treadmill'        },
+    eliptica:   { label: 'Elíptica',         icon: 'ti-arrows-right-left'},
+    bici:       { label: 'Bici estática',    icon: 'ti-bike'             },
+    spinning:   { label: 'Spinning',         icon: 'ti-brand-cycling'    },
+    remo:       { label: 'Remo',             icon: 'ti-ripple'           },
+    natacion:   { label: 'Natación',         icon: 'ti-swim'             },
+    escaladora: { label: 'Escaladora',       icon: 'ti-stairs-up'        },
+    comba:      { label: 'Comba',            icon: 'ti-circles-relation' },
+    hiit:       { label: 'HIIT',             icon: 'ti-flame'            },
+    boxing:     { label: 'Boxeo / saco',     icon: 'ti-ball-american-football'},
+    step:       { label: 'Step aeróbic',     icon: 'ti-steps'            },
+    senderismo: { label: 'Senderismo',       icon: 'ti-mountain'         },
+  }
+  const ctypes = CLIENT.cardio_types || []
+  const ctEl = document.getElementById('cardio-types-list')
+  if (ctEl) {
+    ctEl.innerHTML = ctypes.length
+      ? ctypes.map(id => {
+          const t = CARDIO_TYPE_LABELS[id] || { label: id, icon: 'ti-run' }
+          return `<div class="pill pill-s" style="display:inline-flex;align-items:center;gap:5px"><i class="ti ${t.icon}"></i>${t.label}</div>`
+        }).join('')
+      : '<span style="font-size:12px;color:var(--text3)">Tu preparador no ha asignado tipos todavía</span>'
+  }
+
   // Recordatorio de movimiento — intervalo configurado por trainer o por defecto 45 min
   if (CLIENT.reminder_interval_min) {
     setSedInterval(CLIENT.reminder_interval_min)

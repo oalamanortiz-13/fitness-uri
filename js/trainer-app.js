@@ -4,6 +4,23 @@ import { requireRole, logout } from './auth.js'
 const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']
 const MEAL_ICONS = ['ti-coffee','ti-soup','ti-apple','ti-moon','ti-salad','ti-bread']
 
+const CARDIO_TYPES = [
+  { id: 'correr',       label: 'Correr',           icon: 'ti-run'             },
+  { id: 'caminar',      label: 'Caminar rápido',   icon: 'ti-walk'            },
+  { id: 'cinta',        label: 'Cinta',             icon: 'ti-treadmill'       },
+  { id: 'eliptica',     label: 'Elíptica',          icon: 'ti-arrows-right-left'},
+  { id: 'bici',         label: 'Bici estática',     icon: 'ti-bike'            },
+  { id: 'spinning',     label: 'Spinning',          icon: 'ti-brand-cycling'   },
+  { id: 'remo',         label: 'Remo',              icon: 'ti-ripple'          },
+  { id: 'natacion',     label: 'Natación',          icon: 'ti-swim'            },
+  { id: 'escaladora',   label: 'Escaladora',        icon: 'ti-stairs-up'       },
+  { id: 'comba',        label: 'Comba',             icon: 'ti-circles-relation'},
+  { id: 'hiit',         label: 'HIIT',              icon: 'ti-flame'           },
+  { id: 'boxing',       label: 'Boxeo / saco',      icon: 'ti-ball-american-football'},
+  { id: 'step',         label: 'Step aeróbic',      icon: 'ti-steps'           },
+  { id: 'senderismo',   label: 'Senderismo',        icon: 'ti-mountain'        },
+]
+
 let TRAINER_ID = null
 let ALL_CLIENTS = []
 let SELECTED_CLIENT = null
@@ -807,6 +824,23 @@ async function renderCardioTab(el) {
     </div>
 
     <div class="card">
+      <div class="card-title"><i class="ti ti-run"></i> Tipos de cardio asignados</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Selecciona los tipos de cardio recomendados para este cliente</div>
+      <div id="cardio-types-grid" style="display:flex;flex-wrap:wrap;gap:8px">
+        ${CARDIO_TYPES.map(t => {
+          const active = (c.cardio_types || []).includes(t.id)
+          return `<button type="button" onclick="toggleCardioType('${t.id}')"
+            data-ctype="${t.id}"
+            style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:20px;border:1.5px solid ${active ? 'var(--blue)' : 'var(--border2)'};
+            background:${active ? 'var(--blue)22' : 'var(--bg3)'};color:${active ? 'var(--blue)' : 'var(--text2)'};
+            font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit">
+            <i class="ti ${t.icon}" style="font-size:14px"></i>${t.label}
+          </button>`
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="card">
       <div class="card-title"><i class="ti ti-shoe"></i> Pasos últimos 30 días</div>
       ${stepsWithData.length >= 2
         ? `<div style="position:relative;height:140px"><canvas id="steps-chart"></canvas></div>`
@@ -855,19 +889,38 @@ async function renderCardioTab(el) {
   }
 }
 
+window.toggleCardioType = function(id) {
+  const client = SELECTED_CLIENT_DATA.client
+  const types = [...(client.cardio_types || [])]
+  const idx = types.indexOf(id)
+  if (idx >= 0) types.splice(idx, 1)
+  else types.push(id)
+  client.cardio_types = types
+
+  // Actualizar visual del botón
+  const btn = document.querySelector(`[data-ctype="${id}"]`)
+  if (!btn) return
+  const active = types.includes(id)
+  btn.style.borderColor = active ? 'var(--blue)' : 'var(--border2)'
+  btn.style.background  = active ? 'var(--blue)22' : 'var(--bg3)'
+  btn.style.color       = active ? 'var(--blue)' : 'var(--text2)'
+}
+
 window.saveCardioConfig = async function() {
-  const steps = parseInt(document.getElementById('c-steps').value) || 9000
-  const cardio = parseInt(document.getElementById('c-cardio').value) || 185
+  const steps    = parseInt(document.getElementById('c-steps').value) || 9000
+  const cardio   = parseInt(document.getElementById('c-cardio').value) || 185
   const reminder = parseInt(document.getElementById('c-reminder').value) || null
+  const types    = SELECTED_CLIENT_DATA.client.cardio_types || []
 
   const { error } = await supabase.from('clients').update({
     steps_goal: steps,
     cardio_goal_min: cardio,
     reminder_interval_min: reminder,
+    cardio_types: types,
   }).eq('id', SELECTED_CLIENT)
 
   if (!error) {
-    Object.assign(SELECTED_CLIENT_DATA.client, { steps_goal: steps, cardio_goal_min: cardio, reminder_interval_min: reminder })
+    Object.assign(SELECTED_CLIENT_DATA.client, { steps_goal: steps, cardio_goal_min: cardio, reminder_interval_min: reminder, cardio_types: types })
     showNotif('Cardio guardado ✓')
   } else {
     showNotif('Error: ' + error.message)
