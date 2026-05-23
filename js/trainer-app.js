@@ -582,10 +582,10 @@ window.deleteExercise = async function(exId) {
 
 function renderDietTab(el) {
   const { diet } = SELECTED_CLIENT_DATA
-  const meals = diet?.diet_meals || []
+  const meals = (diet?.diet_meals || []).slice().sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
 
   el.innerHTML = `
-    <div class="card">
+    <div class="card" id="meals-container">
       <div class="card-title"><i class="ti ti-apple"></i> Plan de dieta</div>
       ${meals.length === 0
         ? '<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Sin comidas asignadas. Crea la primera.</div>'
@@ -599,12 +599,17 @@ function renderDietTab(el) {
       <button class="btn btn-primary" onclick="createDietPlan()">Crear plan de dieta</button>
     </div>` : ''}
   `
+
+  initMealDrag()
 }
 
 function renderMealCard(meal) {
   return `
-    <div class="card" style="margin-bottom:8px;background:var(--bg3)">
+    <div class="meal-card-drag" data-meal-id="${meal.id}"
+      style="margin-bottom:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;transition:opacity .15s,border-color .15s">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div class="drag-handle" title="Arrastrar para reordenar"
+          style="cursor:grab;color:var(--text3);font-size:18px;line-height:1;padding:2px 4px;user-select:none;flex-shrink:0">⠿</div>
         <div style="display:flex;gap:6px">
           ${MEAL_ICONS.map(ic => `<button onclick="changeMealIcon('${meal.id}','${ic}')" style="background:${meal.icon===ic?'var(--blue)':'var(--bg2)'};border:1px solid var(--border2);border-radius:6px;padding:4px 6px;cursor:pointer;color:var(--text)">
             <i class="ti ${ic}" style="font-size:14px"></i>
@@ -621,6 +626,70 @@ function renderMealCard(meal) {
       <button class="btn" onclick="openAddFood('${meal.id}')" style="margin-top:8px;font-size:12px;padding:6px 12px"><i class="ti ti-plus"></i> Alimento</button>
     </div>
   `
+}
+
+let _dragMealId = null
+let _dragOver = null
+
+function initMealDrag() {
+  const cards = document.querySelectorAll('.meal-card-drag')
+  cards.forEach(card => {
+    const handle = card.querySelector('.drag-handle')
+
+    // Solo arrastrar desde el handle
+    handle.addEventListener('mousedown', () => { card.draggable = true })
+    card.addEventListener('dragend',    () => { card.draggable = false })
+
+    card.addEventListener('dragstart', e => {
+      _dragMealId = card.dataset.mealId
+      e.dataTransfer.effectAllowed = 'move'
+      setTimeout(() => card.style.opacity = '0.4', 0)
+    })
+
+    card.addEventListener('dragend', () => {
+      card.style.opacity = ''
+      card.style.borderColor = ''
+      _dragMealId = null
+      _dragOver = null
+    })
+
+    card.addEventListener('dragover', e => {
+      e.preventDefault()
+      if (card.dataset.mealId === _dragMealId) return
+      if (_dragOver && _dragOver !== card) _dragOver.style.borderColor = ''
+      _dragOver = card
+      card.style.borderColor = 'var(--blue)'
+    })
+
+    card.addEventListener('dragleave', () => {
+      card.style.borderColor = ''
+    })
+
+    card.addEventListener('drop', e => {
+      e.preventDefault()
+      card.style.borderColor = ''
+      if (!_dragMealId || _dragMealId === card.dataset.mealId) return
+
+      const meals = SELECTED_CLIENT_DATA.diet.diet_meals
+      const fromIdx = meals.findIndex(m => m.id === _dragMealId)
+      const toIdx   = meals.findIndex(m => m.id === card.dataset.mealId)
+      if (fromIdx < 0 || toIdx < 0) return
+
+      const [moved] = meals.splice(fromIdx, 1)
+      meals.splice(toIdx, 0, moved)
+
+      // Actualizar order_index en memoria y en DB
+      meals.forEach((m, i) => { m.order_index = i })
+      saveMealOrder(meals)
+      renderTab()
+    })
+  })
+}
+
+async function saveMealOrder(meals) {
+  await Promise.all(meals.map((m, i) =>
+    supabase.from('diet_meals').update({ order_index: i }).eq('id', m.id)
+  ))
 }
 
 function renderFoodRow(food, mealId) {
