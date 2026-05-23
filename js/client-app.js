@@ -14,6 +14,7 @@ const CHECKS = [
 ]
 
 let CLIENT = null
+let TRAINER_PROFILE = null
 let WORKOUT_DAYS = []
 let DIET_PLAN = null
 let DIET_MEALS = []
@@ -89,6 +90,31 @@ async function loadClientData() {
     .eq('id', USER_ID)
     .single()
   CLIENT = clientData
+
+  // Cargar perfil del cliente (nombre)
+  const { data: myProfile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', USER_ID)
+    .single()
+
+  // Cargar datos del preparador
+  if (clientData?.trainer_id) {
+    const { data: trainerProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', clientData.trainer_id)
+      .single()
+    const { data: trainerData } = await supabase
+      .from('trainers')
+      .select('logo_url')
+      .eq('id', clientData.trainer_id)
+      .single()
+    TRAINER_PROFILE = { ...trainerProfile, ...trainerData }
+  }
+
+  // Aplicar perfil visual
+  applyClientProfile(myProfile)
 
   const { data: woDays } = await supabase
     .from('workout_days')
@@ -267,6 +293,63 @@ async function loadPesoHistory() {
   }
 }
 
+// ─── CLIENT PROFILE ───────────────────────────────────────────────────────────
+
+function applyClientProfile(myProfile) {
+  // Nombre del cliente
+  const name = myProfile?.full_name || '—'
+  document.getElementById('profile-name').textContent = name
+
+  // Avatar del cliente
+  if (CLIENT?.avatar_url) {
+    setAvatarImg(CLIENT.avatar_url)
+  }
+
+  // Preparador
+  document.getElementById('profile-trainer').textContent = TRAINER_PROFILE?.full_name || '—'
+
+  // Logo del preparador
+  if (TRAINER_PROFILE?.logo_url) {
+    const img = document.getElementById('trainer-logo-img')
+    img.src = TRAINER_PROFILE.logo_url
+    img.style.display = 'block'
+    document.getElementById('trainer-logo-icon').style.display = 'none'
+  }
+}
+
+function setAvatarImg(url) {
+  const img = document.getElementById('client-avatar-img')
+  img.src = url
+  img.style.display = 'block'
+  document.getElementById('client-avatar-icon').style.display = 'none'
+}
+
+window.uploadAvatar = async function(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) { showNotif('Imagen demasiado grande (máx. 5 MB)'); return }
+
+  showNotif('Subiendo foto...')
+  const ext = file.name.split('.').pop()
+  const path = `client-${USER_ID}.${ext}`
+
+  const { error: upErr } = await supabase.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true, contentType: file.type })
+
+  if (upErr) { showNotif('Error al subir la foto.'); return }
+
+  const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+
+  await supabase.from('clients').update({ avatar_url: publicUrl }).eq('id', USER_ID)
+  if (CLIENT) CLIENT.avatar_url = publicUrl
+
+  setAvatarImg(publicUrl)
+  showNotif('Foto actualizada ✓')
+  // Reset input so same file can be re-selected
+  e.target.value = ''
+}
+
 // ─── APPLY CLIENT CONFIG ──────────────────────────────────────────────────────
 
 function applyClientConfig() {
@@ -313,6 +396,19 @@ function applyClientConfig() {
       `
     }
   }
+
+  // Objetivo del cliente en perfil
+  const goalTags = []
+  if (CLIENT.goal_label) {
+    goalTags.push(CLIENT.goal_label)
+  } else {
+    if (CLIENT.weight_goal) goalTags.push(`🎯 Objetivo: ${CLIENT.weight_goal} kg`)
+    if (CLIENT.phase_name) goalTags.push(CLIENT.phase_name)
+    if (CLIENT.plan_weeks) goalTags.push(`${CLIENT.plan_weeks} semanas`)
+  }
+  document.getElementById('profile-goal-tags').innerHTML = goalTags
+    .map(t => `<span style="font-size:11px;background:#378ADD22;color:var(--blue);border:1px solid #378ADD44;border-radius:20px;padding:3px 8px;white-space:nowrap">${t}</span>`)
+    .join('')
 
   // Reglas de oro
   const rules = CLIENT.golden_rules || []

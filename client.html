@@ -28,6 +28,40 @@
     <p id="dash-date"></p>
   </div>
 
+  <!-- PERFIL DEL CLIENTE -->
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:20px 20px 16px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <!-- Avatar cliente -->
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="position:relative">
+            <div id="client-avatar-wrap" style="width:64px;height:64px;border-radius:50%;overflow:hidden;border:2px solid var(--blue);background:var(--bg3);display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="document.getElementById('avatar-input').click()">
+              <img id="client-avatar-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
+              <i id="client-avatar-icon" class="ti ti-user" style="font-size:28px;color:var(--text2)"></i>
+            </div>
+            <div onclick="document.getElementById('avatar-input').click()" style="position:absolute;bottom:0;right:0;width:20px;height:20px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer">
+              <i class="ti ti-camera" style="font-size:11px;color:#fff"></i>
+            </div>
+            <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar(event)">
+          </div>
+          <div>
+            <div style="font-size:17px;font-weight:700;line-height:1.2" id="profile-name">—</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:3px;display:flex;align-items:center;gap:5px">
+              <span>Preparado por</span>
+              <span style="color:var(--blue);font-weight:600" id="profile-trainer">—</span>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap" id="profile-goal-tags"></div>
+          </div>
+        </div>
+        <!-- Logo del preparador -->
+        <div id="trainer-logo-wrap" style="width:44px;height:44px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <img id="trainer-logo-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
+          <i id="trainer-logo-icon" class="ti ti-barbell" style="font-size:20px;color:var(--blue)"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="metric-grid">
     <div class="metric"><div class="metric-label">Peso</div><div class="metric-val" id="d-peso">— kg</div><div class="metric-sub" id="d-peso-sub">Cargando...</div></div>
     <div class="metric"><div class="metric-label">Racha</div><div class="metric-val" id="d-streak">0 🔥</div><div class="metric-sub">días consecutivos</div></div>
