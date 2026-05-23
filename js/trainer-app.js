@@ -830,6 +830,28 @@ window.deleteFood = async function(foodId, mealId) {
 
 // ─── TAB: SUPLEMENTOS ─────────────────────────────────────────────────────────
 
+const SUPL_TIMINGS = [
+  { value: 'manana',       label: 'Mañana',       icon: 'ti-sunrise',    color: '#BA7517' },
+  { value: 'tarde',        label: 'Tarde',         icon: 'ti-sun',        color: '#378ADD' },
+  { value: 'noche',        label: 'Noche',         icon: 'ti-moon',       color: '#7C5CBF' },
+  { value: 'pre-workout',  label: 'Pre-workout',   icon: 'ti-bolt',       color: '#1D9E75' },
+  { value: 'post-workout', label: 'Post-workout',  icon: 'ti-check',      color: '#E24B4A' },
+]
+
+function timingTag(timing) {
+  if (!timing) return ''
+  const t = SUPL_TIMINGS.find(t => t.value === timing)
+  if (!t) return ''
+  return `<span class="tag" style="margin-right:4px;border-color:${t.color}44;color:${t.color}"><i class="ti ${t.icon}" style="font-size:11px"></i> ${t.label}</span>`
+}
+
+function timingSelect(id, selected) {
+  return `<select id="${id}" style="padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;width:100%">
+    <option value="">Sin horario</option>
+    ${SUPL_TIMINGS.map(t => `<option value="${t.value}" ${selected === t.value ? 'selected' : ''}>${t.label}</option>`).join('')}
+  </select>`
+}
+
 function renderSupplementsTab(el) {
   const { supplements } = SELECTED_CLIENT_DATA
   el.innerHTML = `
@@ -839,14 +861,17 @@ function renderSupplementsTab(el) {
         ${supplements.map(s => renderSuplRow(s)).join('') || '<div style="font-size:12px;color:var(--text3)">Sin suplementos asignados</div>'}
       </div>
       <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
-        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">
           <input type="text" id="s-name" placeholder="Nombre (ej: Creatina)">
-          <input type="text" id="s-dose" placeholder="Dosis">
-          <button class="btn btn-primary" onclick="addSupplement()"><i class="ti ti-plus"></i></button>
+          <input type="text" id="s-dose" placeholder="Dosis (ej: 5g)">
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <input type="number" id="s-prot" placeholder="Proteína (g)" min="0">
           <input type="number" id="s-kcal" placeholder="Kcal" min="0">
+        </div>
+        <div style="display:flex;gap:8px">
+          ${timingSelect('s-timing', '')}
+          <button class="btn btn-primary" onclick="addSupplement()" style="flex-shrink:0"><i class="ti ti-plus"></i></button>
         </div>
       </div>
     </div>
@@ -855,7 +880,11 @@ function renderSupplementsTab(el) {
 
 function renderSuplRow(s) {
   return `<div class="row" id="supl-row-${s.id}">
-    <div style="flex:1"><div class="row-name">${s.name}</div>${s.dose ? `<div class="row-note">${s.dose}</div>` : ''}</div>
+    <div style="flex:1">
+      <div class="row-name">${s.name}</div>
+      ${s.dose ? `<div class="row-note">${s.dose}</div>` : ''}
+    </div>
+    ${timingTag(s.timing)}
     ${s.protein_g ? `<span class="tag" style="margin-right:4px">${s.protein_g}g prot</span>` : ''}
     ${s.kcal ? `<span class="tag" style="margin-right:4px">${s.kcal}kcal</span>` : ''}
     <button class="check-btn" onclick="openEditSupl('${s.id}')" title="Editar" style="font-size:13px;margin-right:4px">✎</button>
@@ -869,13 +898,14 @@ function renderSuplEditRow(s) {
       <input type="text" id="sedit-name-${s.id}" value="${s.name}" placeholder="Nombre" style="font-size:13px">
       <input type="text" id="sedit-dose-${s.id}" value="${s.dose || ''}" placeholder="Dosis" style="font-size:13px">
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;width:100%">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;margin-bottom:6px">
       <input type="number" id="sedit-prot-${s.id}" value="${s.protein_g || ''}" placeholder="Proteína (g)" min="0" style="font-size:13px">
       <input type="number" id="sedit-kcal-${s.id}" value="${s.kcal || ''}" placeholder="Kcal" min="0" style="font-size:13px">
-      <div style="display:flex;gap:4px">
-        <button class="btn btn-primary" onclick="saveEditSupl('${s.id}')" style="flex:1;font-size:12px;padding:6px">✓</button>
-        <button class="btn" onclick="cancelEditSupl('${s.id}')" style="font-size:12px;padding:6px">✕</button>
-      </div>
+    </div>
+    <div style="display:flex;gap:6px;width:100%">
+      ${timingSelect('sedit-timing-' + s.id, s.timing)}
+      <button class="btn btn-primary" onclick="saveEditSupl('${s.id}')" style="font-size:12px;padding:6px 10px">✓</button>
+      <button class="btn" onclick="cancelEditSupl('${s.id}')" style="font-size:12px;padding:6px 10px">✕</button>
     </div>
   </div>`
 }
@@ -885,12 +915,13 @@ window.addSupplement = async function() {
   const dose = document.getElementById('s-dose').value.trim()
   const protein_g = parseInt(document.getElementById('s-prot').value) || 0
   const kcal = parseInt(document.getElementById('s-kcal').value) || 0
+  const timing = document.getElementById('s-timing').value || null
   if (!name) return
 
   const order_index = SELECTED_CLIENT_DATA.supplements.length
   const { data: s } = await supabase
     .from('supplements')
-    .insert({ client_id: SELECTED_CLIENT, name, dose, protein_g, kcal, order_index })
+    .insert({ client_id: SELECTED_CLIENT, name, dose, protein_g, kcal, timing, order_index })
     .select().single()
 
   SELECTED_CLIENT_DATA.supplements.push(s)
@@ -900,6 +931,7 @@ window.addSupplement = async function() {
   document.getElementById('s-dose').value = ''
   document.getElementById('s-prot').value = ''
   document.getElementById('s-kcal').value = ''
+  document.getElementById('s-timing').value = ''
   showNotif('Suplemento añadido ✓')
 }
 
@@ -922,13 +954,14 @@ window.saveEditSupl = async function(id) {
   const dose = document.getElementById(`sedit-dose-${id}`).value.trim()
   const protein_g = parseInt(document.getElementById(`sedit-prot-${id}`).value) || 0
   const kcal = parseInt(document.getElementById(`sedit-kcal-${id}`).value) || 0
+  const timing = document.getElementById(`sedit-timing-${id}`).value || null
   if (!name) { showNotif('El nombre es obligatorio'); return }
 
-  const { error } = await supabase.from('supplements').update({ name, dose, protein_g, kcal }).eq('id', id)
+  const { error } = await supabase.from('supplements').update({ name, dose, protein_g, kcal, timing }).eq('id', id)
   if (error) { showNotif('Error al guardar: ' + error.message); return }
 
   const s = SELECTED_CLIENT_DATA.supplements.find(s => s.id === id)
-  if (s) { s.name = name; s.dose = dose; s.protein_g = protein_g; s.kcal = kcal }
+  if (s) { s.name = name; s.dose = dose; s.protein_g = protein_g; s.kcal = kcal; s.timing = timing }
   const row = document.getElementById(`supl-row-${id}`)
   if (row) row.outerHTML = renderSuplRow(s)
   showNotif('Suplemento actualizado ✓')

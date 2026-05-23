@@ -573,15 +573,42 @@ function renderNutrition() {
   if (SUPPLEMENTS.length === 0) {
     document.getElementById('supls-card').style.display = 'none'
   } else {
-    suplsEl.innerHTML = SUPPLEMENTS.map(s => {
-      const checked = S.foodsChecked.includes(s.id)
-      return `<div class="meal-row row" data-food-id="${s.id}" data-prot="${s.protein_g || 0}" data-kcal="${s.kcal || 0}" onclick="toggleMeal(this)">
-        <button class="check-btn${checked ? ' on' : ''}" aria-label="Marcar">${checked ? '✓' : ''}</button>
-        <div style="flex:1;margin-left:10px"><div class="row-name">${s.name}</div></div>
-        ${s.protein_g > 0 ? `<span class="tag" style="margin-right:4px">${s.protein_g}g prot</span>` : ''}
-        ${s.dose ? `<span class="tag">${s.dose}</span>` : ''}
-      </div>`
-    }).join('')
+    const TIMING_META = {
+      'manana':       { label: 'Mañana',      icon: 'ti-sunrise',   color: '#BA7517' },
+      'tarde':        { label: 'Tarde',        icon: 'ti-sun',       color: '#378ADD' },
+      'noche':        { label: 'Noche',        icon: 'ti-moon',      color: '#7C5CBF' },
+      'pre-workout':  { label: 'Pre-workout',  icon: 'ti-bolt',      color: '#1D9E75' },
+      'post-workout': { label: 'Post-workout', icon: 'ti-check',     color: '#E24B4A' },
+    }
+    // Agrupar por timing; sin timing al final
+    const ORDER = ['manana','tarde','noche','pre-workout','post-workout', null]
+    const grouped = {}
+    SUPPLEMENTS.forEach(s => {
+      const key = s.timing || null
+      if (!grouped[key]) grouped[key] = []
+      grouped[key].push(s)
+    })
+    let html = ''
+    ORDER.forEach(key => {
+      const group = grouped[key]
+      if (!group?.length) return
+      const meta = key ? TIMING_META[key] : null
+      if (meta) {
+        html += `<div style="display:flex;align-items:center;gap:6px;margin:10px 0 6px;font-size:12px;font-weight:600;color:${meta.color}">
+          <i class="ti ${meta.icon}"></i>${meta.label}
+        </div>`
+      }
+      html += group.map(s => {
+        const checked = S.foodsChecked.includes(s.id)
+        return `<div class="meal-row row" data-food-id="${s.id}" data-prot="${s.protein_g || 0}" data-kcal="${s.kcal || 0}" onclick="toggleMeal(this)">
+          <button class="check-btn${checked ? ' on' : ''}" aria-label="Marcar">${checked ? '✓' : ''}</button>
+          <div style="flex:1;margin-left:10px"><div class="row-name">${s.name}</div></div>
+          ${s.protein_g > 0 ? `<span class="tag" style="margin-right:4px">${s.protein_g}g prot</span>` : ''}
+          ${s.dose ? `<span class="tag">${s.dose}</span>` : ''}
+        </div>`
+      }).join('')
+    })
+    suplsEl.innerHTML = html
   }
 
   // Restore checked state primero, luego actualizar totales
