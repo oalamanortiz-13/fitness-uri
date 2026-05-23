@@ -916,12 +916,12 @@ async function renderMeasuresTab(el) {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <div class="form-group"><label class="form-label">Peso (kg)</label><input type="number" id="m-weight" placeholder="72.5" step="0.1" min="30" max="300"></div>
         <div class="form-group"><label class="form-label">% Grasa</label><input type="number" id="m-fat" placeholder="18" step="0.1" min="3" max="60"></div>
-        <div class="form-group"><label class="form-label">Cintura (cm)</label><input type="number" id="m-waist" placeholder="78" step="0.5"></div>
-        <div class="form-group"><label class="form-label">Cadera (cm)</label><input type="number" id="m-hips" placeholder="96" step="0.5"></div>
-        <div class="form-group"><label class="form-label">Pecho (cm)</label><input type="number" id="m-chest" placeholder="90" step="0.5"></div>
         <div class="form-group"><label class="form-label">Hombros (cm)</label><input type="number" id="m-shoulder" placeholder="110" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Pecho (cm)</label><input type="number" id="m-chest" placeholder="90" step="0.5"></div>
         <div class="form-group"><label class="form-label">Brazo D (cm)</label><input type="number" id="m-arm-r" placeholder="32" step="0.5"></div>
         <div class="form-group"><label class="form-label">Brazo I (cm)</label><input type="number" id="m-arm-l" placeholder="32" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Cintura (cm)</label><input type="number" id="m-waist" placeholder="78" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Cadera (cm)</label><input type="number" id="m-hips" placeholder="96" step="0.5"></div>
         <div class="form-group"><label class="form-label">Muslo D (cm)</label><input type="number" id="m-thigh-r" placeholder="55" step="0.5"></div>
         <div class="form-group"><label class="form-label">Muslo I (cm)</label><input type="number" id="m-thigh-l" placeholder="55" step="0.5"></div>
         <div class="form-group"><label class="form-label">Gemelo D (cm)</label><input type="number" id="m-calf-r" placeholder="36" step="0.5"></div>
@@ -941,12 +941,12 @@ async function renderMeasuresTab(el) {
       <div class="metric-grid">
         ${metricRow('Peso', 'weight_kg', 'kg')}
         ${metricRow('% Grasa', 'body_fat_pct', '%')}
-        ${metricRow('Cintura', 'waist_cm')}
-        ${metricRow('Cadera', 'hips_cm')}
-        ${metricRow('Pecho', 'chest_cm')}
         ${metricRow('Hombros', 'shoulder_cm')}
+        ${metricRow('Pecho', 'chest_cm')}
         ${metricRow('Brazo D', 'arm_r_cm')}
         ${metricRow('Brazo I', 'arm_l_cm')}
+        ${metricRow('Cintura', 'waist_cm')}
+        ${metricRow('Cadera', 'hips_cm')}
         ${metricRow('Muslo D', 'thigh_r_cm')}
         ${metricRow('Muslo I', 'thigh_l_cm')}
         ${metricRow('Gemelo D', 'calf_r_cm')}
@@ -963,12 +963,12 @@ async function renderMeasuresTab(el) {
           <div style="flex:1;display:flex;flex-wrap:wrap;gap:5px">
             ${r.weight_kg != null ? `<span class="tag">${r.weight_kg} kg</span>` : ''}
             ${r.body_fat_pct != null ? `<span class="tag">${r.body_fat_pct}% grasa</span>` : ''}
-            ${histTag('Cin', 'waist_cm', r)}
-            ${histTag('Cad', 'hips_cm', r)}
-            ${histTag('Pec', 'chest_cm', r)}
             ${histTag('Hom', 'shoulder_cm', r)}
+            ${histTag('Pec', 'chest_cm', r)}
             ${histTag('BraD', 'arm_r_cm', r)}
             ${histTag('BraI', 'arm_l_cm', r)}
+            ${histTag('Cin', 'waist_cm', r)}
+            ${histTag('Cad', 'hips_cm', r)}
             ${histTag('MusD', 'thigh_r_cm', r)}
             ${histTag('MusI', 'thigh_l_cm', r)}
             ${histTag('GemD', 'calf_r_cm', r)}
