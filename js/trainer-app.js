@@ -202,6 +202,9 @@ window.filterClients = function(q) {
 
 window.selectClient = async function(clientId) {
   SELECTED_CLIENT = clientId
+  // Quitar highlight de "Mi perfil"
+  const profileBtn = document.getElementById('my-profile-btn')
+  if (profileBtn) { profileBtn.style.color = ''; profileBtn.style.borderColor = '' }
   renderClientList(ALL_CLIENTS.filter(() => true)) // re-render to update selected
   await loadClientDetail(clientId)
 }
@@ -1247,6 +1250,143 @@ window.copyInviteLink = function() {
     btn.textContent = '✓ Copiado'
     setTimeout(() => { btn.innerHTML = '<i class="ti ti-copy"></i> Copiar link' }, 2000)
   })
+}
+
+// ─── MI PERFIL (TRAINER) ──────────────────────────────────────────────────────
+
+let TRAINER_PROFILE_SNAPSHOT = null
+
+window.openMyProfile = async function() {
+  // Marcar botón activo
+  document.getElementById('my-profile-btn').style.color = 'var(--blue)'
+  document.getElementById('my-profile-btn').style.borderColor = 'var(--blue)'
+
+  const main = document.getElementById('main-content')
+  main.innerHTML = '<div style="display:flex;justify-content:center;padding:40px"><div class="spinner"></div></div>'
+
+  const [{ data: trainerData }, { data: profileData }] = await Promise.all([
+    supabase.from('trainers').select('bio, specialty, max_clients').eq('id', TRAINER_ID).single(),
+    supabase.from('profiles').select('full_name, email').eq('id', TRAINER_ID).single(),
+  ])
+
+  TRAINER_PROFILE_SNAPSHOT = {
+    full_name: profileData?.full_name || '',
+    bio: trainerData?.bio || '',
+    specialty: trainerData?.specialty || '',
+    max_clients: trainerData?.max_clients ?? 20,
+  }
+
+  renderMyProfileView(TRAINER_PROFILE_SNAPSHOT, profileData?.email || '')
+}
+
+function renderMyProfileView(snap, email) {
+  const main = document.getElementById('main-content')
+  main.innerHTML = `
+    <div style="max-width:520px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+        <i class="ti ti-user-circle" style="font-size:22px;color:var(--blue)"></i>
+        <h2 style="font-size:16px;font-weight:700;margin:0">Mi perfil</h2>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-id-badge"></i> Información básica</div>
+        <div class="form-group">
+          <label class="form-label">Nombre completo</label>
+          <input type="text" id="tp-name" value="${escHtml(snap.full_name)}" placeholder="Tu nombre">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" value="${escHtml(email)}" disabled style="opacity:.5;cursor:not-allowed">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Especialidad</label>
+          <input type="text" id="tp-specialty" value="${escHtml(snap.specialty)}" placeholder="Ej: Fuerza y hipertrofia, Pérdida de peso...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Máximo de clientes activos</label>
+          <input type="number" id="tp-max" value="${snap.max_clients}" min="1" max="200">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-notes"></i> Sobre mí (bio)</div>
+        <textarea id="tp-bio" style="min-height:120px" placeholder="Cuéntale a tus clientes quién eres, tu experiencia, tu filosofía...">${escHtml(snap.bio)}</textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn" id="tp-discard-btn" onclick="discardMyProfile()" style="flex:1;border-color:var(--border2);color:var(--text2)" disabled>
+          <i class="ti ti-arrow-back-up"></i> Descartar cambios
+        </button>
+        <button class="btn btn-primary" onclick="saveMyProfile()" style="flex:1">
+          <i class="ti ti-device-floppy"></i> Guardar
+        </button>
+      </div>
+    </div>
+  `
+
+  // Activar botón descartar cuando hay cambios
+  const inputs = ['tp-name', 'tp-specialty', 'tp-max', 'tp-bio']
+  inputs.forEach(id => {
+    document.getElementById(id).addEventListener('input', checkMyProfileDirty)
+  })
+}
+
+function checkMyProfileDirty() {
+  const snap = TRAINER_PROFILE_SNAPSHOT
+  const dirty =
+    document.getElementById('tp-name').value !== snap.full_name ||
+    document.getElementById('tp-specialty').value !== snap.specialty ||
+    document.getElementById('tp-max').value !== String(snap.max_clients) ||
+    document.getElementById('tp-bio').value !== snap.bio
+
+  const btn = document.getElementById('tp-discard-btn')
+  if (!btn) return
+  btn.disabled = !dirty
+  btn.style.opacity = dirty ? '1' : '0.4'
+  btn.style.color = dirty ? 'var(--amber)' : 'var(--text2)'
+  btn.style.borderColor = dirty ? 'var(--amber)' : 'var(--border2)'
+}
+
+window.discardMyProfile = function() {
+  const snap = TRAINER_PROFILE_SNAPSHOT
+  document.getElementById('tp-name').value = snap.full_name
+  document.getElementById('tp-specialty').value = snap.specialty
+  document.getElementById('tp-max').value = snap.max_clients
+  document.getElementById('tp-bio').value = snap.bio
+  checkMyProfileDirty()
+  showNotif('Cambios descartados')
+}
+
+window.saveMyProfile = async function() {
+  const name = document.getElementById('tp-name').value.trim()
+  const specialty = document.getElementById('tp-specialty').value.trim()
+  const max = parseInt(document.getElementById('tp-max').value) || 20
+  const bio = document.getElementById('tp-bio').value.trim()
+
+  if (!name) { showNotif('El nombre no puede estar vacío'); return }
+
+  const [{ error: e1 }, { error: e2 }] = await Promise.all([
+    supabase.from('trainers').update({ bio, specialty, max_clients: max }).eq('id', TRAINER_ID),
+    supabase.from('profiles').update({ full_name: name }).eq('id', TRAINER_ID),
+  ])
+
+  if (e1 || e2) {
+    showNotif('Error al guardar: ' + (e1?.message || e2?.message))
+    return
+  }
+
+  // Actualizar snapshot con los valores guardados
+  TRAINER_PROFILE_SNAPSHOT = { full_name: name, bio, specialty, max_clients: max }
+
+  // Actualizar nombre en sidebar
+  document.getElementById('trainer-name-logo').textContent = name
+
+  checkMyProfileDirty()
+  showNotif('Perfil guardado ✓')
+}
+
+function escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
