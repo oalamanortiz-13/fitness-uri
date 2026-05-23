@@ -41,9 +41,7 @@ let S = {
   timerLeft: 90,
   timerRunning: false,
   timerInt: null,
-  sedLeft: 2700,
-  sedRunning: false,
-  sedInt: null,
+
   streak: 0,
   photoSlot: 0,
   chatHistory: [],
@@ -1148,31 +1146,6 @@ window.resetTimer = function() {
   document.getElementById('timer-disp').textContent = fmt(S.timerSecs)
 }
 
-window.startSedTimer = function() {
-  if (S.sedRunning) {
-    clearInterval(S.sedInt); S.sedRunning = false
-    document.getElementById('sed-btn').textContent = '▶ Activar'; return
-  }
-  S.sedRunning = true
-  document.getElementById('sed-btn').textContent = '⏸ Pausar'
-  S.sedInt = setInterval(() => {
-    if (S.sedLeft <= 0) {
-      clearInterval(S.sedInt); S.sedRunning = false; S.sedLeft = 2700
-      document.getElementById('sed-btn').textContent = '▶ Activar'
-      document.getElementById('sed-disp').textContent = '🚶 ¡Levántate!'
-      showNotif('¡Han pasado 45 min! Levántate y camina 5 minutos 🚶')
-      return
-    }
-    S.sedLeft--
-    document.getElementById('sed-disp').textContent = fmt(S.sedLeft)
-  }, 1000)
-}
-
-window.resetSedTimer = function() {
-  clearInterval(S.sedInt); S.sedRunning = false; S.sedLeft = 2700
-  document.getElementById('sed-disp').textContent = '45:00'
-  document.getElementById('sed-btn').textContent = '▶ Activar'
-}
 
 // ─── CALENDAR ─────────────────────────────────────────────────────────────────
 
