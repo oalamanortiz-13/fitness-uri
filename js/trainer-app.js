@@ -243,12 +243,12 @@ function renderClientDetail() {
     </div>
 
     <div class="tabs">
-      <button class="tab-btn${ACTIVE_TAB==='profile'?' active':''}" onclick="switchTab('profile')"><i class="ti ti-user"></i> Perfil</button>
-      <button class="tab-btn${ACTIVE_TAB==='workout'?' active':''}" onclick="switchTab('workout')"><i class="ti ti-barbell"></i> Entreno</button>
-      <button class="tab-btn${ACTIVE_TAB==='diet'?' active':''}" onclick="switchTab('diet')"><i class="ti ti-apple"></i> Nutrición</button>
-      <button class="tab-btn${ACTIVE_TAB==='cardio'?' active':''}" onclick="switchTab('cardio')"><i class="ti ti-run"></i> Cardio</button>
-      <button class="tab-btn${ACTIVE_TAB==='supplements'?' active':''}" onclick="switchTab('supplements')"><i class="ti ti-pill"></i> Supls</button>
-      <button class="tab-btn${ACTIVE_TAB==='progress'?' active':''}" onclick="switchTab('progress')"><i class="ti ti-chart-line"></i> Progreso</button>
+      <button class="tab-btn${ACTIVE_TAB==='profile'?' active':''}" data-tab="profile" onclick="switchTab('profile')"><i class="ti ti-user"></i> Perfil</button>
+      <button class="tab-btn${ACTIVE_TAB==='workout'?' active':''}" data-tab="workout" onclick="switchTab('workout')"><i class="ti ti-barbell"></i> Entreno</button>
+      <button class="tab-btn${ACTIVE_TAB==='diet'?' active':''}" data-tab="diet" onclick="switchTab('diet')"><i class="ti ti-apple"></i> Nutrición</button>
+      <button class="tab-btn${ACTIVE_TAB==='cardio'?' active':''}" data-tab="cardio" onclick="switchTab('cardio')"><i class="ti ti-run"></i> Cardio</button>
+      <button class="tab-btn${ACTIVE_TAB==='supplements'?' active':''}" data-tab="supplements" onclick="switchTab('supplements')"><i class="ti ti-pill"></i> Supls</button>
+      <button class="tab-btn${ACTIVE_TAB==='progress'?' active':''}" data-tab="progress" onclick="switchTab('progress')"><i class="ti ti-chart-line"></i> Progreso</button>
     </div>
 
     <div id="tab-content"></div>
@@ -259,8 +259,7 @@ function renderClientDetail() {
 window.switchTab = function(tab) {
   ACTIVE_TAB = tab
   document.querySelectorAll('.tab-btn').forEach(b => {
-    const onclick = b.getAttribute('onclick') || ''
-    b.classList.toggle('active', onclick.includes(`'${tab}'`))
+    b.classList.toggle('active', b.dataset.tab === tab)
   })
   renderTab()
 }
