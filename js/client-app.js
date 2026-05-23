@@ -497,10 +497,74 @@ function renderWorkout(dayIdx) {
   h += `<div style="margin-top:10px">
     <div class="lbl"><span>${dc}/${tot} completados</span><span>${tot > 0 ? Math.round(dc / tot * 100) : 0}%</span></div>
     <div class="prog-wrap"><div class="prog-fill" style="width:${tot > 0 ? Math.round(dc / tot * 100) : 0}%;background:var(--green)"></div></div>
-  </div></div>`
+  </div>
+  <button onclick="finishWorkout()" style="width:100%;margin-top:14px;padding:14px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:15px;font-weight:600;
+    background:${dc===tot && tot>0 ? 'var(--green)' : 'var(--bg3)'};
+    color:${dc===tot && tot>0 ? '#fff' : 'var(--text2)'};
+    border:2px solid ${dc===tot && tot>0 ? 'var(--green)' : 'var(--border2)'};
+    transition:all .2s">
+    ${dc===tot && tot>0 ? '🏆 ¡Entrenamiento completado! Guardar' : `💪 Finalizar entrenamiento (${dc}/${tot})`}
+  </button>
+  </div>`
 
   document.getElementById('workout-content').innerHTML = h
   renderLoads(wo, dayIdx)
+}
+
+window.finishWorkout = async function() {
+  const dayIdx = S.curDay
+  const wo = WORKOUT_DAYS.find(d => d.day_index === dayIdx)
+  const key = `d${dayIdx}`
+  const done = S.exDone[key]?.length || 0
+  const tot = wo?.workout_exercises?.length || 0
+
+  // Guardar log inmediatamente
+  clearTimeout(saveTimeout)
+  await saveLog()
+
+  // Marcar día como completado en el calendario
+  const today = getToday()
+  S.calDays[today] = 'done'
+  const prev = new Date(); prev.setDate(prev.getDate() - 1)
+  const pk = prev.toISOString().split('T')[0]
+  S.streak = S.calDays[pk] === 'done' ? S.streak + 1 : 1
+
+  await supabase.from('daily_logs').upsert({
+    client_id: USER_ID,
+    log_date: today,
+    calendar_status: 'done',
+  }, { onConflict: 'client_id,log_date' })
+
+  // Mostrar modal de resumen
+  const pct = tot > 0 ? Math.round(done / tot * 100) : 0
+  const modalHtml = `
+    <div id="finish-modal" onclick="if(event.target===this)this.remove()" style="
+      position:fixed;inset:0;background:#000a;display:flex;align-items:center;
+      justify-content:center;z-index:1000;padding:20px">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+        padding:28px;max-width:340px;width:100%;text-align:center">
+        <div style="font-size:48px;margin-bottom:8px">${pct===100 ? '🏆' : '💪'}</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:6px">
+          ${pct===100 ? '¡Entrenamiento completado!' : 'Entrenamiento guardado'}
+        </div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:20px">
+          ${wo?.title || 'Entreno'} · ${done}/${tot} ejercicios · Racha: ${S.streak} día${S.streak!==1?'s':''}  🔥
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+          <div style="background:var(--bg3);border-radius:8px;padding:12px">
+            <div style="font-size:22px;font-weight:700;color:var(--green)">${pct}%</div>
+            <div style="font-size:11px;color:var(--text2)">completado</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:8px;padding:12px">
+            <div style="font-size:22px;font-weight:700;color:var(--blue)">${S.streak}</div>
+            <div style="font-size:11px;color:var(--text2)">días de racha</div>
+          </div>
+        </div>
+        <button onclick="document.getElementById('finish-modal').remove()" class="btn btn-primary" style="width:100%">Cerrar</button>
+      </div>
+    </div>`
+  document.body.insertAdjacentHTML('beforeend', modalHtml)
+  renderWorkout(dayIdx)
 }
 
 window.toggleEx = function(woDayId, exId, dayIdx) {
