@@ -300,9 +300,12 @@ function applyClientProfile(myProfile) {
   const name = myProfile?.full_name || '—'
   document.getElementById('profile-name').textContent = name
 
-  // Avatar del cliente
+  // Avatar del cliente — no hay cache-bust en la carga inicial (es la URL guardada)
   if (CLIENT?.avatar_url) {
-    setAvatarImg(CLIENT.avatar_url)
+    const img = document.getElementById('client-avatar-img')
+    img.src = CLIENT.avatar_url
+    img.style.display = 'block'
+    document.getElementById('client-avatar-icon').style.display = 'none'
   }
 
   // Preparador
@@ -319,7 +322,8 @@ function applyClientProfile(myProfile) {
 
 function setAvatarImg(url) {
   const img = document.getElementById('client-avatar-img')
-  img.src = url
+  // Cache-bust para que el cambio de foto se vea inmediatamente
+  img.src = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now()
   img.style.display = 'block'
   document.getElementById('client-avatar-icon').style.display = 'none'
 }
@@ -329,9 +333,15 @@ window.uploadAvatar = async function(e) {
   if (!file) return
   if (file.size > 5 * 1024 * 1024) { showNotif('Imagen demasiado grande (máx. 5 MB)'); return }
 
+  // Preview inmediato antes de subir
+  const reader = new FileReader()
+  reader.onload = ev => setAvatarImg(ev.target.result)
+  reader.readAsDataURL(file)
+
   showNotif('Subiendo foto...')
-  const ext = file.name.split('.').pop()
-  const path = `client-${USER_ID}.${ext}`
+
+  // Siempre la misma ruta fija para que el upsert sobreescriba sin acumular archivos
+  const path = `client-${USER_ID}`
 
   const { error: upErr } = await supabase.storage
     .from('avatars')
@@ -344,9 +354,9 @@ window.uploadAvatar = async function(e) {
   await supabase.from('clients').update({ avatar_url: publicUrl }).eq('id', USER_ID)
   if (CLIENT) CLIENT.avatar_url = publicUrl
 
+  // Actualizar con URL real (ya con cache-bust)
   setAvatarImg(publicUrl)
   showNotif('Foto actualizada ✓')
-  // Reset input so same file can be re-selected
   e.target.value = ''
 }
 
