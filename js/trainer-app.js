@@ -248,6 +248,7 @@ function renderClientDetail() {
       <button class="tab-btn${ACTIVE_TAB==='diet'?' active':''}" data-tab="diet" onclick="switchTab('diet')"><i class="ti ti-apple"></i> Nutrición</button>
       <button class="tab-btn${ACTIVE_TAB==='cardio'?' active':''}" data-tab="cardio" onclick="switchTab('cardio')"><i class="ti ti-run"></i> Cardio</button>
       <button class="tab-btn${ACTIVE_TAB==='supplements'?' active':''}" data-tab="supplements" onclick="switchTab('supplements')"><i class="ti ti-pill"></i> Supls</button>
+      <button class="tab-btn${ACTIVE_TAB==='measures'?' active':''}" data-tab="measures" onclick="switchTab('measures')"><i class="ti ti-ruler"></i> Medidas</button>
       <button class="tab-btn${ACTIVE_TAB==='progress'?' active':''}" data-tab="progress" onclick="switchTab('progress')"><i class="ti ti-chart-line"></i> Progreso</button>
     </div>
 
@@ -272,6 +273,7 @@ function renderTab() {
   else if (ACTIVE_TAB === 'diet') renderDietTab(el)
   else if (ACTIVE_TAB === 'cardio') renderCardioTab(el)
   else if (ACTIVE_TAB === 'supplements') renderSupplementsTab(el)
+  else if (ACTIVE_TAB === 'measures') renderMeasuresTab(el)
   else if (ACTIVE_TAB === 'progress') renderProgressTab(el)
 }
 
@@ -867,6 +869,131 @@ window.saveCardioConfig = async function() {
   } else {
     showNotif('Error: ' + error.message)
   }
+}
+
+// ─── TAB: MEDIDAS ─────────────────────────────────────────────────────────────
+
+async function renderMeasuresTab(el) {
+  el.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>'
+
+  const { data: rows } = await supabase
+    .from('body_measurements')
+    .select('*')
+    .eq('client_id', SELECTED_CLIENT)
+    .order('measured_at', { ascending: false })
+
+  const all = rows || []
+  const latest = all[0]
+  const prev = all[1]
+
+  function delta(field) {
+    if (!latest || !prev || latest[field] == null || prev[field] == null) return ''
+    const d = (latest[field] - prev[field]).toFixed(1)
+    const col = parseFloat(d) < 0 ? 'var(--green)' : parseFloat(d) > 0 ? 'var(--red)' : 'var(--text2)'
+    return `<span style="font-size:11px;color:${col};margin-left:4px">${parseFloat(d) > 0 ? '+' : ''}${d}</span>`
+  }
+
+  function metricRow(label, field, unit = 'cm') {
+    const val = latest?.[field] != null ? `${latest[field]} ${unit}` : '—'
+    return `<div class="metric">
+      <div class="metric-label">${label}</div>
+      <div class="metric-val">${val}${delta(field)}</div>
+      <div class="metric-sub">${prev?.[field] != null ? `Ant: ${prev[field]} ${unit}` : 'Sin anterior'}</div>
+    </div>`
+  }
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title"><i class="ti ti-plus"></i> Añadir medición</div>
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input type="date" id="m-date" value="${new Date().toISOString().split('T')[0]}">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="form-group"><label class="form-label">Peso (kg)</label><input type="number" id="m-weight" placeholder="72.5" step="0.1" min="30" max="300"></div>
+        <div class="form-group"><label class="form-label">% Grasa</label><input type="number" id="m-fat" placeholder="18" step="0.1" min="3" max="60"></div>
+        <div class="form-group"><label class="form-label">Cintura (cm)</label><input type="number" id="m-waist" placeholder="78" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Cadera (cm)</label><input type="number" id="m-hips" placeholder="96" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Pecho (cm)</label><input type="number" id="m-chest" placeholder="90" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Brazo (cm)</label><input type="number" id="m-arm" placeholder="32" step="0.5"></div>
+        <div class="form-group"><label class="form-label">Muslo (cm)</label><input type="number" id="m-thigh" placeholder="55" step="0.5"></div>
+        <div class="form-group" style="grid-column:span 2"><label class="form-label">Notas</label><input type="text" id="m-notes" placeholder="Ej: en ayunas, por la mañana"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveMeasurement()" style="width:100%;margin-top:4px">
+        <i class="ti ti-plus"></i> Guardar medición
+      </button>
+    </div>
+
+    ${latest ? `
+    <div class="card">
+      <div class="card-title"><i class="ti ti-ruler"></i> Última medición — ${latest.measured_at}
+        ${prev ? `<span style="font-size:11px;color:var(--text2);font-weight:400;margin-left:6px">vs ${prev.measured_at}</span>` : ''}
+      </div>
+      <div class="metric-grid">
+        ${metricRow('Peso', 'weight_kg', 'kg')}
+        ${metricRow('% Grasa', 'body_fat_pct', '%')}
+        ${metricRow('Cintura', 'waist_cm')}
+        ${metricRow('Cadera', 'hips_cm')}
+        ${metricRow('Pecho', 'chest_cm')}
+        ${metricRow('Brazo', 'arm_cm')}
+        ${metricRow('Muslo', 'thigh_cm')}
+      </div>
+    </div>` : ''}
+
+    ${all.length > 0 ? `
+    <div class="card">
+      <div class="card-title"><i class="ti ti-history"></i> Historial</div>
+      ${all.map(r => `
+        <div class="row" style="align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="min-width:90px;font-size:12px;color:var(--text2)">${r.measured_at}</div>
+          <div style="flex:1;display:flex;flex-wrap:wrap;gap:5px">
+            ${r.weight_kg != null ? `<span class="tag">${r.weight_kg} kg</span>` : ''}
+            ${r.body_fat_pct != null ? `<span class="tag">${r.body_fat_pct}% grasa</span>` : ''}
+            ${r.waist_cm != null ? `<span class="tag">Cin ${r.waist_cm}</span>` : ''}
+            ${r.hips_cm != null ? `<span class="tag">Cad ${r.hips_cm}</span>` : ''}
+            ${r.chest_cm != null ? `<span class="tag">Pec ${r.chest_cm}</span>` : ''}
+            ${r.arm_cm != null ? `<span class="tag">Bra ${r.arm_cm}</span>` : ''}
+            ${r.thigh_cm != null ? `<span class="tag">Mus ${r.thigh_cm}</span>` : ''}
+            ${r.notes ? `<span style="font-size:11px;color:var(--text2);align-self:center">${r.notes}</span>` : ''}
+          </div>
+          <button onclick="deleteMeasurement('${r.id}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 4px">×</button>
+        </div>`).join('')}
+    </div>` : `<div class="card" style="text-align:center;padding:30px;color:var(--text2);font-size:13px">
+      <i class="ti ti-ruler" style="font-size:32px;display:block;margin-bottom:8px;color:var(--text3)"></i>
+      Sin mediciones registradas todavía
+    </div>`}
+  `
+}
+
+window.saveMeasurement = async function() {
+  const val = id => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? null : v }
+  const entry = {
+    client_id: SELECTED_CLIENT,
+    measured_at: document.getElementById('m-date').value,
+    weight_kg: val('m-weight'),
+    body_fat_pct: val('m-fat'),
+    waist_cm: val('m-waist'),
+    hips_cm: val('m-hips'),
+    chest_cm: val('m-chest'),
+    arm_cm: val('m-arm'),
+    thigh_cm: val('m-thigh'),
+    notes: document.getElementById('m-notes').value.trim() || null,
+  }
+  if (!entry.measured_at) { showNotif('Elige una fecha.'); return }
+  const hasData = Object.entries(entry).some(([k, v]) => !['client_id','measured_at','notes'].includes(k) && v != null)
+  if (!hasData) { showNotif('Introduce al menos un valor.'); return }
+
+  const { error } = await supabase.from('body_measurements').insert(entry)
+  if (error) { showNotif('Error: ' + error.message); return }
+  showNotif('Medición guardada ✓')
+  renderMeasuresTab(document.getElementById('tab-content'))
+}
+
+window.deleteMeasurement = async function(id) {
+  const { error } = await supabase.from('body_measurements').delete().eq('id', id)
+  if (error) { showNotif('Error: ' + error.message); return }
+  showNotif('Medición eliminada')
+  renderMeasuresTab(document.getElementById('tab-content'))
 }
 
 async function renderProgressTab(el) {
