@@ -233,6 +233,46 @@
   </div>
 </div>
 
+<!-- MODAL IMPORTAR CLIENTES -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <div class="modal-title"><i class="ti ti-file-import" style="color:var(--green)"></i> Importar clientes en masa</div>
+      <button class="modal-close" onclick="closeImportModal()">×</button>
+    </div>
+
+    <!-- PASO 1: Subir archivo -->
+    <div id="import-file-view">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">
+        Sube un archivo <strong>.csv</strong> o <strong>.xlsx</strong> con los datos de tus clientes.
+        Cada fila es un cliente. Las contraseñas vacías se generan automáticamente.
+      </p>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:12px;color:var(--text2);margin-bottom:12px">
+        <div style="font-weight:600;margin-bottom:6px;color:var(--text)">Columnas soportadas:</div>
+        <code style="font-size:11px">nombre · email · contraseña · edad · altura_cm · peso_actual · peso_objetivo · kcal_objetivo · proteina_objetivo · notas · semanas</code>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <button class="btn" onclick="downloadImportTemplate()" style="font-size:12px;flex:1;border-color:var(--border2);color:var(--text2)">
+          <i class="ti ti-download"></i> Descargar plantilla CSV
+        </button>
+      </div>
+      <label style="display:block;border:2px dashed var(--border2);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer" onclick="document.getElementById('import-file-input').click()">
+        <i class="ti ti-file-spreadsheet" style="font-size:32px;color:var(--blue);display:block;margin-bottom:8px"></i>
+        <div style="font-size:13px;font-weight:600">Haz clic para subir archivo</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">CSV o Excel (.xlsx)</div>
+        <input type="file" id="import-file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleImportFile(event)">
+      </label>
+      <div id="import-file-error" style="color:var(--red);font-size:13px;margin-top:10px;display:none"></div>
+    </div>
+
+    <!-- PASO 2: Preview -->
+    <div id="import-preview-view" style="display:none"></div>
+
+    <!-- PASO 3: Progreso / Resultados -->
+    <div id="import-progress-view" style="display:none"></div>
+  </div>
+</div>
+
 <script type="module" src="js/trainer-app.js"></script>
 </body>
 </html>

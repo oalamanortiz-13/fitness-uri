@@ -1618,6 +1618,9 @@ function renderMyProfileView({ snap, email, activeClients, inactiveClients, glob
         <span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:${subColors[subStatus]}22;color:${subColors[subStatus]};border:1px solid ${subColors[subStatus]}44">
           ● ${subLabels[subStatus]}${trialEnd ? ' · hasta ' + trialEnd : ''}
         </span>
+        <button class="btn" onclick="openImportModal()" style="font-size:12px;gap:6px;border-color:var(--green);color:var(--green)">
+          <i class="ti ti-file-import"></i> Importar clientes
+        </button>
         <button class="btn" onclick="toggleProfileEdit()" style="font-size:12px;gap:6px">
           <i class="ti ti-pencil"></i> Editar
         </button>
@@ -1795,6 +1798,289 @@ window.saveMyProfile = async function() {
 
 function escHtml(str) {
   return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+// ─── IMPORTACIÓN MASIVA DE CLIENTES ───────────────────────────────────────────
+
+let IMPORT_ROWS = []
+
+window.openImportModal = function() {
+  IMPORT_ROWS = []
+  document.getElementById('import-modal').classList.add('open')
+  document.getElementById('import-file-view').style.display = 'block'
+  document.getElementById('import-preview-view').style.display = 'none'
+  document.getElementById('import-progress-view').style.display = 'none'
+  document.getElementById('import-file-input').value = ''
+  document.getElementById('import-file-error').style.display = 'none'
+}
+
+window.closeImportModal = function() {
+  document.getElementById('import-modal').classList.remove('open')
+}
+
+window.downloadImportTemplate = function() {
+  const csv = 'nombre,email,contraseña,edad,altura_cm,peso_actual,peso_objetivo,kcal_objetivo,proteina_objetivo,notas,semanas\nJuan García,juan@email.com,Pass1234,35,175,85,75,2500,175,"Sin lesiones conocidas",12'
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'plantilla_clientes.csv'
+  a.click()
+}
+
+window.handleImportFile = async function(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  const errEl = document.getElementById('import-file-error')
+  errEl.style.display = 'none'
+
+  try {
+    let rows
+    if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+      rows = await parseExcel(file)
+    } else {
+      rows = await parseCsv(file)
+    }
+
+    if (!rows || rows.length === 0) {
+      errEl.textContent = 'El archivo está vacío o no tiene el formato correcto.'
+      errEl.style.display = 'block'
+      return
+    }
+
+    IMPORT_ROWS = rows
+    renderImportPreview(rows)
+  } catch (err) {
+    errEl.textContent = 'Error al leer el archivo: ' + err.message
+    errEl.style.display = 'block'
+  }
+}
+
+async function parseCsv(file) {
+  const text = await file.text()
+  const lines = text.split(/\r?\n/).filter(l => l.trim())
+  if (lines.length < 2) return []
+
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/[^a-záéíóúñ_]/g, ''))
+  return lines.slice(1).map(line => {
+    const cols = splitCsvLine(line)
+    const obj = {}
+    headers.forEach((h, i) => { obj[h] = (cols[i] || '').trim() })
+    return normalizeRow(obj)
+  }).filter(r => r.email && r.nombre)
+}
+
+function splitCsvLine(line) {
+  const result = []
+  let cur = '', inQuote = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (ch === '"') { inQuote = !inQuote }
+    else if (ch === ',' && !inQuote) { result.push(cur); cur = '' }
+    else { cur += ch }
+  }
+  result.push(cur)
+  return result
+}
+
+async function parseExcel(file) {
+  if (!window.XLSX) {
+    await loadScript('https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js')
+  }
+  const buf = await file.arrayBuffer()
+  const wb = XLSX.read(buf)
+  const ws = wb.Sheets[wb.SheetNames[0]]
+  const data = XLSX.utils.sheet_to_json(ws, { raw: false, defval: '' })
+  return data.map(row => {
+    const norm = {}
+    Object.entries(row).forEach(([k, v]) => { norm[k.toLowerCase().trim()] = String(v).trim() })
+    return normalizeRow(norm)
+  }).filter(r => r.email && r.nombre)
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script')
+    s.src = src
+    s.onload = resolve
+    s.onerror = () => reject(new Error('No se pudo cargar el lector de Excel'))
+    document.head.appendChild(s)
+  })
+}
+
+function normalizeRow(obj) {
+  const get = (...keys) => { for (const k of keys) { if (obj[k] != null && obj[k] !== '') return obj[k] } return '' }
+  return {
+    nombre:    get('nombre', 'name', 'full_name', 'nombre completo'),
+    email:     get('email', 'correo', 'e-mail'),
+    password:  get('contraseña', 'contrasena', 'password', 'pass', 'clave') || autoPass(),
+    age:       parseInt(get('edad', 'age')) || '',
+    height_cm: parseInt(get('altura_cm', 'altura', 'height_cm', 'height')) || '',
+    weight:    parseFloat(get('peso_actual', 'peso', 'weight', 'weight_kg')) || '',
+    weight_goal: get('peso_objetivo', 'weight_goal', 'objetivo peso'),
+    kcal:      parseInt(get('kcal_objetivo', 'kcal', 'calorias', 'calories')) || '',
+    protein:   parseInt(get('proteina_objetivo', 'proteina', 'protein', 'proteína')) || '',
+    notes:     get('notas', 'notes', 'observaciones', 'lesiones'),
+    weeks:     parseInt(get('semanas', 'weeks', 'plan_weeks', 'duración')) || 12,
+  }
+}
+
+function autoPass() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase() + Math.floor(Math.random() * 90 + 10)
+}
+
+function renderImportPreview(rows) {
+  document.getElementById('import-file-view').style.display = 'none'
+  document.getElementById('import-preview-view').style.display = 'block'
+
+  const cols = ['nombre', 'email', 'contraseña', 'edad', 'kg', 'kcal', 'sem']
+  const html = `
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">
+      Se encontraron <strong style="color:var(--text)">${rows.length} clientes</strong> listos para importar.
+      Las contraseñas auto-generadas aparecen marcadas — guárdalas o cámbialas.
+    </div>
+    <div style="overflow-x:auto;margin-bottom:14px;max-height:320px;overflow-y:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            ${['Nombre','Email','Contraseña','Edad','Peso','Kcal','Sem.'].map(h =>
+              `<th style="text-align:left;padding:6px 8px;color:var(--text2);font-weight:600;white-space:nowrap">${h}</th>`
+            ).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((r, i) => `
+            <tr style="border-bottom:1px solid var(--border);${i % 2 === 0 ? 'background:var(--bg3)' : ''}">
+              <td style="padding:6px 8px;white-space:nowrap">${escHtml(r.nombre)}</td>
+              <td style="padding:6px 8px;color:var(--text2)">${escHtml(r.email)}</td>
+              <td style="padding:6px 8px"><span class="tag" style="font-family:monospace;font-size:11px">${escHtml(r.password)}</span></td>
+              <td style="padding:6px 8px;color:var(--text2)">${r.age || '—'}</td>
+              <td style="padding:6px 8px;color:var(--text2)">${r.weight || '—'}</td>
+              <td style="padding:6px 8px;color:var(--text2)">${r.kcal || '—'}</td>
+              <td style="padding:6px 8px;color:var(--text2)">${r.weeks}</td>
+            </tr>`
+          ).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn" onclick="document.getElementById('import-file-view').style.display='block';document.getElementById('import-preview-view').style.display='none'" style="flex:1">
+        <i class="ti ti-arrow-left"></i> Cambiar archivo
+      </button>
+      <button class="btn btn-primary" onclick="runBulkImport()" style="flex:2">
+        <i class="ti ti-user-plus"></i> Importar ${rows.length} clientes
+      </button>
+    </div>
+  `
+  document.getElementById('import-preview-view').innerHTML = html
+}
+
+window.runBulkImport = async function() {
+  const rows = IMPORT_ROWS
+  if (!rows.length) return
+
+  document.getElementById('import-preview-view').style.display = 'none'
+  document.getElementById('import-progress-view').style.display = 'block'
+
+  const results = []
+  const { data: { session: trainerSession } } = await supabase.auth.getSession()
+
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i]
+    updateImportProgress(i + 1, rows.length, r.nombre)
+
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: r.email,
+        password: r.password,
+        options: { data: { role: 'client', full_name: r.nombre } }
+      })
+
+      await supabase.auth.setSession({
+        access_token: trainerSession.access_token,
+        refresh_token: trainerSession.refresh_token
+      })
+
+      if (signUpError) { results.push({ nombre: r.nombre, ok: false, msg: signUpError.message }); continue }
+      if (!data.user) { results.push({ nombre: r.nombre, ok: false, msg: 'No se creó el usuario' }); continue }
+
+      await supabase.from('profiles').upsert({ id: data.user.id, role: 'client', full_name: r.nombre, email: r.email })
+      const { error: clientErr } = await supabase.from('clients').upsert({
+        id: data.user.id,
+        trainer_id: TRAINER_ID,
+        age: r.age || null,
+        height_cm: r.height_cm || null,
+        weight_start: r.weight || null,
+        weight_goal: r.weight_goal || null,
+        kcal_goal: r.kcal || null,
+        protein_goal: r.protein || null,
+        notes: r.notes || null,
+        plan_weeks: r.weeks,
+        plan_start_date: new Date().toISOString().split('T')[0],
+      })
+
+      if (clientErr) { results.push({ nombre: r.nombre, ok: false, msg: clientErr.message }); continue }
+      results.push({ nombre: r.nombre, ok: true, email: r.email, password: r.password })
+    } catch (err) {
+      await supabase.auth.setSession({ access_token: trainerSession.access_token, refresh_token: trainerSession.refresh_token })
+      results.push({ nombre: r.nombre, ok: false, msg: err.message })
+    }
+  }
+
+  await loadClients()
+  renderImportResults(results)
+}
+
+function updateImportProgress(done, total, name) {
+  const pct = Math.round((done / total) * 100)
+  document.getElementById('import-progress-view').innerHTML = `
+    <div style="text-align:center;padding:20px 0">
+      <div style="font-size:14px;font-weight:600;margin-bottom:16px">Importando clientes...</div>
+      <div style="font-size:24px;font-weight:800;color:var(--blue);margin-bottom:4px">${done} / ${total}</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px">${escHtml(name)}</div>
+      <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%;background:var(--blue)"></div></div>
+    </div>
+  `
+}
+
+function renderImportResults(results) {
+  const ok = results.filter(r => r.ok)
+  const fail = results.filter(r => !r.ok)
+  document.getElementById('import-progress-view').innerHTML = `
+    <div style="text-align:center;margin-bottom:16px">
+      <i class="ti ti-circle-check" style="font-size:32px;color:var(--green);display:block;margin-bottom:8px"></i>
+      <div style="font-size:15px;font-weight:700">${ok.length} clientes importados</div>
+      ${fail.length ? `<div style="font-size:12px;color:var(--red);margin-top:4px">${fail.length} errores</div>` : ''}
+    </div>
+    ${ok.length ? `
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:600">IMPORTADOS CORRECTAMENTE</div>
+      <div style="max-height:200px;overflow-y:auto">
+        ${ok.map(r => `
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+            <span>${escHtml(r.nombre)}</span>
+            <span style="color:var(--text2);font-family:monospace">${escHtml(r.password)}</span>
+          </div>`).join('')}
+      </div>
+      <button class="btn" onclick="downloadImportResults(${JSON.stringify(ok).replace(/</g,'\\u003c')})" style="width:100%;margin-top:10px;font-size:12px">
+        <i class="ti ti-download"></i> Descargar contraseñas temporales
+      </button>
+    </div>` : ''}
+    ${fail.length ? `
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;color:var(--red);margin-bottom:6px;font-weight:600">ERRORES</div>
+      ${fail.map(r => `<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--red)">${escHtml(r.nombre)}</span> — ${escHtml(r.msg)}</div>`).join('')}
+    </div>` : ''}
+    <button class="btn btn-primary" onclick="closeImportModal()" style="width:100%">Cerrar</button>
+  `
+}
+
+window.downloadImportResults = function(rows) {
+  const csv = 'nombre,email,contraseña_temporal\n' + rows.map(r => `${r.nombre},${r.email},${r.password}`).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'credenciales_importados.csv'
+  a.click()
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
