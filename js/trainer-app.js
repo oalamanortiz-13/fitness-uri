@@ -395,9 +395,7 @@ window.toggleClientActive = async function(active) {
 // ─── TAB: ENTRENO ─────────────────────────────────────────────────────────────
 
 function renderWorkoutTab(el) {
-  const c = SELECTED_CLIENT_DATA.client
   el.innerHTML = `
-    ${notesCard('wo-notes', c.notes_workout, 'notes_workout', 'ti-barbell', 'Instrucciones de entrenamiento')}
     <div class="day-sel" id="wo-day-sel"></div>
     <div id="wo-day-content"></div>
   `
@@ -439,6 +437,13 @@ function renderWoDay() {
           <input type="text" id="wo-dur" value="${day?.duration || ''}" placeholder="60-70 min">
         </div>
       </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">Instrucciones del día</label>
+        <div style="display:flex;gap:6px;align-items:flex-start">
+          <textarea id="wo-day-notes" style="flex:1;min-height:60px;resize:vertical;font-size:13px" placeholder="Ej: Calienta 10 min antes, descansa 90s entre series...">${escHtml(day?.notes || '')}</textarea>
+          ${voiceMicBtn('wo-day-notes')}
+        </div>
+      </div>
       <div id="wo-ex-list">
         ${day ? renderExList(day.workout_exercises) : '<div style="font-size:12px;color:var(--text3)">Sin ejercicios todavía</div>'}
       </div>
@@ -468,11 +473,12 @@ function renderExList(exercises) {
 window.saveWorkoutDay = async function() {
   const title = document.getElementById('wo-title').value.trim()
   const duration = document.getElementById('wo-dur').value.trim()
+  const notes = document.getElementById('wo-day-notes')?.value ?? ''
   if (!title) { showNotif('Introduce el nombre del día'); return }
 
   const { data: day, error } = await supabase
     .from('workout_days')
-    .upsert({ client_id: SELECTED_CLIENT, day_index: ACTIVE_DAY, title, duration }, { onConflict: 'client_id,day_index' })
+    .upsert({ client_id: SELECTED_CLIENT, day_index: ACTIVE_DAY, title, duration, notes }, { onConflict: 'client_id,day_index' })
     .select()
     .single()
 
@@ -481,6 +487,7 @@ window.saveWorkoutDay = async function() {
     if (idx >= 0) {
       SELECTED_CLIENT_DATA.workouts[idx].title = title
       SELECTED_CLIENT_DATA.workouts[idx].duration = duration
+      SELECTED_CLIENT_DATA.workouts[idx].notes = notes
     } else {
       SELECTED_CLIENT_DATA.workouts.push({ ...day, workout_exercises: [] })
     }

@@ -475,7 +475,6 @@ function applyClientConfig() {
   }
 
   // Instrucciones del trainer por sección
-  renderInstructionBox('workout-instructions-box', CLIENT.notes_workout)
   renderInstructionBox('diet-instructions-box', CLIENT.notes_diet)
   renderInstructionBox('cardio-instructions-box', CLIENT.notes_cardio)
   renderInstructionBox('supls-instructions-box', CLIENT.notes_supls)
@@ -741,7 +740,8 @@ function renderWorkout(dayIdx) {
 
   let h = `<div class="card">
     <div class="card-title"><i class="ti ti-calendar"></i> ${wo.title}</div>
-    <div class="pill pill-i" style="margin-bottom:10px"><i class="ti ti-clock"></i> ${wo.duration || '—'}</div>`
+    <div class="pill pill-i" style="margin-bottom:10px"><i class="ti ti-clock"></i> ${wo.duration || '—'}</div>
+    ${wo.notes ? `<div style="background:var(--bg3);border-left:3px solid var(--blue);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px;font-size:13px;color:var(--text2);line-height:1.5"><i class="ti ti-info-circle" style="color:var(--blue);margin-right:4px"></i>${wo.notes.replace(/\n/g,'<br>')}</div>` : ''}`
 
   exs.forEach(ex => {
     const done = S.exDone[key].includes(ex.id)
