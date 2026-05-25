@@ -3,8 +3,10 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Qué es esto
-Plataforma multi-tenant de fitness para preparadores físicos y sus clientes.
-- **URL producción:** fitness-uri.vercel.app
+**Tu Preparador** — plataforma multi-tenant de fitness para preparadores físicos y sus clientes.
+- **Nombre:** Tu Preparador
+- **Dominio:** www.tupreparador.es
+- **URL producción (temporal):** fitness-uri.vercel.app
 - **Supabase proyecto:** cwwvwrzqlavuyqhyeepu
 - **Stack:** Vanilla HTML/CSS/JS + Supabase (Auth + PostgreSQL) + Vercel (estático)
 - **Deploy:** push a `main` → Vercel despliega automáticamente. Desarrollar en `claude/exciting-maxwell-3GNsG`, mergear a `main` para ver cambios en producción.
