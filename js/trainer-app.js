@@ -538,15 +538,11 @@ window.applyAIInstruction = async function(btn) {
   }
 
   try {
-    const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch(
       'https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-plan-editor',
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ instruction, plan })
       }
     )
