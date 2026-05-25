@@ -546,10 +546,18 @@ window.applyAIInstruction = async function(btn) {
         body: JSON.stringify({ instruction, plan })
       }
     )
-    const { actions, error } = await res.json()
+    const resData = await res.json()
+    const { actions, error, debug } = resData
 
     if (error) throw new Error(error)
-    if (!actions?.length) throw new Error('La IA no devolvió cambios. Intenta con una instrucción más clara.')
+    if (!actions?.length) {
+      resultEl.style.display = 'block'
+      resultEl.style.color = 'var(--amber)'
+      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> La IA no generó acciones.<br><small style="color:var(--text3)">${debug || 'Sin respuesta'}</small>`
+      btn.disabled = false
+      btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+      return
+    }
 
     await applyAIPlanActions(actions)
 
