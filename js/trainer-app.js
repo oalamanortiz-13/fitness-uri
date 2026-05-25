@@ -1519,21 +1519,37 @@ window.copyInviteLink = function() {
   })
 }
 
-// ─── MI PERFIL (TRAINER) ──────────────────────────────────────────────────────
+// ─── MI PERFIL / DASHBOARD NEGOCIO ───────────────────────────────────────────
 
 let TRAINER_PROFILE_SNAPSHOT = null
 
 window.openMyProfile = async function() {
-  // Marcar botón activo
   document.getElementById('my-profile-btn').style.color = 'var(--blue)'
   document.getElementById('my-profile-btn').style.borderColor = 'var(--blue)'
 
   const main = document.getElementById('main-content')
   main.innerHTML = '<div style="display:flex;justify-content:center;padding:40px"><div class="spinner"></div></div>'
 
-  const [{ data: trainerData }, { data: profileData }] = await Promise.all([
-    supabase.from('trainers').select('bio, specialty, max_clients').eq('id', TRAINER_ID).single(),
+  const today = new Date().toISOString().split('T')[0]
+  const sevenAgo = new Date(); sevenAgo.setDate(sevenAgo.getDate() - 6)
+  const sevenAgoStr = sevenAgo.toISOString().split('T')[0]
+
+  const clientIds = ALL_CLIENTS.map(c => c.id)
+
+  const [
+    { data: trainerData },
+    { data: profileData },
+    { data: todayLogs },
+    { data: weekLogs },
+  ] = await Promise.all([
+    supabase.from('trainers').select('bio, specialty, max_clients, subscription_status, trial_ends_at').eq('id', TRAINER_ID).single(),
     supabase.from('profiles').select('full_name, email').eq('id', TRAINER_ID).single(),
+    clientIds.length
+      ? supabase.from('daily_logs').select('client_id, score').eq('log_date', today).in('client_id', clientIds)
+      : Promise.resolve({ data: [] }),
+    clientIds.length
+      ? supabase.from('daily_logs').select('client_id, score').gte('log_date', sevenAgoStr).in('client_id', clientIds)
+      : Promise.resolve({ data: [] }),
   ])
 
   TRAINER_PROFILE_SNAPSHOT = {
@@ -1543,69 +1559,201 @@ window.openMyProfile = async function() {
     max_clients: trainerData?.max_clients ?? 20,
   }
 
-  renderMyProfileView(TRAINER_PROFILE_SNAPSHOT, profileData?.email || '')
+  const activeClients   = ALL_CLIENTS.filter(c => c.active !== false)
+  const inactiveClients = ALL_CLIENTS.filter(c => c.active === false)
+
+  // Score medio semanal por cliente
+  const scoreByClient = {}
+  ;(weekLogs || []).forEach(l => {
+    if (l.score == null) return
+    if (!scoreByClient[l.client_id]) scoreByClient[l.client_id] = []
+    scoreByClient[l.client_id].push(l.score)
+  })
+  const avgScores = Object.entries(scoreByClient).map(([id, scores]) => ({
+    id,
+    avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+    name: ALL_CLIENTS.find(c => c.id === id)?.profiles?.full_name || '—',
+  })).sort((a, b) => b.avg - a.avg)
+
+  const globalAvg = avgScores.length
+    ? Math.round(avgScores.reduce((a, c) => a + c.avg, 0) / avgScores.length)
+    : null
+
+  // Quién ha registrado hoy
+  const loggedToday = new Set((todayLogs || []).map(l => l.client_id))
+  const atRisk = activeClients.filter(c => !loggedToday.has(c.id))
+
+  // Suscripción
+  const subStatus = trainerData?.subscription_status || 'trial'
+  const subColors = { trial: '#BA7517', active: '#1D9E75', inactive: '#E24B4A' }
+  const subLabels = { trial: 'Trial', active: 'Pro activo', inactive: 'Sin suscripción' }
+  const trialEnd = trainerData?.trial_ends_at
+    ? new Date(trainerData.trial_ends_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+    : null
+
+  renderMyProfileView({
+    snap: TRAINER_PROFILE_SNAPSHOT,
+    email: profileData?.email || '',
+    activeClients, inactiveClients,
+    globalAvg, avgScores,
+    loggedToday, atRisk,
+    subStatus, subColors, subLabels, trialEnd,
+  })
 }
 
-function renderMyProfileView(snap, email) {
+function renderMyProfileView({ snap, email, activeClients, inactiveClients, globalAvg, avgScores, loggedToday, atRisk, subStatus, subColors, subLabels, trialEnd }) {
   const main = document.getElementById('main-content')
+
+  const scoreColor = s => s >= 80 ? 'var(--green)' : s >= 50 ? 'var(--amber)' : 'var(--red)'
+  const scoreBar = s => `<div style="height:4px;border-radius:2px;background:var(--border);margin-top:4px"><div style="height:4px;border-radius:2px;background:${scoreColor(s)};width:${s}%"></div></div>`
+
   main.innerHTML = `
-    <div style="max-width:520px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
-        <i class="ti ti-user-circle" style="font-size:22px;color:var(--blue)"></i>
-        <h2 style="font-size:16px;font-weight:700;margin:0">Mi perfil</h2>
+    <!-- CABECERA -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div>
+        <h2 style="font-size:20px;font-weight:700;margin:0">${escHtml(snap.full_name) || 'Mi negocio'}</h2>
+        ${snap.specialty ? `<div style="font-size:13px;color:var(--text2);margin-top:3px">${escHtml(snap.specialty)}</div>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:${subColors[subStatus]}22;color:${subColors[subStatus]};border:1px solid ${subColors[subStatus]}44">
+          ● ${subLabels[subStatus]}${trialEnd ? ' · hasta ' + trialEnd : ''}
+        </span>
+        <button class="btn" onclick="toggleProfileEdit()" style="font-size:12px;gap:6px">
+          <i class="ti ti-pencil"></i> Editar
+        </button>
+      </div>
+    </div>
+
+    <!-- MÉTRICAS GRANDES -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+      <div class="card" style="text-align:center;padding:16px 10px">
+        <div style="font-size:36px;font-weight:800;color:var(--blue);line-height:1">${activeClients.length}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:6px;font-weight:500">ACTIVOS</div>
+      </div>
+      <div class="card" style="text-align:center;padding:16px 10px">
+        <div style="font-size:36px;font-weight:800;color:var(--text3);line-height:1">${inactiveClients.length}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:6px;font-weight:500">INACTIVOS</div>
+      </div>
+      <div class="card" style="text-align:center;padding:16px 10px">
+        <div style="font-size:36px;font-weight:800;color:${globalAvg != null ? scoreColor(globalAvg) : 'var(--text3)'};line-height:1">${globalAvg != null ? globalAvg + '%' : '—'}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:6px;font-weight:500">MEDIA 7 DÍAS</div>
+      </div>
+      <div class="card" style="text-align:center;padding:16px 10px">
+        <div style="font-size:36px;font-weight:800;color:${atRisk.length > 0 ? 'var(--amber)' : 'var(--green)'};line-height:1">${atRisk.length}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:6px;font-weight:500">SIN HOY</div>
+      </div>
+    </div>
+
+    <!-- DOS COLUMNAS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+
+      <!-- ACTIVIDAD HOY -->
+      <div class="card" style="padding:14px">
+        <div class="card-title" style="margin-bottom:10px"><i class="ti ti-calendar-today"></i> Actividad hoy</div>
+        ${activeClients.length === 0
+          ? '<div style="font-size:12px;color:var(--text3)">Sin clientes activos</div>'
+          : activeClients.map(c => {
+              const logged = loggedToday.has(c.id)
+              const todayScore = logged ? (Array.from(loggedToday).includes(c.id) ? null : null) : null
+              return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+                <span style="font-size:15px">${logged ? '✅' : '⬜'}</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(c.profiles?.full_name || '—')}</div>
+                </div>
+                <span style="font-size:11px;color:${logged ? 'var(--green)' : 'var(--text3)'}">${logged ? 'Registrado' : 'Pendiente'}</span>
+              </div>`
+            }).join('')
+        }
       </div>
 
+      <!-- RANKING SEMANAL -->
+      <div class="card" style="padding:14px">
+        <div class="card-title" style="margin-bottom:10px"><i class="ti ti-trophy"></i> Ranking 7 días</div>
+        ${avgScores.length === 0
+          ? '<div style="font-size:12px;color:var(--text3)">Sin datos de la semana</div>'
+          : avgScores.map((c, i) => `
+              <div style="padding:6px 0;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+                  <span style="font-size:12px;color:var(--text3);width:16px;text-align:right">${i + 1}</span>
+                  <span style="font-size:13px;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(c.name)}</span>
+                  <span style="font-size:13px;font-weight:700;color:${scoreColor(c.avg)}">${c.avg}%</span>
+                </div>
+                ${scoreBar(c.avg)}
+              </div>`
+          ).join('')
+        }
+      </div>
+    </div>
+
+    <!-- CLIENTES SIN REGISTRAR HOY -->
+    ${atRisk.length > 0 ? `
+    <div class="card" style="border-color:var(--amber)44;margin-bottom:16px">
+      <div class="card-title" style="color:var(--amber)"><i class="ti ti-alert-triangle"></i> Sin registro hoy (${atRisk.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+        ${atRisk.map(c => `<span class="tag" style="border-color:var(--amber)44;color:var(--amber)">${escHtml(c.profiles?.full_name || '—')}</span>`).join('')}
+      </div>
+    </div>` : `
+    <div class="card" style="border-color:var(--green)44;margin-bottom:16px;text-align:center;padding:14px">
+      <i class="ti ti-circle-check" style="color:var(--green);font-size:20px"></i>
+      <span style="font-size:13px;color:var(--green);font-weight:600;margin-left:8px">Todos los clientes han registrado hoy</span>
+    </div>`}
+
+    <!-- EDITAR PERFIL (colapsable) -->
+    <div id="profile-edit-section" style="display:none">
       <div class="card">
-        <div class="card-title"><i class="ti ti-id-badge"></i> Información básica</div>
+        <div class="card-title"><i class="ti ti-pencil"></i> Editar perfil</div>
         <div class="form-group">
           <label class="form-label">Nombre completo</label>
-          <input type="text" id="tp-name" value="${escHtml(snap.full_name)}" placeholder="Tu nombre">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" value="${escHtml(email)}" disabled style="opacity:.5;cursor:not-allowed">
+          <input type="text" id="tp-name" value="${escHtml(snap.full_name)}">
         </div>
         <div class="form-group">
           <label class="form-label">Especialidad</label>
-          <input type="text" id="tp-specialty" value="${escHtml(snap.specialty)}" placeholder="Ej: Fuerza y hipertrofia, Pérdida de peso...">
+          <input type="text" id="tp-specialty" value="${escHtml(snap.specialty)}" placeholder="Fuerza y hipertrofia...">
         </div>
         <div class="form-group">
           <label class="form-label">Máximo de clientes activos</label>
           <input type="number" id="tp-max" value="${snap.max_clients}" min="1" max="200">
         </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title"><i class="ti ti-notes"></i> Sobre mí (bio)</div>
-        <textarea id="tp-bio" style="min-height:120px" placeholder="Cuéntale a tus clientes quién eres, tu experiencia, tu filosofía...">${escHtml(snap.bio)}</textarea>
-      </div>
-
-      <div style="display:flex;gap:10px;margin-top:4px">
-        <button class="btn" id="tp-discard-btn" onclick="discardMyProfile()" style="flex:1;border-color:var(--border2);color:var(--text2)" disabled>
-          <i class="ti ti-arrow-back-up"></i> Descartar cambios
-        </button>
-        <button class="btn btn-primary" onclick="saveMyProfile()" style="flex:1">
-          <i class="ti ti-device-floppy"></i> Guardar
-        </button>
+        <div class="form-group">
+          <label class="form-label">Bio</label>
+          <textarea id="tp-bio" style="min-height:100px">${escHtml(snap.bio)}</textarea>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn" id="tp-discard-btn" onclick="discardMyProfile()" style="flex:1;opacity:.4" disabled>
+            <i class="ti ti-arrow-back-up"></i> Descartar
+          </button>
+          <button class="btn btn-primary" onclick="saveMyProfile()" style="flex:1">
+            <i class="ti ti-device-floppy"></i> Guardar
+          </button>
+        </div>
       </div>
     </div>
   `
 
-  // Activar botón descartar cuando hay cambios
   const inputs = ['tp-name', 'tp-specialty', 'tp-max', 'tp-bio']
   inputs.forEach(id => {
-    document.getElementById(id).addEventListener('input', checkMyProfileDirty)
+    const el = document.getElementById(id)
+    if (el) el.addEventListener('input', checkMyProfileDirty)
   })
+}
+
+window.toggleProfileEdit = function() {
+  const sec = document.getElementById('profile-edit-section')
+  if (!sec) return
+  const visible = sec.style.display !== 'none'
+  sec.style.display = visible ? 'none' : 'block'
+  if (!visible) sec.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function checkMyProfileDirty() {
   const snap = TRAINER_PROFILE_SNAPSHOT
-  const dirty =
-    document.getElementById('tp-name').value !== snap.full_name ||
+  const name = document.getElementById('tp-name')?.value
+  const dirty = name !== undefined && (
+    name !== snap.full_name ||
     document.getElementById('tp-specialty').value !== snap.specialty ||
     document.getElementById('tp-max').value !== String(snap.max_clients) ||
     document.getElementById('tp-bio').value !== snap.bio
-
+  )
   const btn = document.getElementById('tp-discard-btn')
   if (!btn) return
   btn.disabled = !dirty
@@ -1637,17 +1785,10 @@ window.saveMyProfile = async function() {
     supabase.from('profiles').update({ full_name: name }).eq('id', TRAINER_ID),
   ])
 
-  if (e1 || e2) {
-    showNotif('Error al guardar: ' + (e1?.message || e2?.message))
-    return
-  }
+  if (e1 || e2) { showNotif('Error al guardar: ' + (e1?.message || e2?.message)); return }
 
-  // Actualizar snapshot con los valores guardados
   TRAINER_PROFILE_SNAPSHOT = { full_name: name, bio, specialty, max_clients: max }
-
-  // Actualizar nombre en sidebar
   document.getElementById('trainer-name-logo').textContent = name
-
   checkMyProfileDirty()
   showNotif('Perfil guardado ✓')
 }
