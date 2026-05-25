@@ -397,7 +397,7 @@ window.toggleClientActive = async function(active) {
 function renderWorkoutTab(el) {
   const c = SELECTED_CLIENT_DATA.client
   el.innerHTML = `
-    ${notesCard('wo-notes', c.notes_workout, 'saveWorkoutNotes', 'ti-barbell', 'Instrucciones de entrenamiento')}
+    ${notesCard('wo-notes', c.notes_workout, 'notes_workout', 'ti-barbell', 'Instrucciones de entrenamiento')}
     <div class="day-sel" id="wo-day-sel"></div>
     <div id="wo-day-content"></div>
   `
@@ -405,12 +405,6 @@ function renderWorkoutTab(el) {
   renderWoDay()
 }
 
-window.saveWorkoutNotes = async function() {
-  const notes = document.getElementById('wo-notes').value
-  const { error } = await supabase.from('clients').update({ notes_workout: notes }).eq('id', SELECTED_CLIENT)
-  if (!error) { SELECTED_CLIENT_DATA.client.notes_workout = notes; showNotif('Instrucciones guardadas ✓') }
-  else showNotif('Error: ' + error.message)
-}
 
 function renderWoDaySel() {
   const sel = document.getElementById('wo-day-sel')
@@ -594,7 +588,7 @@ function renderDietTab(el) {
   const meals = (diet?.diet_meals || []).slice().sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
 
   el.innerHTML = `
-    ${notesCard('diet-notes', c.notes_diet, 'saveDietNotes', 'ti-apple', 'Instrucciones de nutrición')}
+    ${notesCard('diet-notes', c.notes_diet, 'notes_diet', 'ti-apple', 'Instrucciones de nutrición')}
     <div class="card" id="meals-container">
       <div class="card-title"><i class="ti ti-apple"></i> Plan de dieta</div>
       ${meals.length === 0
@@ -613,12 +607,6 @@ function renderDietTab(el) {
   initMealDrag()
 }
 
-window.saveDietNotes = async function() {
-  const notes = document.getElementById('diet-notes').value
-  const { error } = await supabase.from('clients').update({ notes_diet: notes }).eq('id', SELECTED_CLIENT)
-  if (!error) { SELECTED_CLIENT_DATA.client.notes_diet = notes; showNotif('Instrucciones guardadas ✓') }
-  else showNotif('Error: ' + error.message)
-}
 
 function renderMealCard(meal) {
   return `
@@ -873,7 +861,7 @@ function renderSupplementsTab(el) {
   const { supplements } = SELECTED_CLIENT_DATA
   const c = SELECTED_CLIENT_DATA.client
   el.innerHTML = `
-    ${notesCard('supls-notes', c.notes_supls, 'saveSuplsNotes', 'ti-pill', 'Instrucciones de suplementación')}
+    ${notesCard('supls-notes', c.notes_supls, 'notes_supls', 'ti-pill', 'Instrucciones de suplementación')}
     <div class="card">
       <div class="card-title"><i class="ti ti-pill"></i> Suplementación</div>
       <div id="supls-admin-list">
@@ -929,12 +917,6 @@ function renderSuplEditRow(s) {
   </div>`
 }
 
-window.saveSuplsNotes = async function() {
-  const notes = document.getElementById('supls-notes').value
-  const { error } = await supabase.from('clients').update({ notes_supls: notes }).eq('id', SELECTED_CLIENT)
-  if (!error) { SELECTED_CLIENT_DATA.client.notes_supls = notes; showNotif('Instrucciones guardadas ✓') }
-  else showNotif('Error: ' + error.message)
-}
 
 window.addSupplement = async function() {
   const name = document.getElementById('s-name').value.trim()
@@ -1025,7 +1007,7 @@ async function renderCardioTab(el) {
   const stepsWithData = allLogs.filter(l => l.steps > 0)
 
   el.innerHTML = `
-    ${notesCard('cardio-notes', c.notes_cardio, 'saveCardioNotes', 'ti-run', 'Instrucciones de cardio')}
+    ${notesCard('cardio-notes', c.notes_cardio, 'notes_cardio', 'ti-run', 'Instrucciones de cardio')}
     <div class="metric-grid">
       <div class="metric">
         <div class="metric-label">Media pasos/día</div>
@@ -1147,12 +1129,6 @@ window.toggleCardioType = function(id) {
   btn.style.color       = active ? 'var(--blue)' : 'var(--text2)'
 }
 
-window.saveCardioNotes = async function() {
-  const notes = document.getElementById('cardio-notes').value
-  const { error } = await supabase.from('clients').update({ notes_cardio: notes }).eq('id', SELECTED_CLIENT)
-  if (!error) { SELECTED_CLIENT_DATA.client.notes_cardio = notes; showNotif('Instrucciones guardadas ✓') }
-  else showNotif('Error: ' + error.message)
-}
 
 window.saveCardioConfig = async function() {
   const steps    = parseInt(document.getElementById('c-steps').value) || 9000
@@ -2123,7 +2099,7 @@ function voiceMicBtn(targetId) {
   return `<button class="btn" onclick="startVoice('${targetId}', this)" title="Dictar por voz" style="padding:8px 10px;flex-shrink:0"><i class="ti ti-microphone"></i></button>`
 }
 
-function notesCard(fieldId, value, saveFn, icon, label) {
+function notesCard(fieldId, value, dbColumn, icon, label) {
   return `
   <div class="card" style="margin-bottom:12px">
     <div class="card-title"><i class="ti ${icon}"></i> ${label}</div>
@@ -2131,10 +2107,40 @@ function notesCard(fieldId, value, saveFn, icon, label) {
       <textarea id="${fieldId}" style="flex:1;min-height:72px;resize:vertical" placeholder="Escribe o dicta las instrucciones para tu cliente...">${escHtml(value || '')}</textarea>
       ${voiceMicBtn(fieldId)}
     </div>
-    <button class="btn btn-primary" onclick="${saveFn}()" style="margin-top:8px;font-size:12px;padding:7px 14px">
+    <button class="btn btn-primary" onclick="saveNotes('${dbColumn}','${fieldId}',this)" style="margin-top:8px;font-size:12px;padding:7px 14px">
       <i class="ti ti-device-floppy"></i> Guardar instrucciones
     </button>
   </div>`
+}
+
+window.saveNotes = async function(dbColumn, fieldId, btn) {
+  const notes = document.getElementById(fieldId)?.value ?? ''
+  const orig = btn.innerHTML
+  btn.disabled = true
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Guardando...'
+
+  const { error } = await supabase.from('clients')
+    .update({ [dbColumn]: notes })
+    .eq('id', SELECTED_CLIENT)
+
+  if (!error) {
+    SELECTED_CLIENT_DATA.client[dbColumn] = notes
+    btn.innerHTML = '<i class="ti ti-circle-check"></i> ¡Guardado!'
+    btn.style.background = 'var(--green)'
+    setTimeout(() => {
+      btn.innerHTML = orig
+      btn.style.background = ''
+      btn.disabled = false
+    }, 2000)
+  } else {
+    btn.innerHTML = '<i class="ti ti-alert-circle"></i> Error: ' + error.message
+    btn.style.background = 'var(--red)'
+    setTimeout(() => {
+      btn.innerHTML = orig
+      btn.style.background = ''
+      btn.disabled = false
+    }, 3000)
+  }
 }
 
 let _activeRecognition = null
