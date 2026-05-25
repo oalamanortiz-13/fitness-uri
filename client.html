@@ -104,6 +104,7 @@
   <div class="page-header" style="padding-top:8px">
     <h1>Entrenamiento</h1>
   </div>
+  <div id="workout-instructions-box"></div>
   <div class="day-sel" id="day-sel"></div>
   <div class="card">
     <div class="card-title"><i class="ti ti-clock"></i> Timer de descanso</div>
@@ -133,6 +134,7 @@
 <!-- NUTRICIÓN -->
 <div class="sec" id="nutri">
   <div class="page-header" style="padding-top:8px"><h1>Nutrición</h1></div>
+  <div id="diet-instructions-box"></div>
   <div class="metric-grid">
     <div class="metric"><div class="metric-label">Kcal objetivo</div><div class="metric-val" id="nut-kcal">—</div><div class="metric-sub">objetivo diario</div></div>
     <div class="metric"><div class="metric-label">Proteína</div><div class="metric-val" id="nut-prot">—</div><div class="metric-sub">prioridad absoluta</div></div>
@@ -163,6 +165,7 @@
 
   <div class="card" id="supls-card">
     <div class="card-title"><i class="ti ti-pill"></i> Suplementación diaria</div>
+    <div id="supls-instructions-box"></div>
     <div id="supls-list"></div>
   </div>
   <button id="nutri-finish-btn" onclick="finishNutrition()" style="width:100%;padding:14px;border-radius:var(--radius-sm);border:2px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:15px;font-weight:600;transition:all .2s">
@@ -173,6 +176,7 @@
 <!-- CARDIO -->
 <div class="sec" id="cardio">
   <div class="page-header" style="padding-top:8px"><h1>Cardio y pasos</h1></div>
+  <div id="cardio-instructions-box"></div>
   <div class="card">
     <div class="card-title"><i class="ti ti-shoe"></i> Pasos hoy</div>
     <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">

@@ -395,13 +395,21 @@ window.toggleClientActive = async function(active) {
 // ─── TAB: ENTRENO ─────────────────────────────────────────────────────────────
 
 function renderWorkoutTab(el) {
-  const { workouts } = SELECTED_CLIENT_DATA
+  const c = SELECTED_CLIENT_DATA.client
   el.innerHTML = `
+    ${notesCard('wo-notes', c.notes_workout, 'saveWorkoutNotes', 'ti-barbell', 'Instrucciones de entrenamiento')}
     <div class="day-sel" id="wo-day-sel"></div>
     <div id="wo-day-content"></div>
   `
   renderWoDaySel()
   renderWoDay()
+}
+
+window.saveWorkoutNotes = async function() {
+  const notes = document.getElementById('wo-notes').value
+  const { error } = await supabase.from('clients').update({ notes_workout: notes }).eq('id', SELECTED_CLIENT)
+  if (!error) { SELECTED_CLIENT_DATA.client.notes_workout = notes; showNotif('Instrucciones guardadas ✓') }
+  else showNotif('Error: ' + error.message)
 }
 
 function renderWoDaySel() {
@@ -582,9 +590,11 @@ window.deleteExercise = async function(exId) {
 
 function renderDietTab(el) {
   const { diet } = SELECTED_CLIENT_DATA
+  const c = SELECTED_CLIENT_DATA.client
   const meals = (diet?.diet_meals || []).slice().sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
 
   el.innerHTML = `
+    ${notesCard('diet-notes', c.notes_diet, 'saveDietNotes', 'ti-apple', 'Instrucciones de nutrición')}
     <div class="card" id="meals-container">
       <div class="card-title"><i class="ti ti-apple"></i> Plan de dieta</div>
       ${meals.length === 0
@@ -601,6 +611,13 @@ function renderDietTab(el) {
   `
 
   initMealDrag()
+}
+
+window.saveDietNotes = async function() {
+  const notes = document.getElementById('diet-notes').value
+  const { error } = await supabase.from('clients').update({ notes_diet: notes }).eq('id', SELECTED_CLIENT)
+  if (!error) { SELECTED_CLIENT_DATA.client.notes_diet = notes; showNotif('Instrucciones guardadas ✓') }
+  else showNotif('Error: ' + error.message)
 }
 
 function renderMealCard(meal) {
@@ -854,7 +871,9 @@ function timingSelect(id, selected) {
 
 function renderSupplementsTab(el) {
   const { supplements } = SELECTED_CLIENT_DATA
+  const c = SELECTED_CLIENT_DATA.client
   el.innerHTML = `
+    ${notesCard('supls-notes', c.notes_supls, 'saveSuplsNotes', 'ti-pill', 'Instrucciones de suplementación')}
     <div class="card">
       <div class="card-title"><i class="ti ti-pill"></i> Suplementación</div>
       <div id="supls-admin-list">
@@ -908,6 +927,13 @@ function renderSuplEditRow(s) {
       <button class="btn" onclick="cancelEditSupl('${s.id}')" style="font-size:12px;padding:6px 10px">✕</button>
     </div>
   </div>`
+}
+
+window.saveSuplsNotes = async function() {
+  const notes = document.getElementById('supls-notes').value
+  const { error } = await supabase.from('clients').update({ notes_supls: notes }).eq('id', SELECTED_CLIENT)
+  if (!error) { SELECTED_CLIENT_DATA.client.notes_supls = notes; showNotif('Instrucciones guardadas ✓') }
+  else showNotif('Error: ' + error.message)
 }
 
 window.addSupplement = async function() {
@@ -999,6 +1025,7 @@ async function renderCardioTab(el) {
   const stepsWithData = allLogs.filter(l => l.steps > 0)
 
   el.innerHTML = `
+    ${notesCard('cardio-notes', c.notes_cardio, 'saveCardioNotes', 'ti-run', 'Instrucciones de cardio')}
     <div class="metric-grid">
       <div class="metric">
         <div class="metric-label">Media pasos/día</div>
@@ -1120,6 +1147,13 @@ window.toggleCardioType = function(id) {
   btn.style.color       = active ? 'var(--blue)' : 'var(--text2)'
 }
 
+window.saveCardioNotes = async function() {
+  const notes = document.getElementById('cardio-notes').value
+  const { error } = await supabase.from('clients').update({ notes_cardio: notes }).eq('id', SELECTED_CLIENT)
+  if (!error) { SELECTED_CLIENT_DATA.client.notes_cardio = notes; showNotif('Instrucciones guardadas ✓') }
+  else showNotif('Error: ' + error.message)
+}
+
 window.saveCardioConfig = async function() {
   const steps    = parseInt(document.getElementById('c-steps').value) || 9000
   const cardio   = parseInt(document.getElementById('c-cardio').value) || 185
@@ -1196,7 +1230,7 @@ async function renderMeasuresTab(el) {
         <div class="form-group"><label class="form-label">Muslo I (cm)</label><input type="number" id="m-thigh-l" placeholder="55" step="0.5"></div>
         <div class="form-group"><label class="form-label">Gemelo D (cm)</label><input type="number" id="m-calf-r" placeholder="36" step="0.5"></div>
         <div class="form-group"><label class="form-label">Gemelo I (cm)</label><input type="number" id="m-calf-l" placeholder="36" step="0.5"></div>
-        <div class="form-group" style="grid-column:span 3"><label class="form-label">Notas</label><input type="text" id="m-notes" placeholder="Ej: en ayunas, por la mañana"></div>
+        <div class="form-group" style="grid-column:span 3"><label class="form-label">Notas</label><div style="display:flex;gap:6px"><input type="text" id="m-notes" placeholder="Ej: en ayunas, por la mañana" style="flex:1">${voiceMicBtn('m-notes')}</div></div>
       </div>
       <button class="btn btn-primary" onclick="saveMeasurement()" style="width:100%;margin-top:4px">
         <i class="ti ti-plus"></i> Guardar medición
@@ -2081,6 +2115,54 @@ window.downloadImportResults = function(rows) {
   a.href = URL.createObjectURL(blob)
   a.download = 'credenciales_importados.csv'
   a.click()
+}
+
+// ─── VOZ E INSTRUCCIONES ──────────────────────────────────────────────────────
+
+function voiceMicBtn(targetId) {
+  return `<button class="btn" onclick="startVoice('${targetId}', this)" title="Dictar por voz" style="padding:8px 10px;flex-shrink:0"><i class="ti ti-microphone"></i></button>`
+}
+
+function notesCard(fieldId, value, saveFn, icon, label) {
+  return `
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title"><i class="ti ${icon}"></i> ${label}</div>
+    <div style="display:flex;gap:8px;align-items:flex-start">
+      <textarea id="${fieldId}" style="flex:1;min-height:72px;resize:vertical" placeholder="Escribe o dicta las instrucciones para tu cliente...">${escHtml(value || '')}</textarea>
+      ${voiceMicBtn(fieldId)}
+    </div>
+    <button class="btn btn-primary" onclick="${saveFn}()" style="margin-top:8px;font-size:12px;padding:7px 14px">
+      <i class="ti ti-device-floppy"></i> Guardar instrucciones
+    </button>
+  </div>`
+}
+
+window.startVoice = function(targetId, btn) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+  if (!SR) { showNotif('Tu navegador no soporta dictado por voz (usa Chrome)'); return }
+  const r = new SR()
+  r.lang = 'es-ES'
+  r.continuous = false
+  r.interimResults = false
+
+  const reset = () => {
+    btn.style.color = ''
+    btn.style.borderColor = ''
+    btn.innerHTML = '<i class="ti ti-microphone"></i>'
+  }
+  btn.style.color = 'var(--red)'
+  btn.style.borderColor = 'var(--red)'
+  btn.innerHTML = '<i class="ti ti-microphone" style="animation:pulse 1s infinite"></i>'
+
+  r.onresult = e => {
+    const text = e.results[0][0].transcript
+    const el = document.getElementById(targetId)
+    if (el) el.value = (el.value ? el.value + ' ' : '') + text
+    reset()
+  }
+  r.onerror = reset
+  r.onend = reset
+  r.start()
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────

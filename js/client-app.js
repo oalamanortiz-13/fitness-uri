@@ -474,6 +474,12 @@ function applyClientConfig() {
       : '<span style="font-size:12px;color:var(--text3)">Tu preparador no ha asignado tipos todavía</span>'
   }
 
+  // Instrucciones del trainer por sección
+  renderInstructionBox('workout-instructions-box', CLIENT.notes_workout)
+  renderInstructionBox('diet-instructions-box', CLIENT.notes_diet)
+  renderInstructionBox('cardio-instructions-box', CLIENT.notes_cardio)
+  renderInstructionBox('supls-instructions-box', CLIENT.notes_supls)
+
   // Recordatorio de movimiento — intervalo configurado por trainer o por defecto 45 min
   if (CLIENT.reminder_interval_min) {
     setSedInterval(CLIENT.reminder_interval_min)
@@ -485,6 +491,19 @@ function applyClientConfig() {
     <button class="btn" onclick="quickQ('¿Cómo progreso bien esta semana?')" style="font-size:11px;padding:6px 10px">📈 Consejos</button>
     <button class="btn" onclick="quickQ('¿Qué alternativa tiene el ejercicio de hoy?')" style="font-size:11px;padding:6px 10px">🔄 Alternativa</button>
   `
+}
+
+function renderInstructionBox(elId, text) {
+  const el = document.getElementById(elId)
+  if (!el) return
+  if (!text || !text.trim()) { el.innerHTML = ''; return }
+  el.innerHTML = `
+    <div style="background:var(--bg3);border-left:3px solid var(--blue);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:12px;font-size:13px;color:var(--text2);line-height:1.5">
+      <div style="font-size:11px;font-weight:600;color:var(--blue);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">
+        <i class="ti ti-info-circle"></i> Instrucciones de tu preparador
+      </div>
+      ${text.replace(/\n/g, '<br>')}
+    </div>`
 }
 
 // ─── SAVE LOG (debounced) ─────────────────────────────────────────────────────
