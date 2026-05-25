@@ -2137,30 +2137,52 @@ function notesCard(fieldId, value, saveFn, icon, label) {
   </div>`
 }
 
+let _activeRecognition = null
+
 window.startVoice = function(targetId, btn) {
+  // Toggle: si ya está grabando, parar
+  if (_activeRecognition) {
+    _activeRecognition.stop()
+    _activeRecognition = null
+    btn.style.color = ''
+    btn.style.borderColor = ''
+    btn.innerHTML = '<i class="ti ti-microphone"></i>'
+    return
+  }
+
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition
   if (!SR) { showNotif('Tu navegador no soporta dictado por voz (usa Chrome)'); return }
+
   const r = new SR()
   r.lang = 'es-ES'
-  r.continuous = false
+  r.continuous = true
   r.interimResults = false
+  _activeRecognition = r
+
+  btn.style.color = 'var(--red)'
+  btn.style.borderColor = 'var(--red)'
+  btn.innerHTML = '<i class="ti ti-microphone"></i> Escuchando...'
 
   const reset = () => {
+    _activeRecognition = null
     btn.style.color = ''
     btn.style.borderColor = ''
     btn.innerHTML = '<i class="ti ti-microphone"></i>'
   }
-  btn.style.color = 'var(--red)'
-  btn.style.borderColor = 'var(--red)'
-  btn.innerHTML = '<i class="ti ti-microphone" style="animation:pulse 1s infinite"></i>'
 
   r.onresult = e => {
-    const text = e.results[0][0].transcript
+    const text = Array.from(e.results)
+      .filter(res => res.isFinal)
+      .map(res => res[0].transcript)
+      .join(' ')
+    if (!text) return
     const el = document.getElementById(targetId)
     if (el) el.value = (el.value ? el.value + ' ' : '') + text
+  }
+  r.onerror = e => {
+    if (e.error !== 'aborted') showNotif('Error de micrófono: ' + e.error)
     reset()
   }
-  r.onerror = reset
   r.onend = reset
   r.start()
 }
