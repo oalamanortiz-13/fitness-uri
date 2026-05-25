@@ -162,6 +162,8 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - `006_measurements_split_fields` — `shoulder_cm`, `arm_r_cm`, `arm_l_cm`, `thigh_r_cm`, `thigh_l_cm`, `calf_r_cm`, `calf_l_cm`
 - `007_cardio_types` — `cardio_types TEXT[]` en clients
 - `008_supplement_timing` — `timing TEXT` en supplements
+- `009_section_notes` — `notes_workout`, `notes_diet`, `notes_cardio`, `notes_supls TEXT` en clients
+- `010_workout_day_notes` — `notes TEXT` en workout_days (instrucciones por día visibles en cliente)
 
 ## Funcionalidades implementadas (producción)
 - [x] Sistema de puntuación diaria (entrenamiento 40% + nutrición 40% + cardio 20%)
@@ -173,19 +175,31 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - [x] Recordatorio anti-sedentarismo configurable (por cliente o por trainer en pestaña Cardio)
 - [x] Pestaña Cardio en portal trainer (objetivos, gráfica, historial)
 - [x] Pestaña Medidas en portal trainer (hombros, pecho, brazos D/I, cintura, cadera, muslos D/I, gemelos D/I)
-- [x] Mi Perfil del trainer — bio, especialidad, máx. clientes; botón "Descartar cambios" (snapshot del último guardado)
+- [x] Mi Perfil del trainer — dashboard de negocio: métricas grandes (activos/inactivos/media 7 días/sin registro hoy), actividad diaria por cliente, ranking semanal con barras de score, alerta clientes sin registrar; formulario colapsable editar perfil con descartar cambios
+- [x] Importación masiva de clientes desde CSV o Excel (.xlsx) con preview, barra de progreso y descarga de credenciales temporales
 - [x] Tipos de cardio asignables por cliente (14 opciones); visibles en portal cliente agrupados con iconos
 - [x] Suplementos suman proteína a totales de nutrición al marcarlos; score de nutrición los incluye
 - [x] Edición inline/modal de ejercicios, alimentos de dieta y suplementos (botón ✎)
 - [x] Drag & drop para reordenar bloques de comida en pestaña Nutrición del trainer (handle ⠿, persiste order_index)
 - [x] Horario de suplementos (mañana/tarde/noche/pre-workout/post-workout) con tag de color en trainer y agrupación en cliente
+- [x] Instrucciones por sección (Nutrición, Cardio, Suplementación) — textarea + dictado por voz (Web Speech API, es-ES), guardado con feedback visual en botón; cliente ve instrucciones como caja azul al inicio de cada sección
+- [x] Instrucciones por día de entrenamiento — campo `notes` en workout_days, dictado por voz, se guarda con el día; cliente ve la nota dentro de la tarjeta del día
+- [x] Editor de plan con IA (Gemini 2.0 Flash) — trainer dicta instrucción en lenguaje natural, Edge Function `ai-plan-editor` la procesa y devuelve acciones JSON que se aplican al plan al momento (add/edit/remove_exercise, update_day)
 
 ## Notas de arquitectura (sesión 23/05)
 - `SUPL_TIMINGS` y `CARDIO_TYPES` son constantes definidas en `trainer-app.js`; los mismos valores están duplicados inline en `client-app.js` (candidato a extraer a un módulo compartido)
 - Drag & drop de comidas usa HTML5 nativo (`draggable`), activado solo desde el handle `.drag-handle` vía `mousedown` para evitar conflictos con inputs
 - El snapshot de "Mi Perfil" se guarda en `TRAINER_PROFILE_SNAPSHOT`; al guardar se actualiza el snapshot y el nombre en sidebar
 
+## Notas de arquitectura (sesión 25/05)
+- `notesCard(fieldId, value, dbColumn, icon, label)` — helper en trainer-app.js que genera tarjeta con textarea + mic + botón guardar; llama a `saveNotes(dbColumn, fieldId, btn)` que hace update directo a `clients`
+- `startVoice(targetId, btn)` — toggle: 1er click inicia SpeechRecognition (continuous, es-ES), 2º click para y resetea; acumula resultados isFinal en el textarea; `_activeRecognition` previene sesiones múltiples
+- `applyAIInstruction(btn)` — recoge plan completo de `SELECTED_CLIENT_DATA.workouts`, llama Edge Function `ai-plan-editor`, aplica acciones via `applyAIPlanActions(actions)`
+- Edge Function `ai-plan-editor` — Gemini 2.0 Flash, `verify_jwt:false`, usa `GEMINI_API_KEY` secret, fuerza `responseMimeType:'application/json'`; acciones: add_exercise, edit_exercise, remove_exercise, update_day
+- Importación masiva: CSV parseado nativamente; Excel via SheetJS (cargado lazy desde CDN); columnas normalizadas (español/inglés); contraseñas auto-generadas si faltan; sesión trainer restaurada tras cada `signUp`
+
 ## Pendiente
 - [ ] Activar Stripe (añadir secrets en Supabase Edge Functions + crear webhook)
 - [ ] Confirmar emails automáticamente (Supabase → Auth → desactivar "Confirm email")
 - [ ] Chat IA — API key de Anthropic expuesta en cliente, mover a Edge Function proxy
+- [ ] Verificar editor IA de plan con Gemini (depurar si `actions` llega vacío — ver campo `debug` en respuesta)
