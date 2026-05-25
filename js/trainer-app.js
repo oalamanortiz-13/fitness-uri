@@ -396,6 +396,20 @@ window.toggleClientActive = async function(active) {
 
 function renderWorkoutTab(el) {
   el.innerHTML = `
+    <div class="card" style="margin-bottom:12px;border-color:var(--blue)44">
+      <div class="card-title" style="color:var(--blue)"><i class="ti ti-robot"></i> Editar plan con IA</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
+        Di o escribe qué quieres cambiar en el plan. Ej: <em>"El lunes añade press de banca 4x8"</em>, <em>"Quita las sentadillas del martes"</em>, <em>"El miércoles cambia el nombre del día a Piernas Fuerza"</em>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <textarea id="ai-instruction" style="flex:1;min-height:60px;resize:vertical;font-size:13px" placeholder="Instrucción para modificar el plan..."></textarea>
+        ${voiceMicBtn('ai-instruction')}
+      </div>
+      <button class="btn btn-primary" onclick="applyAIInstruction(this)" style="margin-top:10px;width:100%">
+        <i class="ti ti-wand"></i> Aplicar cambios con IA
+      </button>
+      <div id="ai-result" style="margin-top:10px;font-size:12px;display:none"></div>
+    </div>
     <div class="day-sel" id="wo-day-sel"></div>
     <div id="wo-day-content"></div>
   `
@@ -492,6 +506,116 @@ window.saveWorkoutDay = async function() {
       SELECTED_CLIENT_DATA.workouts.push({ ...day, workout_exercises: [] })
     }
     showNotif('Día guardado ✓')
+  }
+}
+
+// ─── IA EDITOR DE PLAN ────────────────────────────────────────────────────────
+
+window.applyAIInstruction = async function(btn) {
+  const instruction = document.getElementById('ai-instruction')?.value?.trim()
+  if (!instruction) { showNotif('Escribe o dicta una instrucción'); return }
+
+  const resultEl = document.getElementById('ai-result')
+  btn.disabled = true
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Consultando IA...'
+  resultEl.style.display = 'none'
+
+  // Construir snapshot del plan actual
+  const plan = {
+    days: SELECTED_CLIENT_DATA.workouts.map(d => ({
+      day_index: d.day_index,
+      title: d.title,
+      duration: d.duration || '',
+      notes: d.notes || '',
+      exercises: (d.workout_exercises || []).map(e => ({
+        id: e.id,
+        name: e.name,
+        sets_reps: e.sets_reps,
+        note: e.note || '',
+        order_index: e.order_index,
+      }))
+    }))
+  }
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(
+      'https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-plan-editor',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ instruction, plan })
+      }
+    )
+    const { actions, error } = await res.json()
+
+    if (error) throw new Error(error)
+    if (!actions?.length) throw new Error('La IA no devolvió cambios. Intenta con una instrucción más clara.')
+
+    await applyAIPlanActions(actions)
+
+    resultEl.style.display = 'block'
+    resultEl.style.color = 'var(--green)'
+    resultEl.innerHTML = `<i class="ti ti-circle-check"></i> ${actions.length} cambio(s) aplicado(s) correctamente.`
+    document.getElementById('ai-instruction').value = ''
+    renderWoDay()
+  } catch (err) {
+    resultEl.style.display = 'block'
+    resultEl.style.color = 'var(--red)'
+    resultEl.innerHTML = `<i class="ti ti-alert-circle"></i> ${err.message}`
+  }
+
+  btn.disabled = false
+  btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+}
+
+async function applyAIPlanActions(actions) {
+  for (const action of actions) {
+    if (action.type === 'add_exercise') {
+      let day = SELECTED_CLIENT_DATA.workouts.find(d => d.day_index === action.day_index)
+      let dayId = day?.id
+      if (!dayId) {
+        const { data } = await supabase.from('workout_days')
+          .upsert({ client_id: SELECTED_CLIENT, day_index: action.day_index, title: DAYS[action.day_index] }, { onConflict: 'client_id,day_index' })
+          .select().single()
+        dayId = data?.id
+        day = { ...data, workout_exercises: [] }
+        SELECTED_CLIENT_DATA.workouts.push(day)
+      }
+      const order = day.workout_exercises?.length || 0
+      const { data: ex } = await supabase.from('workout_exercises').insert({
+        workout_day_id: dayId,
+        name: action.name,
+        sets_reps: action.sets_reps || '3x10',
+        note: action.note || null,
+        order_index: order,
+      }).select().single()
+      if (ex) day.workout_exercises.push(ex)
+
+    } else if (action.type === 'remove_exercise') {
+      await supabase.from('workout_exercises').delete().eq('id', action.exercise_id)
+      SELECTED_CLIENT_DATA.workouts.forEach(d => {
+        d.workout_exercises = (d.workout_exercises || []).filter(e => e.id !== action.exercise_id)
+      })
+
+    } else if (action.type === 'edit_exercise') {
+      const changes = action.changes || {}
+      await supabase.from('workout_exercises').update(changes).eq('id', action.exercise_id)
+      SELECTED_CLIENT_DATA.workouts.forEach(d => {
+        const ex = (d.workout_exercises || []).find(e => e.id === action.exercise_id)
+        if (ex) Object.assign(ex, changes)
+      })
+
+    } else if (action.type === 'update_day') {
+      const day = SELECTED_CLIENT_DATA.workouts.find(d => d.day_index === action.day_index)
+      if (day?.id) {
+        await supabase.from('workout_days').update(action.changes).eq('id', day.id)
+        Object.assign(day, action.changes)
+      }
+    }
   }
 }
 
