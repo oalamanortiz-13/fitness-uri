@@ -1,16 +1,54 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   <!--
-    Tu Preparador · App Icon
-    Mark: bold upward arrow — T-shape + arrowhead
-    Represents: ascent, progress, the trainer's upward push
+    Tu Preparador · App Icon v4
+    TP monogram, italic bold, cyan arrow in P bowl
+    Navy #03045E + Cyan #00D4FF + White
   -->
-  <rect width="200" height="200" rx="36" ry="36" fill="#0D0D0D"/>
+  <defs>
+    <linearGradient id="bg-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#071a8a"/>
+      <stop offset="100%" stop-color="#03045E"/>
+    </linearGradient>
+    <linearGradient id="streak-g" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00D4FF" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#00D4FF" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#00D4FF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="arrow-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
 
-  <!-- Bold lime arrow mark -->
-  <polygon
-    points="100,22 160,98 126,98 126,178 74,178 74,98 40,98"
-    fill="#C6FF34"/>
+  <!-- Background -->
+  <rect width="200" height="200" rx="36" ry="36" fill="url(#bg-g)"/>
 
-  <!-- Blue precision underline — subtle structural accent -->
-  <rect x="74" y="178" width="52" height="8" rx="4" fill="#0038A8"/>
+  <!-- Diagonal speed streak -->
+  <line x1="-15" y1="185" x2="215" y2="15"
+    stroke="url(#streak-g)" stroke-width="28" opacity="0.3"/>
+
+  <!-- ── T shape (italic bold, built from paths) ── -->
+  <!-- Crossbar: italic parallelogram leaning right -->
+  <polygon points="22,18 118,18 112,40 16,40" fill="white"/>
+  <!-- Stem: italic parallelogram -->
+  <polygon points="58,40 80,40 72,180 50,180" fill="white"/>
+
+  <!-- ── P shape (italic bold, built from paths) ── -->
+  <!-- P stem -->
+  <polygon points="96,18 118,18 110,180 88,180" fill="white"/>
+  <!-- P bowl outer + inner (D-shape) -->
+  <path d="M 114,18 C 192,18 192,98 114,98 L 110,86 C 172,86 172,30 110,30 Z"
+    fill="white"/>
+
+  <!-- ── Cyan arrow inside P bowl ── -->
+  <g filter="url(#arrow-glow)">
+    <!-- Arrow shaft -->
+    <line x1="118" y1="88" x2="176" y2="32"
+      stroke="#00D4FF" stroke-width="8" stroke-linecap="round"/>
+    <!-- Arrowhead -->
+    <polygon points="176,32 157,41 165,59" fill="#00D4FF"/>
+  </g>
+
+  <!-- Subtle cyan glow behind arrow -->
+  <ellipse cx="150" cy="58" rx="22" ry="20" fill="#00D4FF" opacity="0.08"/>
 </svg>

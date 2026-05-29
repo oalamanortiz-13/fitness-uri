@@ -1,38 +1,71 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 100" width="460" height="100">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 110" width="560" height="110">
   <!--
-    Tu Preparador · Horizontal logo — dark backgrounds
-    Outfit font loaded from parent HTML for inline use.
-    For <img> usage, system fallback: Helvetica Neue / Arial
+    Tu Preparador · Horizontal — dark backgrounds
+    Navy pill for mark + white wordmark + cyan accent + tagline
   -->
   <defs>
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;700&amp;display=swap');
-    </style>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&amp;display=swap');</style>
+    <linearGradient id="bg-d" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#071a8a"/>
+      <stop offset="100%" stop-color="#03045E"/>
+    </linearGradient>
+    <linearGradient id="sk-d" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00D4FF" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#00D4FF" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#00D4FF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="ag-d">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="mark-clip-d">
+      <rect x="0" y="0" width="110" height="110" rx="20"/>
+    </clipPath>
   </defs>
 
-  <!-- Arrow mark, scaled 0.46x, centered vertically in 100px canvas -->
-  <!-- Original 200×200 → scaled to ~88×88, centered: translate(16, 6) -->
-  <g transform="translate(16,6) scale(0.46)">
-    <polygon
-      points="100,22 160,98 126,98 126,178 74,178 74,98 40,98"
-      fill="#C6FF34"/>
-    <rect x="74" y="178" width="52" height="8" rx="4" fill="#0038A8"/>
+  <!-- Mark pill (navy bg) -->
+  <rect x="0" y="0" width="110" height="110" rx="20" fill="url(#bg-d)"/>
+
+  <!-- Speed streak inside pill -->
+  <g clip-path="url(#mark-clip-d)">
+    <line x1="-10" y1="110" x2="120" y2="0"
+      stroke="url(#sk-d)" stroke-width="18" opacity="0.35"/>
   </g>
 
-  <!-- Thin divider -->
-  <line x1="112" y1="16" x2="112" y2="84" stroke="#FFFFFF" stroke-width="1" opacity="0.1"/>
+  <!-- TP mark scaled 0.55x (200→110), centered: translate(4,5) scale(0.505) -->
+  <g transform="translate(4,5) scale(0.505)">
+    <!-- T crossbar -->
+    <polygon points="22,18 118,18 112,40 16,40" fill="white"/>
+    <!-- T stem -->
+    <polygon points="58,40 80,40 72,180 50,180" fill="white"/>
+    <!-- P stem -->
+    <polygon points="96,18 118,18 110,180 88,180" fill="white"/>
+    <!-- P bowl -->
+    <path d="M 114,18 C 192,18 192,98 114,98 L 110,86 C 172,86 172,30 110,30 Z" fill="white"/>
+    <!-- Arrow -->
+    <g filter="url(#ag-d)">
+      <line x1="118" y1="88" x2="176" y2="32"
+        stroke="#00D4FF" stroke-width="8" stroke-linecap="round"/>
+      <polygon points="176,32 157,41 165,59" fill="#00D4FF"/>
+    </g>
+  </g>
 
-  <!-- TU — small, lime, wide tracking -->
-  <text
-    x="128" y="42"
-    font-family="'Outfit', 'Helvetica Neue', Arial, sans-serif"
-    font-size="13" font-weight="300" letter-spacing="8"
-    fill="#C6FF34" opacity="0.85">TU</text>
+  <!-- Wordmark -->
+  <!-- TU — small cyan -->
+  <text x="128" y="38"
+    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
+    font-size="13" font-weight="700" letter-spacing="7"
+    fill="#00D4FF">TU</text>
 
   <!-- PREPARADOR — dominant white -->
-  <text
-    x="126" y="80"
-    font-family="'Outfit', 'Helvetica Neue', Arial, sans-serif"
-    font-size="35" font-weight="700" letter-spacing="1"
-    fill="#FFFFFF">PREPARADOR</text>
+  <text x="126" y="74"
+    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
+    font-size="36" font-weight="900" letter-spacing="0.5"
+    fill="white">PREPARADOR</text>
+
+  <!-- Tagline -->
+  <text x="128" y="96"
+    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
+    font-size="10" font-weight="300" letter-spacing="2.5"
+    fill="#A9B0C3">CONECTA · ENTRENA · EVOLUCIONA</text>
 </svg>

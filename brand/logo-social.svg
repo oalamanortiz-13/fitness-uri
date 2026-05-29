@@ -1,56 +1,87 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
   <!--
-    Tu Preparador · Social media square 1000×1000
-    Editorial typographic layout — mark + wordmark hierarchy
+    Tu Preparador · Social Media 1000×1000
+    Navy bg · Large TP mark · Editorial wordmark · Tagline
   -->
   <defs>
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;700&amp;display=swap');
-    </style>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&amp;display=swap');</style>
+    <linearGradient id="bg-s" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#081da0"/>
+      <stop offset="100%" stop-color="#03045E"/>
+    </linearGradient>
+    <linearGradient id="streak-s" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00D4FF" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#00D4FF" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#00D4FF" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow-s" cx="62%" cy="35%" r="40%">
+      <stop offset="0%" stop-color="#00D4FF" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#00D4FF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="ag-s" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
 
-  <!-- Deep black background -->
-  <rect width="1000" height="1000" fill="#0D0D0D"/>
+  <!-- Background -->
+  <rect width="1000" height="1000" fill="url(#bg-s)"/>
+  <rect width="1000" height="1000" fill="url(#glow-s)"/>
 
-  <!-- Very subtle texture: one horizontal lime rule, top third -->
-  <rect x="0" y="333" width="1000" height="1" fill="#C6FF34" opacity="0.06"/>
+  <!-- Main diagonal speed streak -->
+  <line x1="-50" y1="900" x2="1050" y2="100"
+    stroke="url(#streak-s)" stroke-width="120" opacity="0.35"/>
+  <!-- Secondary thinner streak -->
+  <line x1="-50" y1="750" x2="1050" y2="250"
+    stroke="url(#streak-s)" stroke-width="40" opacity="0.2"/>
 
-  <!-- Bold arrow mark — centered, 340px tall -->
-  <!-- Scale: 340/156 ≈ 2.18 from 200×200 base (visible content 22→178 = 156px) -->
-  <!-- Centered: x_offset = (1000 - 340*80/156) / 2 ≈ (1000-174.4)/2 ≈ nope, let me recalc -->
-  <!-- Arrow at scale 2.18: width of arrowhead = (160-40)*2.18 = 261.6, center at 500 → x_offset = 500 - (100*2.18) = 500-218 = 282 -->
-  <!-- y: center mark at y=250 (slightly above center, editorial) -->
-  <!-- transform: translate(282, 94) scale(2.18) -->
-  <!-- Verify: apex y = 94 + 22*2.18 = 94 + 47.96 = 142, base y = 94 + 178*2.18 = 94 + 388 = 482 ✓ -->
-  <g transform="translate(282,94) scale(2.18)">
-    <polygon
-      points="100,22 160,98 126,98 126,178 74,178 74,98 40,98"
-      fill="#C6FF34"/>
-    <rect x="74" y="178" width="52" height="8" rx="4" fill="#0038A8"/>
+  <!-- ── Large TP Mark — centered upper 55% ── -->
+  <!-- Mark is 200×200 base, scaled 2.6× → 520×520, centered at (500,280) -->
+  <!-- translate: x = 500 - 100*2.6 = 500-260 = 240, y = 60 -->
+  <g transform="translate(240,60) scale(2.6)">
+    <!-- T crossbar -->
+    <polygon points="22,18 118,18 112,40 16,40" fill="white"/>
+    <!-- T stem -->
+    <polygon points="58,40 80,40 72,180 50,180" fill="white"/>
+    <!-- P stem -->
+    <polygon points="96,18 118,18 110,180 88,180" fill="white"/>
+    <!-- P bowl -->
+    <path d="M 114,18 C 192,18 192,98 114,98 L 110,86 C 172,86 172,30 110,30 Z" fill="white"/>
+    <!-- Cyan arrow with glow -->
+    <g filter="url(#ag-s)">
+      <line x1="118" y1="88" x2="176" y2="32"
+        stroke="#00D4FF" stroke-width="8" stroke-linecap="round"/>
+      <polygon points="176,32 157,41 165,59" fill="#00D4FF"/>
+    </g>
+    <!-- Glow behind arrow -->
+    <ellipse cx="150" cy="58" rx="26" ry="24" fill="#00D4FF" opacity="0.1"/>
   </g>
 
-  <!-- Editorial wordmark — generous space below mark -->
-  <!-- "TU" small, lime, wide tracking -->
-  <text
-    x="500" y="590"
-    font-family="'Outfit', 'Helvetica Neue', Arial, sans-serif"
-    font-size="44" font-weight="300" letter-spacing="28"
-    fill="#C6FF34" opacity="0.9"
-    text-anchor="middle">TU</text>
+  <!-- Thin cyan rule separating mark from wordmark -->
+  <rect x="300" y="594" width="400" height="2" rx="1" fill="#00D4FF" opacity="0.35"/>
 
-  <!-- "PREPARADOR" dominant white -->
-  <text
-    x="500" y="720"
-    font-family="'Outfit', 'Helvetica Neue', Arial, sans-serif"
-    font-size="116" font-weight="700" letter-spacing="2"
-    fill="#FFFFFF"
-    text-anchor="middle">PREPARADOR</text>
+  <!-- Wordmark block — centered -->
+  <!-- TU -->
+  <text x="500" y="660"
+    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
+    font-size="48" font-weight="700" letter-spacing="22"
+    fill="#00D4FF" text-anchor="middle">TU</text>
 
-  <!-- Domain — very subtle, low opacity -->
-  <text
-    x="500" y="800"
-    font-family="'Outfit', 'Helvetica Neue', Arial, sans-serif"
-    font-size="26" font-weight="300" letter-spacing="6"
-    fill="#FFFFFF" opacity="0.22"
-    text-anchor="middle">tupreparador.es</text>
+  <!-- PREPARADOR -->
+  <text x="500" y="780"
+    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
+    font-size="120" font-weight="900" letter-spacing="2"
+    fill="white" text-anchor="middle">PREPARADOR</text>
+
+  <!-- Tagline -->
+  <text x="500" y="848"
+    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
+    font-size="26" font-weight="300" letter-spacing="5"
+    fill="#A9B0C3" text-anchor="middle">CONECTA · ENTRENA · EVOLUCIONA</text>
+
+  <!-- Domain subtle -->
+  <text x="500" y="960"
+    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
+    font-size="22" font-weight="300" letter-spacing="4"
+    fill="#00D4FF" opacity="0.3" text-anchor="middle">tupreparador.es</text>
 </svg>

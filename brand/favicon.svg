@@ -1,7 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <!-- Favicon: bold arrow, legible at 16-32px -->
-  <rect width="32" height="32" rx="5" fill="#0D0D0D"/>
-  <polygon
-    points="16,4 25,16 20,16 20,28 12,28 12,16 7,16"
-    fill="#C6FF34"/>
+  <!-- Favicon: simplified TP, navy + cyan -->
+  <defs>
+    <linearGradient id="bg-f" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#071a8a"/>
+      <stop offset="100%" stop-color="#03045E"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="6" fill="url(#bg-f)"/>
+  <!-- T crossbar -->
+  <polygon points="3,3 19,3 18,7 2,7" fill="white"/>
+  <!-- T stem -->
+  <polygon points="9,7 13,7 12,29 8,29" fill="white"/>
+  <!-- P stem -->
+  <polygon points="15,3 19,3 18,29 14,29" fill="white"/>
+  <!-- P bowl -->
+  <path d="M 18,3 C 30,3 30,16 18,16 L 17,13 C 26,13 26,6 17,6 Z" fill="white"/>
+  <!-- Arrow -->
+  <line x1="18" y1="14" x2="27" y2="5" stroke="#00D4FF" stroke-width="2.2" stroke-linecap="round"/>
+  <polygon points="27,5 22,7 24,11" fill="#00D4FF"/>
 </svg>

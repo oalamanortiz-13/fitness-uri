@@ -3,368 +3,351 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tu Preparador — Brand Identity</title>
+  <title>Tu Preparador — Brand v4</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --lime: #C6FF34;
-      --blue: #0038A8;
-      --black: #0D0D0D;
-      --surface: #141414;
-      --border: rgba(255,255,255,0.06);
+      --cyan: #00D4FF;
+      --navy: #03045E;
+      --navy-light: #071a8a;
+      --white: #FFFFFF;
+      --gray: #A9B0C3;
+      --surface: #07093a;
+      --border: rgba(0,212,255,0.12);
     }
-
     body {
       font-family: 'Outfit', system-ui, sans-serif;
-      background: var(--black);
+      background: #03045E;
       color: #fff;
       padding: 0 0 120px;
     }
 
     /* Top bar */
     .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 28px 48px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 24px 48px;
       border-bottom: 1px solid var(--border);
       position: sticky; top: 0;
-      background: rgba(13,13,13,0.9);
-      backdrop-filter: blur(12px);
+      background: rgba(3,4,94,0.92);
+      backdrop-filter: blur(16px);
       z-index: 10;
     }
-    .topbar-brand {
-      font-size: 11px; font-weight: 600;
-      letter-spacing: 4px; text-transform: uppercase;
-      color: var(--lime); opacity: 0.7;
+    .topbar-left { display: flex; align-items: center; gap: 16px; }
+    .topbar-name {
+      font-size: 11px; font-weight: 700; letter-spacing: 4px;
+      text-transform: uppercase; color: var(--cyan);
     }
-    .topbar-label {
-      font-size: 11px; color: #fff; opacity: 0.25; letter-spacing: 1px;
+    .topbar-version {
+      font-size: 10px; color: var(--gray); opacity: 0.6; letter-spacing: 1px;
     }
 
     .container { max-width: 1100px; margin: 0 auto; padding: 0 48px; }
 
-    /* Sections */
     .section { padding: 72px 0; border-bottom: 1px solid var(--border); }
     .section:last-child { border-bottom: none; }
-
-    .section-eyebrow {
-      font-size: 10px; font-weight: 600; letter-spacing: 4px;
-      text-transform: uppercase; color: #fff; opacity: 0.25;
-      margin-bottom: 32px;
+    .eyebrow {
+      font-size: 10px; font-weight: 700; letter-spacing: 4px;
+      text-transform: uppercase; color: var(--cyan); opacity: 0.5;
+      margin-bottom: 36px;
     }
 
-    /* Logo display cards */
-    .logo-card {
-      border-radius: 20px;
-      padding: 48px 56px;
-      display: inline-flex;
-      align-items: center;
-      margin-bottom: 16px;
+    /* Cards */
+    .card-navy {
+      display: inline-flex; align-items: center;
+      background: linear-gradient(135deg, #071a8a, #03045E);
+      border: 1px solid var(--border);
+      border-radius: 24px; padding: 40px 48px;
     }
-    .logo-card.dark  { background: #111; border: 1px solid var(--border); }
-    .logo-card.white { background: #F8F8F8; }
-    .logo-card.blue  { background: var(--blue); }
-
-    /* Icon grid */
-    .icon-grid {
-      display: flex;
-      gap: 32px;
-      align-items: flex-end;
-      flex-wrap: wrap;
+    .card-white {
+      display: inline-flex; align-items: center;
+      background: #F4F4F6; border-radius: 24px; padding: 40px 48px;
     }
-    .icon-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-    .icon-item img { display: block; }
-    .icon-label {
-      font-size: 10px; color: #fff; opacity: 0.25;
-      letter-spacing: 1px; text-align: center;
-    }
-    .circle-crop {
-      border-radius: 50%;
-      overflow: hidden;
-      display: block;
+    .card-dark {
+      display: inline-flex; align-items: center;
+      background: #0a0a1a; border: 1px solid var(--border);
+      border-radius: 24px; padding: 40px 48px;
     }
 
-    /* Color palette */
-    .palette {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-    .swatch-item {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .swatch-color {
-      width: 96px;
-      height: 96px;
-      border-radius: 16px;
-    }
-    .swatch-info { display: flex; flex-direction: column; gap: 2px; }
+    .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+    .col { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .col-label { font-size: 10px; color: var(--gray); opacity: 0.5; letter-spacing: 1px; }
+
+    .icon-row { display: flex; gap: 28px; align-items: flex-end; flex-wrap: wrap; }
+    .circle-crop { border-radius: 50%; overflow: hidden; display: block; }
+
+    /* Palette */
+    .palette { display: flex; gap: 20px; flex-wrap: wrap; }
+    .swatch { display: flex; flex-direction: column; gap: 12px; }
+    .swatch-block { width: 96px; height: 96px; border-radius: 16px; }
     .swatch-name {
-      font-size: 11px; font-weight: 600; letter-spacing: 1px;
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
       text-transform: uppercase; color: #fff; opacity: 0.5;
     }
-    .swatch-hex {
-      font-size: 12px; font-family: monospace; color: var(--lime); opacity: 0.7;
+    .swatch-hex { font-size: 12px; font-family: monospace; color: var(--cyan); opacity: 0.8; }
+    .swatch-role { font-size: 10px; color: var(--gray); opacity: 0.4; }
+
+    /* Tagline ref */
+    .tagline-box {
+      background: rgba(0,212,255,0.06);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 12px; padding: 20px 28px;
+      display: inline-block; margin-top: 16px;
     }
-    .swatch-role {
-      font-size: 10px; color: #fff; opacity: 0.25;
+    .tagline-text {
+      font-size: 20px; font-weight: 300; letter-spacing: 6px;
+      color: var(--cyan); opacity: 0.9;
     }
 
-    /* Social preview */
-    .social-grid {
-      display: flex;
-      gap: 24px;
-      flex-wrap: wrap;
-      align-items: flex-start;
-    }
+    /* Files */
+    .files { font-size: 13px; font-family: monospace; line-height: 2.6; }
+    .files .fname { color: var(--cyan); opacity: 0.8; }
+    .files .fdesc { color: var(--gray); opacity: 0.4; }
 
-    /* Files list */
-    .files {
-      font-size: 13px;
-      font-family: monospace;
-      color: #fff;
-      opacity: 0.3;
-      line-height: 2.4;
-    }
-    .files span { color: var(--lime); opacity: 0.6; }
-
-    /* Mark anatomy label */
-    .anatomy-label {
-      font-size: 11px; color: var(--lime);
-      opacity: 0.6; letter-spacing: 1px;
-      margin-top: 8px; text-align: center;
-    }
+    /* SVG inline override */
+    svg text { font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif !important; }
   </style>
 </head>
 <body>
 
-<!-- Top bar -->
 <div class="topbar">
-  <span class="topbar-brand">Tu Preparador</span>
-  <span class="topbar-label">Brand Identity System · 2025</span>
+  <div class="topbar-left">
+    <!-- Mini inline mark -->
+    <svg viewBox="0 0 40 40" width="32" height="32">
+      <rect width="40" height="40" rx="7" fill="#03045E"/>
+      <g transform="translate(1,1) scale(0.195)">
+        <polygon points="22,18 118,18 112,40 16,40" fill="white"/>
+        <polygon points="58,40 80,40 72,180 50,180" fill="white"/>
+        <polygon points="96,18 118,18 110,180 88,180" fill="white"/>
+        <path d="M 114,18 C 192,18 192,98 114,98 L 110,86 C 172,86 172,30 110,30 Z" fill="white"/>
+        <line x1="118" y1="88" x2="176" y2="32" stroke="#00D4FF" stroke-width="9" stroke-linecap="round"/>
+        <polygon points="176,32 157,41 165,59" fill="#00D4FF"/>
+      </g>
+    </svg>
+    <span class="topbar-name">Tu Preparador</span>
+  </div>
+  <span class="topbar-version">Brand Identity v4 · 2025</span>
 </div>
 
 <div class="container">
 
-  <!-- ─── MARK ─────────────────────────────── -->
+  <!-- 01 MARK -->
   <div class="section">
-    <p class="section-eyebrow">01 — Símbolo de marca</p>
-    <div class="icon-grid">
+    <p class="eyebrow">01 — Símbolo TP · Monograma con flecha</p>
+    <div class="icon-row" style="align-items:flex-start;">
 
-      <div class="icon-item">
-        <div class="logo-card dark" style="padding:40px;">
-          <!-- Inline SVG so Outfit font applies from page -->
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-            <rect width="200" height="200" rx="36" fill="#0D0D0D"/>
-            <polygon points="100,22 160,98 126,98 126,178 74,178 74,98 40,98" fill="#C6FF34"/>
-            <rect x="74" y="178" width="52" height="8" rx="4" fill="#0038A8"/>
+      <!-- Primary on navy -->
+      <div class="col">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+          <defs>
+            <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#071a8a"/>
+              <stop offset="100%" stop-color="#03045E"/>
+            </linearGradient>
+            <linearGradient id="sk1" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#00D4FF" stop-opacity="0"/>
+              <stop offset="45%" stop-color="#00D4FF" stop-opacity="0.55"/>
+              <stop offset="100%" stop-color="#00D4FF" stop-opacity="0"/>
+            </linearGradient>
+            <filter id="gf1"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <rect width="200" height="200" rx="36" fill="url(#bg1)"/>
+          <line x1="-15" y1="185" x2="215" y2="15" stroke="url(#sk1)" stroke-width="28" opacity="0.3"/>
+          <polygon points="22,18 118,18 112,40 16,40" fill="white"/>
+          <polygon points="58,40 80,40 72,180 50,180" fill="white"/>
+          <polygon points="96,18 118,18 110,180 88,180" fill="white"/>
+          <path d="M 114,18 C 192,18 192,98 114,98 L 110,86 C 172,86 172,30 110,30 Z" fill="white"/>
+          <g filter="url(#gf1)">
+            <line x1="118" y1="88" x2="176" y2="32" stroke="#00D4FF" stroke-width="8" stroke-linecap="round"/>
+            <polygon points="176,32 157,41 165,59" fill="#00D4FF"/>
+          </g>
+          <ellipse cx="150" cy="58" rx="22" ry="20" fill="#00D4FF" opacity="0.08"/>
+        </svg>
+        <span class="col-label">Principal · navy</span>
+      </div>
+
+      <!-- On dark -->
+      <div class="col">
+        <div style="background:#0a0a1a; border-radius:24px; padding:16px; display:inline-block;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="160" height="160">
+            <polygon points="22,18 118,18 112,40 16,40" fill="white"/>
+            <polygon points="58,40 80,40 72,180 50,180" fill="white"/>
+            <polygon points="96,18 118,18 110,180 88,180" fill="white"/>
+            <path d="M 114,18 C 192,18 192,98 114,98 L 110,86 C 172,86 172,30 110,30 Z" fill="white"/>
+            <line x1="118" y1="88" x2="176" y2="32" stroke="#00D4FF" stroke-width="8" stroke-linecap="round"/>
+            <polygon points="176,32 157,41 165,59" fill="#00D4FF"/>
           </svg>
         </div>
-        <span class="anatomy-label">↑ Ascenso · Progreso · El preparador como impulso</span>
+        <span class="col-label">Sin fondo · dark</span>
       </div>
 
-      <div class="icon-item">
-        <!-- On blue background -->
-        <div class="logo-card blue" style="padding:40px;">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-            <rect width="200" height="200" rx="36" fill="#0038A8"/>
-            <polygon points="100,22 160,98 126,98 126,178 74,178 74,98 40,98" fill="#C6FF34"/>
-            <rect x="74" y="178" width="52" height="8" rx="4" fill="white" opacity="0.4"/>
+      <!-- On white -->
+      <div class="col">
+        <div style="background:#fff; border-radius:24px; padding:16px; display:inline-block;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="160" height="160">
+            <polygon points="22,18 118,18 112,40 16,40" fill="#03045E"/>
+            <polygon points="58,40 80,40 72,180 50,180" fill="#03045E"/>
+            <polygon points="96,18 118,18 110,180 88,180" fill="#03045E"/>
+            <path d="M 114,18 C 192,18 192,98 114,98 L 110,86 C 172,86 172,30 110,30 Z" fill="#03045E"/>
+            <line x1="118" y1="88" x2="176" y2="32" stroke="#00D4FF" stroke-width="8" stroke-linecap="round"/>
+            <polygon points="176,32 157,41 165,59" fill="#00D4FF"/>
           </svg>
         </div>
-        <span class="anatomy-label">Variante fondo azul</span>
-      </div>
-
-      <div class="icon-item">
-        <!-- On white -->
-        <div class="logo-card white" style="padding:40px;">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-            <rect width="200" height="200" rx="36" fill="#F0F0F0"/>
-            <polygon points="100,22 160,98 126,98 126,178 74,178 74,98 40,98" fill="#0D0D0D"/>
-            <rect x="74" y="178" width="52" height="8" rx="4" fill="#0038A8"/>
-          </svg>
-        </div>
-        <span class="anatomy-label">Variante monocromática</span>
+        <span class="col-label">Versión clara</span>
       </div>
     </div>
   </div>
 
-  <!-- ─── HORIZONTAL LOGOS ────────────────── -->
+  <!-- 02 HORIZONTAL -->
   <div class="section">
-    <p class="section-eyebrow">02 — Logo horizontal</p>
+    <p class="eyebrow">02 — Logo horizontal</p>
+    <div class="col" style="align-items:flex-start; gap:20px; max-width:600px;">
+      <div class="card-navy" style="width:100%; padding:28px 36px;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 110" width="100%" style="max-width:520px;">
+          <defs>
+            <linearGradient id="bgp" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#071a8a"/><stop offset="100%" stop-color="#03045E"/></linearGradient>
+            <linearGradient id="skp" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#00D4FF" stop-opacity="0"/><stop offset="50%" stop-color="#00D4FF" stop-opacity="0.5"/><stop offset="100%" stop-color="#00D4FF" stop-opacity="0"/></linearGradient>
+            <filter id="agp"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <clipPath id="mcp"><rect x="0" y="0" width="110" height="110" rx="20"/></clipPath>
+          </defs>
+          <rect x="0" y="0" width="110" height="110" rx="20" fill="url(#bgp)"/>
+          <g clip-path="url(#mcp)"><line x1="-10" y1="110" x2="120" y2="0" stroke="url(#skp)" stroke-width="18" opacity="0.35"/></g>
+          <g transform="translate(4,5) scale(0.505)">
+            <polygon points="22,18 118,18 112,40 16,40" fill="white"/>
+            <polygon points="58,40 80,40 72,180 50,180" fill="white"/>
+            <polygon points="96,18 118,18 110,180 88,180" fill="white"/>
+            <path d="M 114,18 C 192,18 192,98 114,98 L 110,86 C 172,86 172,30 110,30 Z" fill="white"/>
+            <g filter="url(#agp)"><line x1="118" y1="88" x2="176" y2="32" stroke="#00D4FF" stroke-width="8" stroke-linecap="round"/><polygon points="176,32 157,41 165,59" fill="#00D4FF"/></g>
+          </g>
+          <text x="128" y="38" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="7" fill="#00D4FF">TU</text>
+          <text x="126" y="74" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="36" font-weight="900" letter-spacing="0.5" fill="white">PREPARADOR</text>
+          <text x="128" y="96" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="10" font-weight="300" letter-spacing="2.5" fill="#A9B0C3">CONECTA · ENTRENA · EVOLUCIONA</text>
+        </svg>
+      </div>
+      <span class="col-label">Fondo oscuro / app</span>
 
-    <!-- Dark version -->
-    <div class="logo-card dark" style="width:100%; max-width:620px; margin-bottom:20px;">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 100" width="460" height="100">
-        <g transform="translate(16,6) scale(0.46)">
-          <polygon points="100,22 160,98 126,98 126,178 74,178 74,98 40,98" fill="#C6FF34"/>
-          <rect x="74" y="178" width="52" height="8" rx="4" fill="#0038A8"/>
-        </g>
-        <line x1="112" y1="16" x2="112" y2="84" stroke="#FFFFFF" stroke-width="1" opacity="0.1"/>
-        <text x="128" y="42" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="13" font-weight="300" letter-spacing="8" fill="#C6FF34" opacity="0.85">TU</text>
-        <text x="126" y="80" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="35" font-weight="700" letter-spacing="1" fill="#FFFFFF">PREPARADOR</text>
-      </svg>
-    </div>
-
-    <!-- Light version -->
-    <div class="logo-card white" style="width:100%; max-width:620px;">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 100" width="460" height="100">
-        <rect x="8" y="4" width="100" height="92" rx="16" fill="#0D0D0D"/>
-        <g transform="translate(16,6) scale(0.46)">
-          <polygon points="100,22 160,98 126,98 126,178 74,178 74,98 40,98" fill="#C6FF34"/>
-          <rect x="74" y="178" width="52" height="8" rx="4" fill="#0038A8"/>
-        </g>
-        <line x1="120" y1="16" x2="120" y2="84" stroke="#0D0D0D" stroke-width="1" opacity="0.12"/>
-        <text x="136" y="42" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="13" font-weight="300" letter-spacing="8" fill="#0D0D0D" opacity="0.45">TU</text>
-        <text x="134" y="80" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="35" font-weight="700" letter-spacing="1" fill="#0D0D0D">PREPARADOR</text>
-      </svg>
-    </div>
-  </div>
-
-  <!-- ─── APP ICON SIZES ──────────────────── -->
-  <div class="section">
-    <p class="section-eyebrow">03 — App Icon · escalabilidad</p>
-    <div class="icon-grid">
-      <div class="icon-item">
-        <img src="logo-icon.svg" width="200" height="200" alt="200px">
-        <span class="icon-label">200px</span>
+      <div class="card-white" style="width:100%; padding:28px 36px; margin-top:4px;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 110" width="100%" style="max-width:520px;">
+          <defs>
+            <linearGradient id="bgq" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#071a8a"/><stop offset="100%" stop-color="#03045E"/></linearGradient>
+            <linearGradient id="skq" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#00D4FF" stop-opacity="0"/><stop offset="50%" stop-color="#00D4FF" stop-opacity="0.5"/><stop offset="100%" stop-color="#00D4FF" stop-opacity="0"/></linearGradient>
+            <filter id="agq"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <clipPath id="mcq"><rect x="0" y="0" width="110" height="110" rx="20"/></clipPath>
+          </defs>
+          <rect x="0" y="0" width="110" height="110" rx="20" fill="url(#bgq)"/>
+          <g clip-path="url(#mcq)"><line x1="-10" y1="110" x2="120" y2="0" stroke="url(#skq)" stroke-width="18" opacity="0.35"/></g>
+          <g transform="translate(4,5) scale(0.505)">
+            <polygon points="22,18 118,18 112,40 16,40" fill="white"/>
+            <polygon points="58,40 80,40 72,180 50,180" fill="white"/>
+            <polygon points="96,18 118,18 110,180 88,180" fill="white"/>
+            <path d="M 114,18 C 192,18 192,98 114,98 L 110,86 C 172,86 172,30 110,30 Z" fill="white"/>
+            <g filter="url(#agq)"><line x1="118" y1="88" x2="176" y2="32" stroke="#00D4FF" stroke-width="8" stroke-linecap="round"/><polygon points="176,32 157,41 165,59" fill="#00D4FF"/></g>
+          </g>
+          <text x="128" y="38" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="7" fill="#03045E" opacity="0.75">TU</text>
+          <text x="126" y="74" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="36" font-weight="900" letter-spacing="0.5" fill="#03045E">PREPARADOR</text>
+          <text x="128" y="96" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="10" font-weight="300" letter-spacing="2.5" fill="#6b7898">CONECTA · ENTRENA · EVOLUCIONA</text>
+        </svg>
       </div>
-      <div class="icon-item">
-        <img src="logo-icon.svg" width="128" height="128" alt="128px">
-        <span class="icon-label">128px</span>
-      </div>
-      <div class="icon-item">
-        <img src="logo-icon.svg" width="64" height="64" alt="64px">
-        <span class="icon-label">64px</span>
-      </div>
-      <div class="icon-item">
-        <img src="logo-icon.svg" width="32" height="32" alt="32px">
-        <span class="icon-label">32px</span>
-      </div>
-      <div class="icon-item">
-        <img src="logo-icon.svg" width="16" height="16" alt="16px">
-        <span class="icon-label">16px</span>
-      </div>
-      <div class="icon-item">
-        <div class="circle-crop" style="width:200px;height:200px;">
-          <img src="logo-icon.svg" width="200" height="200" alt="Circular">
-        </div>
-        <span class="icon-label">iOS / Android</span>
-      </div>
+      <span class="col-label">Fondo claro / PDF / docs</span>
     </div>
   </div>
 
-  <!-- ─── FAVICON ─────────────────────────── -->
+  <!-- 03 ICON SIZES -->
   <div class="section">
-    <p class="section-eyebrow">04 — Favicon</p>
-    <div class="icon-grid">
-      <div class="icon-item">
-        <img src="favicon.svg" width="128" height="128" alt="Preview">
-        <span class="icon-label">Preview</span>
-      </div>
-      <div class="icon-item">
-        <img src="favicon.svg" width="64" height="64" alt="64px">
-        <span class="icon-label">64px</span>
-      </div>
-      <div class="icon-item">
-        <img src="favicon.svg" width="32" height="32" alt="32px">
-        <span class="icon-label">32px</span>
-      </div>
-      <div class="icon-item">
-        <img src="favicon.svg" width="16" height="16" alt="16px">
-        <span class="icon-label">16px</span>
+    <p class="eyebrow">03 — App Icon · Escalabilidad</p>
+    <div class="icon-row">
+      <div class="col"><img src="logo-icon.svg" width="200" height="200" alt="200px"><span class="col-label">200px</span></div>
+      <div class="col"><img src="logo-icon.svg" width="128" height="128" alt="128px"><span class="col-label">128px</span></div>
+      <div class="col"><img src="logo-icon.svg" width="64" height="64" alt="64px"><span class="col-label">64px</span></div>
+      <div class="col"><img src="logo-icon.svg" width="32" height="32" alt="32px"><span class="col-label">32px</span></div>
+      <div class="col"><img src="logo-icon.svg" width="16" height="16" alt="16px"><span class="col-label">16px</span></div>
+      <div class="col">
+        <div class="circle-crop" style="width:200px;height:200px;"><img src="logo-icon.svg" width="200" height="200" alt="iOS"></div>
+        <span class="col-label">iOS / Android</span>
       </div>
     </div>
   </div>
 
-  <!-- ─── SOCIAL ───────────────────────────── -->
+  <!-- 04 FAVICON -->
   <div class="section">
-    <p class="section-eyebrow">05 — Redes sociales</p>
-    <div class="social-grid">
-      <div class="icon-item">
-        <img src="logo-social.svg" width="400" height="400" alt="Social" style="border-radius:16px;">
-        <span class="icon-label">Post 1:1</span>
+    <p class="eyebrow">04 — Favicon</p>
+    <div class="icon-row">
+      <div class="col"><img src="favicon.svg" width="128" height="128"><span class="col-label">Preview</span></div>
+      <div class="col"><img src="favicon.svg" width="64" height="64"><span class="col-label">64px</span></div>
+      <div class="col"><img src="favicon.svg" width="32" height="32"><span class="col-label">32px</span></div>
+      <div class="col"><img src="favicon.svg" width="16" height="16"><span class="col-label">16px</span></div>
+    </div>
+  </div>
+
+  <!-- 05 SOCIAL -->
+  <div class="section">
+    <p class="eyebrow">05 — Redes sociales</p>
+    <div class="row">
+      <div class="col">
+        <img src="logo-social.svg" width="400" height="400" style="border-radius:20px;" alt="Post">
+        <span class="col-label">Post 1:1</span>
       </div>
       <div style="display:flex; flex-direction:column; gap:24px;">
-        <div class="icon-item">
-          <div class="circle-crop" style="width:200px;height:200px;">
-            <img src="logo-social.svg" width="200" height="200" alt="Perfil">
-          </div>
-          <span class="icon-label">Foto de perfil</span>
+        <div class="col">
+          <div class="circle-crop" style="width:200px;height:200px;"><img src="logo-social.svg" width="200" height="200"></div>
+          <span class="col-label">Foto de perfil</span>
         </div>
-        <div class="icon-item">
-          <div class="circle-crop" style="width:88px;height:88px;">
-            <img src="logo-social.svg" width="88" height="88" alt="Mini">
-          </div>
-          <span class="icon-label">88px</span>
+        <div class="col">
+          <div class="circle-crop" style="width:88px;height:88px;"><img src="logo-social.svg" width="88" height="88"></div>
+          <span class="col-label">88px</span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ─── COLOR PALETTE ───────────────────── -->
+  <!-- 06 TAGLINE -->
   <div class="section">
-    <p class="section-eyebrow">06 — Paleta</p>
+    <p class="eyebrow">06 — Tagline</p>
+    <div class="tagline-box">
+      <span class="tagline-text">CONECTA · ENTRENA · EVOLUCIONA</span>
+    </div>
+    <p style="margin-top:16px; font-size:13px; color:var(--gray); opacity:0.5; max-width:500px; line-height:1.7;">
+      Usar siempre en mayúsculas. Peso 300, tracking 5-6px, color #A9B0C3 sobre fondos oscuros o #6b7898 sobre fondos claros.
+    </p>
+  </div>
+
+  <!-- 07 PALETTE -->
+  <div class="section">
+    <p class="eyebrow">07 — Paleta</p>
     <div class="palette">
-      <div class="swatch-item">
-        <div class="swatch-color" style="background:#C6FF34;"></div>
-        <div class="swatch-info">
-          <span class="swatch-name">Lime C</span>
-          <span class="swatch-hex">#C6FF34</span>
-          <span class="swatch-role">Símbolo · acento primario</span>
-        </div>
+      <div class="swatch">
+        <div class="swatch-block" style="background:#00D4FF;"></div>
+        <div><div class="swatch-name">Cyan</div><div class="swatch-hex">#00D4FF</div><div class="swatch-role">Acento · arrow · CTA</div></div>
       </div>
-      <div class="swatch-item">
-        <div class="swatch-color" style="background:#0D0D0D; outline:1px solid rgba(255,255,255,0.1);"></div>
-        <div class="swatch-info">
-          <span class="swatch-name">Black</span>
-          <span class="swatch-hex">#0D0D0D</span>
-          <span class="swatch-role">Fondo principal</span>
-        </div>
+      <div class="swatch">
+        <div class="swatch-block" style="background:#03045E; border:1px solid rgba(0,212,255,0.2);"></div>
+        <div><div class="swatch-name">Navy</div><div class="swatch-hex">#03045E</div><div class="swatch-role">Fondo principal</div></div>
       </div>
-      <div class="swatch-item">
-        <div class="swatch-color" style="background:#0038A8;"></div>
-        <div class="swatch-info">
-          <span class="swatch-name">Blue 072C</span>
-          <span class="swatch-hex">#0038A8</span>
-          <span class="swatch-role">Acento estructural</span>
-        </div>
+      <div class="swatch">
+        <div class="swatch-block" style="background:#FFFFFF; border:1px solid rgba(255,255,255,0.1);"></div>
+        <div><div class="swatch-name">White</div><div class="swatch-hex">#FFFFFF</div><div class="swatch-role">Letras TP · wordmark</div></div>
       </div>
-      <div class="swatch-item">
-        <div class="swatch-color" style="background:#FFFFFF; outline:1px solid rgba(255,255,255,0.1);"></div>
-        <div class="swatch-info">
-          <span class="swatch-name">White</span>
-          <span class="swatch-hex">#FFFFFF</span>
-          <span class="swatch-role">Tipografía dominante</span>
-        </div>
+      <div class="swatch">
+        <div class="swatch-block" style="background:#A9B0C3; border:1px solid rgba(255,255,255,0.1);"></div>
+        <div><div class="swatch-name">Gray</div><div class="swatch-hex">#A9B0C3</div><div class="swatch-role">Tagline · secundario</div></div>
       </div>
     </div>
   </div>
 
-  <!-- ─── FILES ───────────────────────────── -->
+  <!-- 08 FILES -->
   <div class="section">
-    <p class="section-eyebrow">07 — Archivos</p>
+    <p class="eyebrow">08 — Archivos</p>
     <div class="files">
-      brand/<span>logo-icon.svg</span>&nbsp;&nbsp;&nbsp;· App icon 200×200, fondo negro<br>
-      brand/<span>favicon.svg</span>&nbsp;&nbsp;&nbsp;&nbsp;· Favicon 32×32 optimizado<br>
-      brand/<span>logo-dark.svg</span>&nbsp;&nbsp;· Horizontal — fondos oscuros<br>
-      brand/<span>logo-light.svg</span>&nbsp;· Horizontal — PDFs y docs<br>
-      brand/<span>logo-social.svg</span>· Social media 1000×1000<br>
-      brand/<span>preview.html</span>&nbsp;&nbsp;&nbsp;· Este archivo
+      brand/<span class="fname">logo-icon.svg</span>   <span class="fdesc">· App icon 200×200, navy + TP + arrow</span><br>
+      brand/<span class="fname">favicon.svg</span>    <span class="fdesc">· Favicon 32×32 optimizado</span><br>
+      brand/<span class="fname">logo-dark.svg</span>  <span class="fdesc">· Horizontal — fondos oscuros y app</span><br>
+      brand/<span class="fname">logo-light.svg</span> <span class="fdesc">· Horizontal — PDFs y documentos</span><br>
+      brand/<span class="fname">logo-social.svg</span><span class="fdesc">· Social media 1000×1000</span><br>
+      brand/<span class="fname">preview.html</span>   <span class="fdesc">· Este showcase</span>
     </div>
   </div>
 
-</div><!-- /container -->
+</div>
 </body>
 </html>
