@@ -125,7 +125,7 @@ window.doRegister = async function() {
     email,
     password,
     options: {
-      data: { role: 'trainer', full_name: name }
+      data: { role: 'trainer', full_name: name, specialty: specialty || '' }
     }
   })
 
@@ -136,22 +136,6 @@ window.doRegister = async function() {
     btn.textContent = 'Crear cuenta gratis'
     btn.disabled = false
     return
-  }
-
-  if (data.user) {
-    // Upsert profile (el trigger lo crea pero nos aseguramos de tener todo)
-    await supabase.from('profiles').upsert({
-      id: data.user.id,
-      role: 'trainer',
-      full_name: name,
-      email,
-    })
-
-    // Insertar registro de trainer
-    await supabase.from('trainers').upsert({
-      id: data.user.id,
-      specialty: specialty || null,
-    })
   }
 
   // Si hay sesión activa (email confirm desactivado), redirigir directo
