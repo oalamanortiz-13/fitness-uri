@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tu Preparador — Brand Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: #0f0f0f;
+      color: #f0f0f0;
+      padding: 32px 24px 80px;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.light {
+      background: #f4f4f4;
+      color: #111;
+    }
+
+    #toggle {
+      position: fixed; top: 20px; right: 20px; z-index: 100;
+      background: #0038A8; color: white;
+      border: none; padding: 10px 20px; border-radius: 10px;
+      font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600;
+      cursor: pointer; letter-spacing: 0.5px;
+      transition: opacity 0.2s;
+    }
+    #toggle:hover { opacity: 0.85; }
+
+    .page-title {
+      font-size: 13px; font-weight: 300; letter-spacing: 4px;
+      text-transform: uppercase; opacity: 0.4; margin-bottom: 48px;
+    }
+
+    .section { margin-bottom: 56px; }
+    .section-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 3px;
+      text-transform: uppercase; opacity: 0.35; margin-bottom: 20px;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border-radius: 16px;
+      padding: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s;
+    }
+    body.light .card { background: #e8e8e8; }
+    .card.white { background: #ffffff; }
+    .card.blue { background: #0038A8; }
+
+    .row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+    .col { display: flex; flex-direction: column; gap: 8px; }
+    .col-label { font-size: 11px; opacity: 0.4; letter-spacing: 1px; }
+
+    /* Inline SVGs for font rendering */
+    .svg-dark, .svg-light {
+      display: block;
+    }
+
+    .icon-row { display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; }
+
+    .circle-crop {
+      border-radius: 50%;
+      overflow: hidden;
+      display: block;
+    }
+
+    /* Color palette */
+    .palette { display: flex; gap: 12px; flex-wrap: wrap; }
+    .swatch {
+      display: flex; flex-direction: column; gap: 8px; align-items: center;
+    }
+    .swatch-block {
+      width: 80px; height: 80px; border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    body.light .swatch-block { border-color: rgba(0,0,0,0.08); }
+    .swatch-name {
+      font-size: 11px; font-weight: 600; letter-spacing: 1px;
+      text-transform: uppercase; opacity: 0.6;
+    }
+    .swatch-hex { font-size: 11px; opacity: 0.4; font-family: monospace; }
+
+    hr { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 0 0 40px; }
+    body.light hr { border-color: rgba(0,0,0,0.08); }
+  </style>
+</head>
+<body>
+
+<button id="toggle" onclick="document.body.classList.toggle('light')">☀ / ☾</button>
+
+<p class="page-title">Tu Preparador · Brand Identity System</p>
+
+<!-- ─── HORIZONTAL LOGOS ─── -->
+<div class="section">
+  <p class="section-label">Logo horizontal — fondo oscuro</p>
+  <div class="card" style="min-width:520px; justify-content:flex-start; padding: 24px 32px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" width="480" height="120">
+      <g transform="translate(16,15) scale(0.45)">
+        <polyline points="40,162 100,40 160,162" fill="none" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+        <polygon points="100,76 73,134 127,134" fill="#C6FF34"/>
+      </g>
+      <line x1="124" y1="22" x2="124" y2="98" stroke="#FFFFFF" stroke-width="1" opacity="0.15"/>
+      <text x="140" y="50" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="16" font-weight="300" letter-spacing="7" fill="#FFFFFF" opacity="0.75">TU</text>
+      <text x="138" y="87" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="36" font-weight="700" letter-spacing="0.5" fill="#FFFFFF">PREPARADOR</text>
+    </svg>
+  </div>
+</div>
+
+<div class="section">
+  <p class="section-label">Logo horizontal — fondo claro (docs, PDF)</p>
+  <div class="card white" style="min-width:520px; justify-content:flex-start; padding: 24px 32px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" width="480" height="120">
+      <g transform="translate(16,15) scale(0.45)">
+        <polyline points="40,162 100,40 160,162" fill="none" stroke="#0038A8" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+        <polygon points="100,76 73,134 127,134" fill="#C6FF34"/>
+      </g>
+      <line x1="124" y1="22" x2="124" y2="98" stroke="#0038A8" stroke-width="1" opacity="0.2"/>
+      <text x="140" y="50" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="16" font-weight="300" letter-spacing="7" fill="#0038A8" opacity="0.65">TU</text>
+      <text x="138" y="87" font-family="'Outfit','Helvetica Neue',Arial,sans-serif" font-size="36" font-weight="700" letter-spacing="0.5" fill="#0038A8">PREPARADOR</text>
+    </svg>
+  </div>
+</div>
+
+<hr>
+
+<!-- ─── APP ICON ─── -->
+<div class="section">
+  <p class="section-label">App Icon — distintos tamaños</p>
+  <div class="icon-row">
+    <div class="col">
+      <img src="logo-icon.svg" width="200" height="200" alt="App icon 200px">
+      <span class="col-label">200px</span>
+    </div>
+    <div class="col">
+      <img src="logo-icon.svg" width="128" height="128" alt="App icon 128px">
+      <span class="col-label">128px</span>
+    </div>
+    <div class="col">
+      <img src="logo-icon.svg" width="64" height="64" alt="App icon 64px">
+      <span class="col-label">64px</span>
+    </div>
+    <div class="col">
+      <img src="logo-icon.svg" width="32" height="32" alt="App icon 32px">
+      <span class="col-label">32px</span>
+    </div>
+    <div class="col">
+      <!-- Circle crop (iOS / Instagram) -->
+      <div class="circle-crop" style="width:200px;height:200px;">
+        <img src="logo-icon.svg" width="200" height="200" alt="App icon circular">
+      </div>
+      <span class="col-label">Circular</span>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<!-- ─── FAVICON ─── -->
+<div class="section">
+  <p class="section-label">Favicon SVG</p>
+  <div class="icon-row">
+    <div class="col">
+      <img src="favicon.svg" width="128" height="128" alt="Favicon 2x">
+      <span class="col-label">Preview 128px</span>
+    </div>
+    <div class="col">
+      <img src="favicon.svg" width="64" height="64" alt="Favicon 2x">
+      <span class="col-label">64px</span>
+    </div>
+    <div class="col">
+      <img src="favicon.svg" width="32" height="32" alt="Favicon 1x">
+      <span class="col-label">32px (real)</span>
+    </div>
+    <div class="col">
+      <img src="favicon.svg" width="16" height="16" alt="Favicon 16px">
+      <span class="col-label">16px</span>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<!-- ─── SOCIAL MEDIA ─── -->
+<div class="section">
+  <p class="section-label">Social media 1:1 (Instagram, LinkedIn, Twitter)</p>
+  <div class="row">
+    <div class="col">
+      <img src="logo-social.svg" width="400" height="400" alt="Social square" style="border-radius:16px;">
+      <span class="col-label">Post 1:1</span>
+    </div>
+    <div class="col">
+      <div class="circle-crop" style="width:200px;height:200px;">
+        <img src="logo-social.svg" width="200" height="200" alt="Profile avatar">
+      </div>
+      <span class="col-label">Foto de perfil</span>
+    </div>
+    <div class="col">
+      <div class="circle-crop" style="width:96px;height:96px;">
+        <img src="logo-social.svg" width="96" height="96" alt="Profile avatar small">
+      </div>
+      <span class="col-label">96px</span>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<!-- ─── COLOR PALETTE ─── -->
+<div class="section">
+  <p class="section-label">Paleta de color</p>
+  <div class="palette">
+    <div class="swatch">
+      <div class="swatch-block" style="background:#0038A8;"></div>
+      <span class="swatch-name">Blue 072 C</span>
+      <span class="swatch-hex">#0038A8</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#C6FF34; border-color:rgba(0,0,0,0.1);"></div>
+      <span class="swatch-name">Lime C</span>
+      <span class="swatch-hex">#C6FF34</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#0f0f0f;"></div>
+      <span class="swatch-name">Dark BG</span>
+      <span class="swatch-hex">#0F0F0F</span>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#FFFFFF; border-color:rgba(0,0,0,0.1);"></div>
+      <span class="swatch-name">White</span>
+      <span class="swatch-hex">#FFFFFF</span>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<!-- ─── USAGE NOTES ─── -->
+<div class="section">
+  <p class="section-label">Archivos generados</p>
+  <div style="font-size:13px; opacity:0.5; line-height:2; font-family:monospace;">
+    brand/logo-icon.svg &nbsp;&nbsp;— App icon 200×200, fondo azul<br>
+    brand/favicon.svg &nbsp;&nbsp;&nbsp;— Favicon 32×32, legible en cualquier tamaño<br>
+    brand/logo-dark.svg &nbsp;— Horizontal, para fondos oscuros<br>
+    brand/logo-light.svg — Horizontal, para fondos claros y PDFs<br>
+    brand/logo-social.svg — Social media 1000×1000<br>
+    brand/preview.html &nbsp;&nbsp;— Este archivo
+  </div>
+</div>
+
+</body>
+</html>

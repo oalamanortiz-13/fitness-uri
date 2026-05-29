@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- App icon: blue rounded square, white chevron peak, lime energy triangle -->
+  <rect width="200" height="200" rx="40" ry="40" fill="#0038A8"/>
+  <polyline points="40,162 100,40 160,162"
+    fill="none" stroke="#FFFFFF" stroke-width="20"
+    stroke-linecap="round" stroke-linejoin="round"/>
+  <polygon points="100,76 73,134 127,134" fill="#C6FF34"/>
+</svg>
