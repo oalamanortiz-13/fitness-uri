@@ -13,12 +13,41 @@ serve(async (req) => {
   const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!
 
   let event: Stripe.Event
+
+  // Try V1 signature (classic webhooks)
   try {
     event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret)
-  } catch (err) {
-    console.error('Webhook signature error:', (err as Error).message)
-    console.error('Secret defined:', !!webhookSecret, '| Sig header:', sig?.substring(0, 30))
-    return new Response(`Webhook Error: ${(err as Error).message}`, { status: 400 })
+  } catch (v1Err) {
+    // V2 signature: new Stripe Event Destinations send "t=...,v2=..." header
+    // For V2, verify manually using HMAC-SHA256 on "v2:" + timestamp + "." + body
+    try {
+      const parts = sig.split(',').reduce((acc: Record<string, string>, part) => {
+        const [k, v] = part.split('=')
+        acc[k] = v
+        return acc
+      }, {})
+
+      if (parts.v2) {
+        const timestamp = parts.t
+        const toSign = `v2:${timestamp}.${body}`
+        const encoder = new TextEncoder()
+        const keyData = encoder.encode(webhookSecret.replace('whsec_', ''))
+        const secretBytes = Uint8Array.from(atob(webhookSecret.replace('whsec_', '')), c => c.charCodeAt(0))
+        const key = await crypto.subtle.importKey('raw', secretBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'])
+        const sigBytes = Uint8Array.from(atob(parts.v2), c => c.charCodeAt(0))
+        const msgBytes = encoder.encode(toSign)
+        const valid = await crypto.subtle.verify('HMAC', key, sigBytes, msgBytes)
+        if (!valid) throw new Error('V2 signature invalid')
+        event = JSON.parse(body) as Stripe.Event
+      } else {
+        throw v1Err
+      }
+    } catch (v2Err) {
+      console.error('Webhook signature error (V1):', (v1Err as Error).message)
+      console.error('Webhook signature error (V2):', (v2Err as Error).message)
+      console.error('Secret defined:', !!webhookSecret, '| Sig:', sig?.substring(0, 50))
+      return new Response(`Webhook Error: ${(v1Err as Error).message}`, { status: 400 })
+    }
   }
 
   const supabase = createClient(
