@@ -1,38 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
   <defs>
-    <style>@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;700&amp;display=swap');</style>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&amp;display=swap');</style>
   </defs>
 
-  <!-- Background -->
-  <rect width="1000" height="1000" fill="#0038A8"/>
+  <!-- Black background -->
+  <rect width="1000" height="1000" fill="#0D0D0D"/>
 
-  <!-- Subtle texture: faint lime circle in background -->
-  <circle cx="500" cy="380" r="360" fill="#C6FF34" opacity="0.04"/>
+  <!-- Subtle lime grid texture -->
+  <line x1="0" y1="500" x2="1000" y2="500" stroke="#C6FF34" stroke-width="1" opacity="0.04"/>
+  <line x1="500" y1="0" x2="500" y2="1000" stroke="#C6FF34" stroke-width="1" opacity="0.04"/>
 
-  <!-- Peak mark — white chevron + lime triangle, scaled 2x centered -->
-  <g transform="translate(300,120) scale(2.0)">
-    <polyline points="40,162 100,40 160,162"
-      fill="none" stroke="#FFFFFF" stroke-width="20"
-      stroke-linecap="round" stroke-linejoin="round"/>
-    <polygon points="100,76 73,134 127,134" fill="#C6FF34"/>
-  </g>
+  <!-- Large TP monogram — centered, dominant -->
+  <!-- T crossbar -->
+  <rect x="120" y="180" width="310" height="60" rx="12" fill="#C6FF34"/>
+  <!-- T stem -->
+  <rect x="228" y="180" width="96" height="320" rx="12" fill="#C6FF34"/>
+
+  <!-- P stem -->
+  <rect x="518" y="180" width="96" height="320" rx="12" fill="#C6FF34"/>
+  <!-- P bowl -->
+  <path d="M614,180 Q880,180 880,340 Q880,500 614,500 L614,440 Q800,440 800,340 Q800,240 614,240 Z" fill="#C6FF34"/>
+
+  <!-- Blue accent bar under mark -->
+  <rect x="120" y="528" width="760" height="16" rx="8" fill="#0038A8"/>
 
   <!-- Wordmark -->
-  <text x="500" y="640"
-    font-family="'Outfit', 'Helvetica Neue', Arial, sans-serif"
-    font-size="56" font-weight="300" letter-spacing="24"
-    fill="#FFFFFF" opacity="0.8"
+  <text x="500" y="690"
+    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
+    font-size="52" font-weight="800" letter-spacing="22"
+    fill="#C6FF34" opacity="0.7"
     text-anchor="middle">TU</text>
-  <text x="500" y="770"
-    font-family="'Outfit', 'Helvetica Neue', Arial, sans-serif"
-    font-size="108" font-weight="700" letter-spacing="4"
+  <text x="500" y="800"
+    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
+    font-size="110" font-weight="900" letter-spacing="2"
     fill="#FFFFFF"
     text-anchor="middle">PREPARADOR</text>
 
-  <!-- Tagline -->
-  <text x="500" y="840"
-    font-family="'Outfit', 'Helvetica Neue', Arial, sans-serif"
-    font-size="28" font-weight="300" letter-spacing="3"
-    fill="#C6FF34" opacity="0.7"
+  <!-- Domain -->
+  <text x="500" y="868"
+    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
+    font-size="28" font-weight="400" letter-spacing="4"
+    fill="#C6FF34" opacity="0.45"
     text-anchor="middle">tupreparador.es</text>
 </svg>

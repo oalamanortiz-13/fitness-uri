@@ -1,8 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <!-- App icon: blue rounded square, white chevron peak, lime energy triangle -->
-  <rect width="200" height="200" rx="40" ry="40" fill="#0038A8"/>
-  <polyline points="40,162 100,40 160,162"
-    fill="none" stroke="#FFFFFF" stroke-width="20"
-    stroke-linecap="round" stroke-linejoin="round"/>
-  <polygon points="100,76 73,134 127,134" fill="#C6FF34"/>
+  <!-- App icon: black background, lime TP monogram, blue accent -->
+  <rect width="200" height="200" rx="36" ry="36" fill="#0D0D0D"/>
+
+  <!-- Bold "TP" monogram -->
+  <!-- T: crossbar + stem -->
+  <rect x="22" y="44" width="76" height="18" rx="4" fill="#C6FF34"/>
+  <rect x="48" y="44" width="24" height="82" rx="4" fill="#C6FF34"/>
+
+  <!-- P: stem shared + bowl -->
+  <rect x="104" y="44" width="20" height="90" rx="4" fill="#C6FF34"/>
+  <!-- P bowl arc using path -->
+  <path d="M124,44 Q178,44 178,83 Q178,122 124,122 L124,104 Q158,104 158,83 Q158,62 124,62 Z" fill="#C6FF34"/>
+
+  <!-- Blue accent bar at bottom -->
+  <rect x="22" y="152" width="156" height="8" rx="4" fill="#0038A8"/>
 </svg>
