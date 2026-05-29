@@ -16,19 +16,19 @@ export async function getRole(userId) {
 
 export function redirectByRole(role) {
   const routes = { admin: '/admin.html', trainer: '/trainer.html', client: '/client.html' }
-  window.location.href = routes[role] || '/index.html'
+  window.location.href = routes[role] || '/login.html'
 }
 
 export async function requireRole(expectedRole) {
   const session = await getSession()
-  if (!session) { window.location.href = '/index.html'; return null }
+  if (!session) { window.location.href = '/login.html'; return null }
   const profile = await getRole(session.user.id)
-  if (!profile) { window.location.href = '/index.html'; return null }
+  if (!profile) { window.location.href = '/login.html'; return null }
   if (profile.role !== expectedRole) { redirectByRole(profile.role); return null }
   return { session, profile }
 }
 
 export async function logout() {
   await supabase.auth.signOut()
-  window.location.href = '/index.html'
+  window.location.href = '/login.html'
 }

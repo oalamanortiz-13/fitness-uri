@@ -72,7 +72,7 @@
       </button>
 
       <div class="divider">¿Ya tienes cuenta?</div>
-      <button class="link-btn" onclick="window.location.href='index.html'" style="width:100%;text-align:center">
+      <button class="link-btn" onclick="window.location.href='login.html'" style="width:100%;text-align:center">
         Iniciar sesión
       </button>
     </div>
@@ -149,7 +149,7 @@ window.doRegister = async function() {
     const sv = document.getElementById('success-view')
     sv.style.display = 'block'
     document.getElementById('success-msg').innerHTML =
-      `Hemos enviado un email de confirmación a <strong>${email}</strong>.<br><br>Confírmalo y después <a href="index.html" style="color:var(--blue)">inicia sesión aquí</a>.`
+      `Hemos enviado un email de confirmación a <strong>${email}</strong>.<br><br>Confírmalo y después <a href="login.html" style="color:var(--blue)">inicia sesión aquí</a>.`
   }
 }
 
