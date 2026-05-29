@@ -1,14 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <!-- Favicon: black bg, lime bold "TP" -->
+  <!-- Favicon: bold arrow, legible at 16-32px -->
   <rect width="32" height="32" rx="5" fill="#0D0D0D"/>
-  <!-- T crossbar -->
-  <rect x="2" y="7" width="13" height="3" rx="1" fill="#C6FF34"/>
-  <!-- T stem -->
-  <rect x="7" y="7" width="3" height="13" rx="1" fill="#C6FF34"/>
-  <!-- P stem -->
-  <rect x="17" y="7" width="3" height="18" rx="1" fill="#C6FF34"/>
-  <!-- P bowl -->
-  <path d="M20,7 Q29,7 29,13 Q29,19 20,19 L20,16 Q25,16 25,13 Q25,10 20,10 Z" fill="#C6FF34"/>
-  <!-- Blue underline -->
-  <rect x="2" y="24" width="28" height="2" rx="1" fill="#0038A8"/>
+  <polygon
+    points="16,4 25,16 20,16 20,28 12,28 12,16 7,16"
+    fill="#C6FF34"/>
 </svg>

@@ -1,45 +1,56 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+  <!--
+    Tu Preparador · Social media square 1000×1000
+    Editorial typographic layout — mark + wordmark hierarchy
+  -->
   <defs>
-    <style>@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@800;900&amp;display=swap');</style>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;700&amp;display=swap');
+    </style>
   </defs>
 
-  <!-- Black background -->
+  <!-- Deep black background -->
   <rect width="1000" height="1000" fill="#0D0D0D"/>
 
-  <!-- Subtle lime grid texture -->
-  <line x1="0" y1="500" x2="1000" y2="500" stroke="#C6FF34" stroke-width="1" opacity="0.04"/>
-  <line x1="500" y1="0" x2="500" y2="1000" stroke="#C6FF34" stroke-width="1" opacity="0.04"/>
+  <!-- Very subtle texture: one horizontal lime rule, top third -->
+  <rect x="0" y="333" width="1000" height="1" fill="#C6FF34" opacity="0.06"/>
 
-  <!-- Large TP monogram — centered, dominant -->
-  <!-- T crossbar -->
-  <rect x="120" y="180" width="310" height="60" rx="12" fill="#C6FF34"/>
-  <!-- T stem -->
-  <rect x="228" y="180" width="96" height="320" rx="12" fill="#C6FF34"/>
+  <!-- Bold arrow mark — centered, 340px tall -->
+  <!-- Scale: 340/156 ≈ 2.18 from 200×200 base (visible content 22→178 = 156px) -->
+  <!-- Centered: x_offset = (1000 - 340*80/156) / 2 ≈ (1000-174.4)/2 ≈ nope, let me recalc -->
+  <!-- Arrow at scale 2.18: width of arrowhead = (160-40)*2.18 = 261.6, center at 500 → x_offset = 500 - (100*2.18) = 500-218 = 282 -->
+  <!-- y: center mark at y=250 (slightly above center, editorial) -->
+  <!-- transform: translate(282, 94) scale(2.18) -->
+  <!-- Verify: apex y = 94 + 22*2.18 = 94 + 47.96 = 142, base y = 94 + 178*2.18 = 94 + 388 = 482 ✓ -->
+  <g transform="translate(282,94) scale(2.18)">
+    <polygon
+      points="100,22 160,98 126,98 126,178 74,178 74,98 40,98"
+      fill="#C6FF34"/>
+    <rect x="74" y="178" width="52" height="8" rx="4" fill="#0038A8"/>
+  </g>
 
-  <!-- P stem -->
-  <rect x="518" y="180" width="96" height="320" rx="12" fill="#C6FF34"/>
-  <!-- P bowl -->
-  <path d="M614,180 Q880,180 880,340 Q880,500 614,500 L614,440 Q800,440 800,340 Q800,240 614,240 Z" fill="#C6FF34"/>
-
-  <!-- Blue accent bar under mark -->
-  <rect x="120" y="528" width="760" height="16" rx="8" fill="#0038A8"/>
-
-  <!-- Wordmark -->
-  <text x="500" y="690"
-    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
-    font-size="52" font-weight="800" letter-spacing="22"
-    fill="#C6FF34" opacity="0.7"
+  <!-- Editorial wordmark — generous space below mark -->
+  <!-- "TU" small, lime, wide tracking -->
+  <text
+    x="500" y="590"
+    font-family="'Outfit', 'Helvetica Neue', Arial, sans-serif"
+    font-size="44" font-weight="300" letter-spacing="28"
+    fill="#C6FF34" opacity="0.9"
     text-anchor="middle">TU</text>
-  <text x="500" y="800"
-    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
-    font-size="110" font-weight="900" letter-spacing="2"
+
+  <!-- "PREPARADOR" dominant white -->
+  <text
+    x="500" y="720"
+    font-family="'Outfit', 'Helvetica Neue', Arial, sans-serif"
+    font-size="116" font-weight="700" letter-spacing="2"
     fill="#FFFFFF"
     text-anchor="middle">PREPARADOR</text>
 
-  <!-- Domain -->
-  <text x="500" y="868"
-    font-family="'Outfit','Helvetica Neue',Arial,sans-serif"
-    font-size="28" font-weight="400" letter-spacing="4"
-    fill="#C6FF34" opacity="0.45"
+  <!-- Domain — very subtle, low opacity -->
+  <text
+    x="500" y="800"
+    font-family="'Outfit', 'Helvetica Neue', Arial, sans-serif"
+    font-size="26" font-weight="300" letter-spacing="6"
+    fill="#FFFFFF" opacity="0.22"
     text-anchor="middle">tupreparador.es</text>
 </svg>
