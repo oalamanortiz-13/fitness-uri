@@ -1405,18 +1405,16 @@ window.sendChat = async function() {
   scrollChat()
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 800,
-        system: buildSystemPrompt(),
+        systemPrompt: buildSystemPrompt(),
         messages: S.chatHistory
       })
     })
     const data = await res.json()
-    const reply = data.content?.find(b => b.type === 'text')?.text || 'Error de conexión.'
+    const reply = data.reply || 'Error de conexión.'
     S.chatHistory.push({ role: 'assistant', content: reply })
   } catch(e) {
     S.chatHistory.push({ role: 'assistant', content: 'Error de conexión. Inténtalo de nuevo.' })
