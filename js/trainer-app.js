@@ -422,7 +422,7 @@ function showInviteModal(msg) {
 
   const overlay = document.createElement('div')
   overlay.id = 'invite-modal-overlay'
-  overlay.className = 'modal-overlay'
+  overlay.className = 'modal-overlay open'
   overlay.innerHTML = `
     <div class="modal" style="max-width:500px;width:90%">
       <div class="card-title" style="margin-bottom:12px"><i class="ti ti-send" style="color:var(--green)"></i> Mensaje de bienvenida</div>
