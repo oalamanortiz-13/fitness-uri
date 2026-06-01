@@ -2528,68 +2528,38 @@ window.runBulkImport = async function() {
 
   document.getElementById('import-preview-view').style.display = 'none'
   document.getElementById('import-progress-view').style.display = 'block'
+  updateImportProgress(0, rows.length, 'Iniciando...')
 
-  const results = []
-  const { data: { session: trainerSession } } = await supabase.auth.getSession()
-
-  for (let i = 0; i < rows.length; i++) {
-    const r = rows[i]
-    updateImportProgress(i + 1, rows.length, r.nombre)
-
-    try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: r.email,
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(
+      'https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/bulk-import-clients',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ clients: rows })
+      }
+    )
+    const data = await res.json()
+    if (data.error) throw new Error(data.error)
+    await loadClients()
+    renderImportResults(data.results)
+  } catch (err) {
+    document.getElementById('import-progress-view').innerHTML = `
+      <div style="text-align:center;padding:20px">
+        <i class="ti ti-alert-circle" style="font-size:32px;color:var(--red);display:block;margin-bottom:8px"></i>
+        <div style="color:var(--red);font-weight:600">Error en la importación</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:8px">${escHtml(err.message)}</div>
+        <button class="btn" onclick="closeImportModal()" style="margin-top:16px">Cerrar</button>
+      </div>
+    `
+  }
+}
         password: r.password,
         options: { data: { role: 'client', full_name: r.nombre } }
-      })
-
-      await supabase.auth.setSession({
-        access_token: trainerSession.access_token,
-        refresh_token: trainerSession.refresh_token
-      })
-
-      if (signUpError) { results.push({ nombre: r.nombre, ok: false, msg: signUpError.message }); continue }
-      if (!data.user) { results.push({ nombre: r.nombre, ok: false, msg: 'No se creó el usuario' }); continue }
-
-      await supabase.from('profiles').upsert({ id: data.user.id, role: 'client', full_name: r.nombre, email: r.email })
-      const { error: clientErr } = await supabase.from('clients').upsert({
-        id: data.user.id,
-        trainer_id: TRAINER_ID,
-        age: r.age || null,
-        height_cm: r.height_cm || null,
-        weight_start: r.weight || null,
-        weight_goal: r.weight_goal || null,
-        kcal_goal: r.kcal || null,
-        protein_goal: r.protein || null,
-        notes: r.notes || null,
-        plan_weeks: r.weeks,
-        plan_start_date: new Date().toISOString().split('T')[0],
-      })
-
-      if (clientErr) { results.push({ nombre: r.nombre, ok: false, msg: clientErr.message }); continue }
-
-      // Import body measurements if the file had measurement columns
-      if (r._measurements) {
-        const measData = Object.fromEntries(Object.entries(r._measurements).filter(([, v]) => v !== null))
-        if (Object.keys(measData).length > 0) {
-          await supabase.from('body_measurements').insert({
-            client_id: data.user.id,
-            measured_at: new Date().toISOString().split('T')[0],
-            ...measData
-          })
-        }
-      }
-
-      results.push({ nombre: r.nombre, ok: true, email: r.email, password: r.password })
-    } catch (err) {
-      await supabase.auth.setSession({ access_token: trainerSession.access_token, refresh_token: trainerSession.refresh_token })
-      results.push({ nombre: r.nombre, ok: false, msg: err.message })
-    }
-  }
-
-  await loadClients()
-  renderImportResults(results)
-}
 
 function updateImportProgress(done, total, name) {
   const pct = Math.round((done / total) * 100)
