@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **URL producción (temporal):** fitness-uri.vercel.app
 - **Supabase proyecto:** cwwvwrzqlavuyqhyeepu
 - **Stack:** Vanilla HTML/CSS/JS + Supabase (Auth + PostgreSQL) + Vercel (estático)
-- **Deploy:** push a `main` → Vercel despliega automáticamente. Desarrollar en `claude/exciting-maxwell-3GNsG`, mergear a `main` para ver cambios en producción.
+- **Deploy:** push a `main` → Vercel despliega automáticamente. Desarrollar en `claude/vigilant-noether-VWGx9`, mergear a `main` para ver cambios en producción.
 
 ## Estructura de archivos
 ```
@@ -30,8 +30,16 @@ fitness-uri/
     ├── schema.sql          # Schema original (referencia)
     ├── migrations/         # Migraciones ejecutadas en producción
     └── functions/
-        ├── create-checkout-session/  # Edge Function Stripe Checkout (desplegada)
-        └── stripe-webhook/           # Edge Function webhook Stripe (desplegada)
+        ├── create-checkout-session/   # Edge Function Stripe Checkout (desplegada)
+        ├── stripe-webhook/            # Edge Function webhook Stripe (desplegada)
+        ├── bulk-import-clients/       # Importación masiva via Admin API (sin rate limit)
+        ├── generate-invite-link/      # Genera magic link para invitar cliente (verify_jwt:true)
+        ├── ai-plan-editor/            # Groq Llama 3.3 70B — edita plan de entreno (acciones JSON)
+        ├── ai-diet-editor/            # Groq — edita plan de nutrición
+        ├── ai-cardio-editor/          # Groq — edita objetivos de cardio
+        ├── ai-supls-editor/           # Groq — edita suplementos
+        ├── ai-measures-editor/        # Groq — extrae medidas corporales de texto natural
+        └── ai-chat/                   # Groq Llama 3.1 8B — chat IA para portal cliente
 ```
 
 ## Roles y acceso
@@ -184,7 +192,14 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - [x] Horario de suplementos (mañana/tarde/noche/pre-workout/post-workout) con tag de color en trainer y agrupación en cliente
 - [x] Instrucciones por sección (Nutrición, Cardio, Suplementación) — textarea + dictado por voz (Web Speech API, es-ES), guardado con feedback visual en botón; cliente ve instrucciones como caja azul al inicio de cada sección
 - [x] Instrucciones por día de entrenamiento — campo `notes` en workout_days, dictado por voz, se guarda con el día; cliente ve la nota dentro de la tarjeta del día
-- [x] Editor de plan con IA (Gemini 2.0 Flash) — trainer dicta instrucción en lenguaje natural, Edge Function `ai-plan-editor` la procesa y devuelve acciones JSON que se aplican al plan al momento (add/edit/remove_exercise, update_day)
+- [x] Editor de plan con IA (Groq Llama 3.3 70B) — trainer dicta instrucción en lenguaje natural, Edge Function `ai-plan-editor` la procesa y devuelve acciones JSON que se aplican al plan al momento (add/edit/remove_exercise, update_day)
+- [x] Editor IA en Nutrición (`ai-diet-editor`) — acciones: add_meal, add_food, edit_food, remove_food, rename_meal, remove_meal
+- [x] Editor IA en Cardio (`ai-cardio-editor`) — acciones: set_steps_goal, set_cardio_goal, set_reminder, set_cardio_types
+- [x] Editor IA en Suplementación (`ai-supls-editor`) — acciones: add_supplement, edit_supplement, remove_supplement
+- [x] Editor IA en Medidas (`ai-measures-editor`) — extrae campos de medidas corporales de texto natural e inserta en body_measurements
+- [x] Chat IA para cliente (`ai-chat`) — Groq Llama 3.1 8B, proxy Edge Function (API key server-side)
+- [x] Importación masiva de clientes via Edge Function `bulk-import-clients` (Admin API, sin rate limits, email auto-confirmado)
+- [x] Botón "Invitar cliente" en pestaña Perfil — genera magic link via `generate-invite-link`, muestra modal con mensaje de bienvenida pre-redactado (editable), botones Copiar y WhatsApp
 
 ## Notas de arquitectura (sesión 23/05)
 - `SUPL_TIMINGS` y `CARDIO_TYPES` son constantes definidas en `trainer-app.js`; los mismos valores están duplicados inline en `client-app.js` (candidato a extraer a un módulo compartido)
@@ -195,11 +210,15 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - `notesCard(fieldId, value, dbColumn, icon, label)` — helper en trainer-app.js que genera tarjeta con textarea + mic + botón guardar; llama a `saveNotes(dbColumn, fieldId, btn)` que hace update directo a `clients`
 - `startVoice(targetId, btn)` — toggle: 1er click inicia SpeechRecognition (continuous, es-ES), 2º click para y resetea; acumula resultados isFinal en el textarea; `_activeRecognition` previene sesiones múltiples
 - `applyAIInstruction(btn)` — recoge plan completo de `SELECTED_CLIENT_DATA.workouts`, llama Edge Function `ai-plan-editor`, aplica acciones via `applyAIPlanActions(actions)`
-- Edge Function `ai-plan-editor` — Gemini 2.0 Flash, `verify_jwt:false`, usa `GEMINI_API_KEY` secret, fuerza `responseMimeType:'application/json'`; acciones: add_exercise, edit_exercise, remove_exercise, update_day
-- Importación masiva: CSV parseado nativamente; Excel via SheetJS (cargado lazy desde CDN); columnas normalizadas (español/inglés); contraseñas auto-generadas si faltan; sesión trainer restaurada tras cada `signUp`
+- Importación masiva: CSV parseado nativamente; Excel via SheetJS (cargado lazy desde CDN); columnas normalizadas (español/inglés) con `normalizeKey()` (elimina tildes, unidades entre paréntesis, caracteres especiales); contraseñas auto-generadas si faltan; `window._lastImportOk` para pasar resultados al botón de descarga
+
+## Notas de arquitectura (sesión 01/06)
+- Todos los editores IA usan **Groq** (llama-3.3-70b-versatile para plan/dieta/cardio/supls/medidas, llama-3.1-8b-instant para chat). Secret: `GROQ_API_KEY` en Supabase. La key se sanitiza con `.replace(/[^a-zA-Z0-9_]/g, '')` para evitar ByteString errors por caracteres invisibles.
+- Patrón CORS obligatorio en Edge Functions: try-catch que SIEMPRE devuelve headers CORS incluso en error 500, o el browser bloquea la respuesta.
+- `bulk-import-clients`: recibe array de clientes, usa `adminClient.auth.admin.createUser` (bypass rate limits), inserta profiles+clients+body_measurements, devuelve `{results:[{nombre, ok, email, password, msg}]}`. `window._lastImportOk` guarda los OK para la descarga CSV.
+- `generate-invite-link`: `adminClient.auth.admin.generateLink({type:'magiclink', email, options:{redirectTo:'https://www.tupreparador.es/client.html'}})`, devuelve `{link: linkData.properties.action_link}`. El modal dinámico necesita clase `.open` para ser visible (CSS de trainer.html).
+- `inviteClient()` / `showInviteModal(msg)` — en trainer-app.js. Modal creado dinámicamente con `overlay.className = 'modal-overlay open'`. Botones: copyInviteMsg() y shareInviteWhatsApp() (wa.me/?text=...).
 
 ## Pendiente
 - [ ] Activar Stripe (añadir secrets en Supabase Edge Functions + crear webhook)
 - [ ] Confirmar emails automáticamente (Supabase → Auth → desactivar "Confirm email")
-- [ ] Chat IA — API key de Anthropic expuesta en cliente, mover a Edge Function proxy
-- [ ] Verificar editor IA de plan con Gemini (depurar si `actions` llega vacío — ver campo `debug` en respuesta)
