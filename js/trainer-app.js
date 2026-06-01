@@ -724,6 +724,20 @@ function renderDietTab(el) {
 
   el.innerHTML = `
     ${notesCard('diet-notes', c.notes_diet, 'notes_diet', 'ti-apple', 'Instrucciones de nutrición')}
+    <div class="card" style="margin-bottom:12px;border-color:var(--blue)44">
+      <div class="card-title" style="color:var(--blue)"><i class="ti ti-robot"></i> Editar dieta con IA</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
+        Di o escribe qué quieres cambiar. Ej: <em>"Añade 200g de arroz al almuerzo"</em>, <em>"Quita el batido de proteínas del desayuno"</em>, <em>"Cambia el pollo por salmón en la cena"</em>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <textarea id="ai-diet-instruction" style="flex:1;min-height:60px;resize:vertical;font-size:13px" placeholder="Instrucción para modificar la dieta..."></textarea>
+        ${voiceMicBtn('ai-diet-instruction')}
+      </div>
+      <button class="btn btn-primary" onclick="applyAIDietInstruction(this)" style="margin-top:10px;width:100%">
+        <i class="ti ti-wand"></i> Aplicar cambios con IA
+      </button>
+      <div id="ai-diet-result" style="margin-top:10px;font-size:12px;display:none"></div>
+    </div>
     <div class="card" id="meals-container">
       <div class="card-title"><i class="ti ti-apple"></i> Plan de dieta</div>
       ${meals.length === 0
@@ -965,6 +979,126 @@ window.deleteFood = async function(foodId, mealId) {
     meal.diet_foods = meal.diet_foods.filter(f => f.id !== foodId)
     const foodsEl = document.getElementById(`foods-in-${mealId}`)
     if (foodsEl) foodsEl.innerHTML = meal.diet_foods.map(f => renderFoodRow(f, mealId)).join('')
+  }
+}
+
+// ─── IA EDITOR DE DIETA ───────────────────────────────────────────────────────
+
+window.applyAIDietInstruction = async function(btn) {
+  const instruction = document.getElementById('ai-diet-instruction')?.value?.trim()
+  if (!instruction) { showNotif('Escribe o dicta una instrucción'); return }
+
+  const resultEl = document.getElementById('ai-diet-result')
+  btn.disabled = true
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Consultando IA...'
+  resultEl.style.display = 'none'
+
+  const diet = SELECTED_CLIENT_DATA.diet
+  if (!diet) {
+    resultEl.style.display = 'block'
+    resultEl.style.color = 'var(--amber)'
+    resultEl.innerHTML = '<i class="ti ti-alert-triangle"></i> No hay plan de dieta activo. Crea uno primero.'
+    btn.disabled = false
+    btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+    return
+  }
+
+  const plan = {
+    meals: (diet.diet_meals || []).map(m => ({
+      id: m.id,
+      name: m.name,
+      icon: m.icon || '',
+      foods: (m.diet_foods || []).map(f => ({
+        id: f.id,
+        name: f.name,
+        kcal: f.kcal || 0,
+        protein_g: f.protein_g || 0
+      }))
+    }))
+  }
+
+  try {
+    const res = await fetch(
+      'https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-diet-editor',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction, plan })
+      }
+    )
+    const resData = await res.json()
+    const { actions, error, debug } = resData
+
+    if (error) throw new Error(error)
+    if (!actions?.length) {
+      resultEl.style.display = 'block'
+      resultEl.style.color = 'var(--amber)'
+      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> La IA no generó acciones.<br><small style="color:var(--text3)">${debug || 'Sin respuesta'}</small>`
+      btn.disabled = false
+      btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+      return
+    }
+
+    await applyAIDietActions(actions)
+
+    resultEl.style.display = 'block'
+    resultEl.style.color = 'var(--green)'
+    resultEl.innerHTML = `<i class="ti ti-circle-check"></i> ${actions.length} cambio(s) aplicado(s) correctamente.`
+    document.getElementById('ai-diet-instruction').value = ''
+    renderTab()
+  } catch (err) {
+    resultEl.style.display = 'block'
+    resultEl.style.color = 'var(--red)'
+    resultEl.innerHTML = `<i class="ti ti-alert-circle"></i> ${err.message}`
+  }
+
+  btn.disabled = false
+  btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+}
+
+async function applyAIDietActions(actions) {
+  const diet = SELECTED_CLIENT_DATA.diet
+  for (const action of actions) {
+    if (action.type === 'add_meal') {
+      const order = diet.diet_meals?.length || 0
+      const { data: meal } = await supabase
+        .from('diet_meals')
+        .insert({ diet_plan_id: diet.id, name: action.name, icon: action.icon || '🍽️', order_index: order })
+        .select('*, diet_foods(*)')
+        .single()
+      if (meal) {
+        diet.diet_meals = diet.diet_meals || []
+        diet.diet_meals.push({ ...meal, diet_foods: [] })
+      }
+    } else if (action.type === 'add_food') {
+      const meal = diet.diet_meals?.find(m => m.id === action.meal_id || m.name.toLowerCase() === (action.meal_name || '').toLowerCase())
+      if (!meal) continue
+      const order = meal.diet_foods?.length || 0
+      const { data: food } = await supabase
+        .from('diet_foods')
+        .insert({ diet_meal_id: meal.id, name: action.name, kcal: action.kcal || 0, protein_g: action.protein_g || 0, order_index: order })
+        .select().single()
+      if (food) meal.diet_foods = [...(meal.diet_foods || []), food]
+    } else if (action.type === 'edit_food') {
+      const changes = action.changes || {}
+      await supabase.from('diet_foods').update(changes).eq('id', action.food_id)
+      for (const meal of (diet.diet_meals || [])) {
+        const food = meal.diet_foods?.find(f => f.id === action.food_id)
+        if (food) { Object.assign(food, changes); break }
+      }
+    } else if (action.type === 'remove_food') {
+      await supabase.from('diet_foods').delete().eq('id', action.food_id)
+      for (const meal of (diet.diet_meals || [])) {
+        meal.diet_foods = (meal.diet_foods || []).filter(f => f.id !== action.food_id)
+      }
+    } else if (action.type === 'rename_meal') {
+      await supabase.from('diet_meals').update({ name: action.name }).eq('id', action.meal_id)
+      const meal = diet.diet_meals?.find(m => m.id === action.meal_id)
+      if (meal) meal.name = action.name
+    } else if (action.type === 'remove_meal') {
+      await supabase.from('diet_meals').delete().eq('id', action.meal_id)
+      diet.diet_meals = (diet.diet_meals || []).filter(m => m.id !== action.meal_id)
+    }
   }
 }
 
