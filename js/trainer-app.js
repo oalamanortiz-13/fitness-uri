@@ -2393,41 +2393,78 @@ function loadScript(src) {
 }
 
 function normalizeRow(obj) {
-  // Accept both raw keys and pre-normalized keys
-  const n = {}
-  Object.entries(obj).forEach(([k, v]) => { n[normalizeKey ? normalizeKey(k) : k] = v; n[k] = v })
+  // obj keys already normalized by parseExcel/parseCsv
 
-  const get = (...keys) => {
-    for (const k of keys) {
-      const nk = typeof normalizeKey === 'function' ? normalizeKey(k) : k
-      if (n[nk] != null && n[nk] !== '') return n[nk]
-      if (n[k] != null && n[k] !== '') return n[k]
+  // Exact match first, then partial (key contains keyword), excluding certain words
+  const find = (keywords, exclude = []) => {
+    // exact
+    for (const kw of keywords) {
+      const nkw = normalizeKey(kw)
+      if (obj[nkw] != null && obj[nkw] !== '') return obj[nkw]
+    }
+    // partial
+    for (const [k, v] of Object.entries(obj)) {
+      if (!v || v === '') continue
+      if (exclude.some(ex => k.includes(normalizeKey(ex)))) continue
+      for (const kw of keywords) {
+        if (k.includes(normalizeKey(kw))) return v
+      }
     }
     return ''
   }
 
-  const nombre = get('nombre', 'name', 'full name', 'full_name', 'nombre completo', 'apellidos', 'cliente', 'participante')
-  const email  = get('email', 'correo', 'e-mail', 'correo electronico', 'mail', 'email address')
+  // D/I helper: look for right-side column first, fall back to generic
+  const findSide = (base, rightHints, leftHints) => {
+    const r = find([...rightHints.map(h => base + ' ' + h), ...rightHints.map(h => h + ' ' + base)])
+    const l = find([...leftHints.map(h => base + ' ' + h), ...leftHints.map(h => h + ' ' + base)])
+    const generic = find([base])
+    return { r: r || generic || '', l: l || '' }
+  }
 
-  // Auto-generate placeholder email if missing
+  const nombre = find(['nombre completo', 'nombre', 'name', 'full name', 'cliente', 'participante', 'apellido'])
+  const email  = find(['email', 'correo electronico', 'correo', 'mail'])
+
   const emailAuto = !email && !!nombre
   const emailFinal = email || (nombre
-    ? nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$/, '') + '@sinmail.local'
+    ? nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$/g, '') + '@sinmail.local'
     : '')
+
+  // Body measurements (only populated if columns exist)
+  const brazo  = findSide('brazo',       ['d', 'der', 'derecho', 'r'],  ['i', 'izq', 'izquierdo', 'l'])
+  const muslo  = findSide('muslo',       ['d', 'der', 'derecho', 'r'],  ['i', 'izq', 'izquierdo', 'l'])
+  const gemelo = findSide('gemelo',      ['d', 'der', 'derecho', 'r'],  ['i', 'izq', 'izquierdo', 'l'])
+  const panto  = findSide('pantorrilla', ['d', 'der', 'derecho', 'r'],  ['i', 'izq', 'izquierdo', 'l'])
+
+  const meas = {
+    weight_kg:    parseFloat(find(['peso inicial', 'peso actual', 'peso'], ['objetivo', 'meta', 'goal'])) || null,
+    body_fat_pct: parseFloat(find(['grasa corporal', 'grasa', 'body fat', '% grasa'])) || null,
+    waist_cm:     parseFloat(find(['cintura'])) || null,
+    hips_cm:      parseFloat(find(['cadera'])) || null,
+    chest_cm:     parseFloat(find(['pecho', 'torax', 'chest'])) || null,
+    shoulder_cm:  parseFloat(find(['hombros', 'hombro', 'shoulder'])) || null,
+    arm_r_cm:     parseFloat(brazo.r) || null,
+    arm_l_cm:     parseFloat(brazo.l) || null,
+    thigh_r_cm:   parseFloat(muslo.r) || null,
+    thigh_l_cm:   parseFloat(muslo.l) || null,
+    calf_r_cm:    parseFloat(gemelo.r || panto.r) || null,
+    calf_l_cm:    parseFloat(gemelo.l || panto.l) || null,
+  }
+  const hasMeasurements = Object.values(meas).some(v => v !== null)
 
   return {
     nombre,
-    email:       emailFinal,
+    email:        emailFinal,
     emailAuto,
-    password:    get('contrasena', 'contraseña', 'password', 'pass', 'clave') || autoPass(),
-    age:         parseInt(get('edad', 'age')) || '',
-    height_cm:   parseFloat(get('altura cm', 'altura', 'height cm', 'height', 'altura_cm', 'height_cm', 'talla')) || '',
-    weight:      parseFloat(get('peso kg', 'peso', 'weight', 'weight kg', 'peso actual', 'peso_actual', 'peso inicial')) || '',
-    weight_goal: get('peso objetivo', 'objetivo peso', 'peso meta', 'weight_goal', 'peso_objetivo'),
-    kcal:        parseInt(get('kcal objetivo', 'kcal', 'calorias', 'calories', 'kcal_objetivo', 'calorias objetivo')) || '',
-    protein:     parseInt(get('proteina objetivo', 'proteina', 'protein', 'proteina_objetivo', 'proteinas')) || '',
-    notes:       get('notas', 'notes', 'observaciones', 'lesiones', 'objetivo principal', 'nivel actividad fisica', 'nivel actividad', 'objetivo'),
-    weeks:       parseInt(get('semanas', 'weeks', 'plan_weeks', 'duracion')) || 12,
+    password:     find(['contrasena', 'contraseña', 'password', 'pass', 'clave']) || autoPass(),
+    age:          parseInt(find(['edad', 'age'])) || '',
+    height_cm:    parseFloat(find(['altura', 'height', 'talla', 'estatura'])) || '',
+    weight:       parseFloat(find(['peso inicial', 'peso actual', 'peso'], ['objetivo', 'meta', 'goal'])) || '',
+    weight_goal:  find(['peso objetivo', 'objetivo peso', 'peso meta', 'weight goal']),
+    kcal:         parseInt(find(['kcal objetivo', 'kcal', 'calorias', 'calories', 'energia'], ['objetivo'])) || '',
+    protein:      parseInt(find(['proteina objetivo', 'proteina', 'protein'])) || '',
+    notes:        find(['objetivo principal', 'objetivo', 'notas', 'notes', 'observaciones', 'lesiones', 'nivel actividad']),
+    weeks:        parseInt(find(['semanas', 'weeks', 'duracion', 'plan'])) || 12,
+    _measurements: hasMeasurements ? meas : null,
   }
 }
 
@@ -2444,6 +2481,7 @@ function renderImportPreview(rows) {
     <div style="font-size:13px;color:var(--text2);margin-bottom:12px">
       Se encontraron <strong style="color:var(--text)">${rows.length} clientes</strong> listos para importar.
       Las contraseñas auto-generadas aparecen marcadas — guárdalas o cámbialas.
+      ${rows.some(r => r._measurements) ? `<span style="color:var(--green)"> · <i class="ti ti-ruler-2"></i> Medidas corporales detectadas — se importarán automáticamente.</span>` : ''}
     </div>
     ${rows.some(r => r.emailAuto) ? `<div style="font-size:12px;color:var(--amber);background:var(--amber)15;border:1px solid var(--amber)44;border-radius:8px;padding:8px 12px;margin-bottom:10px">
       <i class="ti ti-alert-triangle"></i> El archivo no tiene columna Email. Se ha generado un email provisional (<em>nombre@sinmail.local</em>) — actualízalos desde el perfil de cada cliente tras la importación.
@@ -2529,6 +2567,19 @@ window.runBulkImport = async function() {
       })
 
       if (clientErr) { results.push({ nombre: r.nombre, ok: false, msg: clientErr.message }); continue }
+
+      // Import body measurements if the file had measurement columns
+      if (r._measurements) {
+        const measData = Object.fromEntries(Object.entries(r._measurements).filter(([, v]) => v !== null))
+        if (Object.keys(measData).length > 0) {
+          await supabase.from('body_measurements').insert({
+            client_id: data.user.id,
+            measured_at: new Date().toISOString().split('T')[0],
+            ...measData
+          })
+        }
+      }
+
       results.push({ nombre: r.nombre, ok: true, email: r.email, password: r.password })
     } catch (err) {
       await supabase.auth.setSession({ access_token: trainerSession.access_token, refresh_token: trainerSession.refresh_token })
