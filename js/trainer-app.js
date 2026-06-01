@@ -2361,9 +2361,25 @@ async function parseExcel(file) {
   const data = XLSX.utils.sheet_to_json(ws, { raw: false, defval: '' })
   return data.map(row => {
     const norm = {}
-    Object.entries(row).forEach(([k, v]) => { norm[k.toLowerCase().trim()] = String(v).trim() })
+    Object.entries(row).forEach(([k, v]) => {
+      // Normalize key: lowercase, remove accents, strip units in parens, normalize spaces
+      const nk = k.toLowerCase().trim()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/\([^)]*\)/g, '')   // remove (kg), (cm), (%), etc.
+        .replace(/[^a-z0-9\s]/g, '') // remove special chars
+        .replace(/\s+/g, ' ').trim()
+      norm[nk] = String(v).trim()
+    })
     return normalizeRow(norm)
-  }).filter(r => r.email && r.nombre)
+  }).filter(r => r.nombre)
+}
+
+function normalizeKey(k) {
+  return k.toLowerCase().trim()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\([^)]*\)/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ').trim()
 }
 
 function loadScript(src) {
@@ -2377,19 +2393,41 @@ function loadScript(src) {
 }
 
 function normalizeRow(obj) {
-  const get = (...keys) => { for (const k of keys) { if (obj[k] != null && obj[k] !== '') return obj[k] } return '' }
+  // Accept both raw keys and pre-normalized keys
+  const n = {}
+  Object.entries(obj).forEach(([k, v]) => { n[normalizeKey ? normalizeKey(k) : k] = v; n[k] = v })
+
+  const get = (...keys) => {
+    for (const k of keys) {
+      const nk = typeof normalizeKey === 'function' ? normalizeKey(k) : k
+      if (n[nk] != null && n[nk] !== '') return n[nk]
+      if (n[k] != null && n[k] !== '') return n[k]
+    }
+    return ''
+  }
+
+  const nombre = get('nombre', 'name', 'full name', 'full_name', 'nombre completo', 'apellidos', 'cliente', 'participante')
+  const email  = get('email', 'correo', 'e-mail', 'correo electronico', 'mail', 'email address')
+
+  // Auto-generate placeholder email if missing
+  const emailAuto = !email && !!nombre
+  const emailFinal = email || (nombre
+    ? nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$/, '') + '@sinmail.local'
+    : '')
+
   return {
-    nombre:    get('nombre', 'name', 'full_name', 'nombre completo'),
-    email:     get('email', 'correo', 'e-mail'),
-    password:  get('contraseña', 'contrasena', 'password', 'pass', 'clave') || autoPass(),
-    age:       parseInt(get('edad', 'age')) || '',
-    height_cm: parseInt(get('altura_cm', 'altura', 'height_cm', 'height')) || '',
-    weight:    parseFloat(get('peso_actual', 'peso', 'weight', 'weight_kg')) || '',
-    weight_goal: get('peso_objetivo', 'weight_goal', 'objetivo peso'),
-    kcal:      parseInt(get('kcal_objetivo', 'kcal', 'calorias', 'calories')) || '',
-    protein:   parseInt(get('proteina_objetivo', 'proteina', 'protein', 'proteína')) || '',
-    notes:     get('notas', 'notes', 'observaciones', 'lesiones'),
-    weeks:     parseInt(get('semanas', 'weeks', 'plan_weeks', 'duración')) || 12,
+    nombre,
+    email:       emailFinal,
+    emailAuto,
+    password:    get('contrasena', 'contraseña', 'password', 'pass', 'clave') || autoPass(),
+    age:         parseInt(get('edad', 'age')) || '',
+    height_cm:   parseFloat(get('altura cm', 'altura', 'height cm', 'height', 'altura_cm', 'height_cm', 'talla')) || '',
+    weight:      parseFloat(get('peso kg', 'peso', 'weight', 'weight kg', 'peso actual', 'peso_actual', 'peso inicial')) || '',
+    weight_goal: get('peso objetivo', 'objetivo peso', 'peso meta', 'weight_goal', 'peso_objetivo'),
+    kcal:        parseInt(get('kcal objetivo', 'kcal', 'calorias', 'calories', 'kcal_objetivo', 'calorias objetivo')) || '',
+    protein:     parseInt(get('proteina objetivo', 'proteina', 'protein', 'proteina_objetivo', 'proteinas')) || '',
+    notes:       get('notas', 'notes', 'observaciones', 'lesiones', 'objetivo principal', 'nivel actividad fisica', 'nivel actividad', 'objetivo'),
+    weeks:       parseInt(get('semanas', 'weeks', 'plan_weeks', 'duracion')) || 12,
   }
 }
 
@@ -2407,6 +2445,9 @@ function renderImportPreview(rows) {
       Se encontraron <strong style="color:var(--text)">${rows.length} clientes</strong> listos para importar.
       Las contraseñas auto-generadas aparecen marcadas — guárdalas o cámbialas.
     </div>
+    ${rows.some(r => r.emailAuto) ? `<div style="font-size:12px;color:var(--amber);background:var(--amber)15;border:1px solid var(--amber)44;border-radius:8px;padding:8px 12px;margin-bottom:10px">
+      <i class="ti ti-alert-triangle"></i> El archivo no tiene columna Email. Se ha generado un email provisional (<em>nombre@sinmail.local</em>) — actualízalos desde el perfil de cada cliente tras la importación.
+    </div>` : ''}
     <div style="overflow-x:auto;margin-bottom:14px;max-height:320px;overflow-y:auto">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
@@ -2420,7 +2461,7 @@ function renderImportPreview(rows) {
           ${rows.map((r, i) => `
             <tr style="border-bottom:1px solid var(--border);${i % 2 === 0 ? 'background:var(--bg3)' : ''}">
               <td style="padding:6px 8px;white-space:nowrap">${escHtml(r.nombre)}</td>
-              <td style="padding:6px 8px;color:var(--text2)">${escHtml(r.email)}</td>
+              <td style="padding:6px 8px;color:${r.emailAuto ? 'var(--amber)' : 'var(--text2)'}">${escHtml(r.email)}${r.emailAuto ? ' <i class="ti ti-alert-circle" style="font-size:11px"></i>' : ''}</td>
               <td style="padding:6px 8px"><span class="tag" style="font-family:monospace;font-size:11px">${escHtml(r.password)}</span></td>
               <td style="padding:6px 8px;color:var(--text2)">${r.age || '—'}</td>
               <td style="padding:6px 8px;color:var(--text2)">${r.weight || '—'}</td>
