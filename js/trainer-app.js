@@ -723,7 +723,6 @@ function renderDietTab(el) {
   const meals = (diet?.diet_meals || []).slice().sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
 
   el.innerHTML = `
-    ${notesCard('diet-notes', c.notes_diet, 'notes_diet', 'ti-apple', 'Instrucciones de nutrición')}
     <div class="card" style="margin-bottom:12px;border-color:var(--blue)44">
       <div class="card-title" style="color:var(--blue)"><i class="ti ti-robot"></i> Editar dieta con IA</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
@@ -1102,6 +1101,157 @@ async function applyAIDietActions(actions) {
   }
 }
 
+// ─── IA EDITOR DE CARDIO ──────────────────────────────────────────────────────
+
+window.applyAICardioInstruction = async function(btn) {
+  const instruction = document.getElementById('ai-cardio-instruction')?.value?.trim()
+  if (!instruction) { showNotif('Escribe o dicta una instrucción'); return }
+  const resultEl = document.getElementById('ai-cardio-result')
+  btn.disabled = true
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Consultando IA...'
+  resultEl.style.display = 'none'
+
+  const c = SELECTED_CLIENT_DATA.client
+  const context = {
+    steps_goal: c.steps_goal || 9000,
+    cardio_goal_min: c.cardio_goal_min || 185,
+    reminder_interval_min: c.reminder_interval_min || null,
+    cardio_types: c.cardio_types || [],
+    available_types: CARDIO_TYPES.map(t => t.id)
+  }
+
+  try {
+    const res = await fetch('https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-cardio-editor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ instruction, context })
+    })
+    const resData = await res.json()
+    const { actions, error, debug } = resData
+    if (error) throw new Error(error)
+    if (!actions?.length) {
+      resultEl.style.display = 'block'; resultEl.style.color = 'var(--amber)'
+      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> La IA no generó acciones.<br><small style="color:var(--text3)">${debug || ''}</small>`
+      btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'; return
+    }
+    const updates = {}
+    for (const action of actions) {
+      if (action.type === 'set_steps_goal') updates.steps_goal = action.value
+      else if (action.type === 'set_cardio_goal') updates.cardio_goal_min = action.value
+      else if (action.type === 'set_reminder') updates.reminder_interval_min = action.value
+      else if (action.type === 'set_cardio_types') updates.cardio_types = action.types
+    }
+    if (Object.keys(updates).length) {
+      await supabase.from('clients').update(updates).eq('id', SELECTED_CLIENT)
+      Object.assign(SELECTED_CLIENT_DATA.client, updates)
+    }
+    resultEl.style.display = 'block'; resultEl.style.color = 'var(--green)'
+    resultEl.innerHTML = `<i class="ti ti-circle-check"></i> ${actions.length} cambio(s) aplicado(s).`
+    document.getElementById('ai-cardio-instruction').value = ''
+    renderTab()
+  } catch (err) {
+    resultEl.style.display = 'block'; resultEl.style.color = 'var(--red)'
+    resultEl.innerHTML = `<i class="ti ti-alert-circle"></i> ${err.message}`
+  }
+  btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+}
+
+// ─── IA EDITOR DE SUPLEMENTOS ─────────────────────────────────────────────────
+
+window.applyAISuplsInstruction = async function(btn) {
+  const instruction = document.getElementById('ai-supls-instruction')?.value?.trim()
+  if (!instruction) { showNotif('Escribe o dicta una instrucción'); return }
+  const resultEl = document.getElementById('ai-supls-result')
+  btn.disabled = true
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Consultando IA...'
+  resultEl.style.display = 'none'
+
+  const plan = {
+    supplements: SELECTED_CLIENT_DATA.supplements.map(s => ({
+      id: s.id, name: s.name, dose: s.dose || '', protein_g: s.protein_g || 0, kcal: s.kcal || 0, timing: s.timing || ''
+    })),
+    available_timings: SUPL_TIMINGS.map(t => t.value)
+  }
+
+  try {
+    const res = await fetch('https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-supls-editor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ instruction, plan })
+    })
+    const resData = await res.json()
+    const { actions, error, debug } = resData
+    if (error) throw new Error(error)
+    if (!actions?.length) {
+      resultEl.style.display = 'block'; resultEl.style.color = 'var(--amber)'
+      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> La IA no generó acciones.<br><small style="color:var(--text3)">${debug || ''}</small>`
+      btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'; return
+    }
+    for (const action of actions) {
+      if (action.type === 'add_supplement') {
+        const order = SELECTED_CLIENT_DATA.supplements.length
+        const { data: s } = await supabase.from('supplements')
+          .insert({ client_id: SELECTED_CLIENT, name: action.name, dose: action.dose || '', protein_g: action.protein_g || 0, kcal: action.kcal || 0, timing: action.timing || null, order_index: order })
+          .select().single()
+        if (s) SELECTED_CLIENT_DATA.supplements.push(s)
+      } else if (action.type === 'edit_supplement') {
+        await supabase.from('supplements').update(action.changes).eq('id', action.supplement_id)
+        const s = SELECTED_CLIENT_DATA.supplements.find(s => s.id === action.supplement_id)
+        if (s) Object.assign(s, action.changes)
+      } else if (action.type === 'remove_supplement') {
+        await supabase.from('supplements').delete().eq('id', action.supplement_id)
+        SELECTED_CLIENT_DATA.supplements = SELECTED_CLIENT_DATA.supplements.filter(s => s.id !== action.supplement_id)
+      }
+    }
+    resultEl.style.display = 'block'; resultEl.style.color = 'var(--green)'
+    resultEl.innerHTML = `<i class="ti ti-circle-check"></i> ${actions.length} cambio(s) aplicado(s).`
+    document.getElementById('ai-supls-instruction').value = ''
+    renderTab()
+  } catch (err) {
+    resultEl.style.display = 'block'; resultEl.style.color = 'var(--red)'
+    resultEl.innerHTML = `<i class="ti ti-alert-circle"></i> ${err.message}`
+  }
+  btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+}
+
+// ─── IA EDITOR DE MEDIDAS ─────────────────────────────────────────────────────
+
+window.applyAIMeasuresInstruction = async function(btn) {
+  const instruction = document.getElementById('ai-measures-instruction')?.value?.trim()
+  if (!instruction) { showNotif('Dicta las medidas del cliente'); return }
+  const resultEl = document.getElementById('ai-measures-result')
+  btn.disabled = true
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Procesando...'
+  resultEl.style.display = 'none'
+
+  try {
+    const res = await fetch('https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-measures-editor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ instruction })
+    })
+    const resData = await res.json()
+    const { measurement, error, debug } = resData
+    if (error) throw new Error(error)
+    if (!measurement) {
+      resultEl.style.display = 'block'; resultEl.style.color = 'var(--amber)'
+      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> No se pudieron extraer medidas.<br><small style="color:var(--text3)">${debug || ''}</small>`
+      btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Registrar con IA'; return
+    }
+    const { error: dbErr } = await supabase.from('body_measurements')
+      .insert({ client_id: SELECTED_CLIENT, measured_at: measurement.date || new Date().toISOString().split('T')[0], ...measurement })
+    if (dbErr) throw new Error(dbErr.message)
+    resultEl.style.display = 'block'; resultEl.style.color = 'var(--green)'
+    resultEl.innerHTML = '<i class="ti ti-circle-check"></i> Medidas registradas correctamente.'
+    document.getElementById('ai-measures-instruction').value = ''
+    renderTab()
+  } catch (err) {
+    resultEl.style.display = 'block'; resultEl.style.color = 'var(--red)'
+    resultEl.innerHTML = `<i class="ti ti-alert-circle"></i> ${err.message}`
+  }
+  btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Registrar con IA'
+}
+
 // ─── TAB: SUPLEMENTOS ─────────────────────────────────────────────────────────
 
 const SUPL_TIMINGS = [
@@ -1130,7 +1280,20 @@ function renderSupplementsTab(el) {
   const { supplements } = SELECTED_CLIENT_DATA
   const c = SELECTED_CLIENT_DATA.client
   el.innerHTML = `
-    ${notesCard('supls-notes', c.notes_supls, 'notes_supls', 'ti-pill', 'Instrucciones de suplementación')}
+    <div class="card" style="margin-bottom:12px;border-color:var(--blue)44">
+      <div class="card-title" style="color:var(--blue)"><i class="ti ti-robot"></i> Editar suplementación con IA</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
+        Di o escribe qué quieres cambiar. Ej: <em>"Añade creatina 5g por la mañana"</em>, <em>"Quita la proteína de suero"</em>, <em>"Cambia la dosis de magnesio a 400mg"</em>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <textarea id="ai-supls-instruction" style="flex:1;min-height:60px;resize:vertical;font-size:13px" placeholder="Instrucción para modificar la suplementación..."></textarea>
+        ${voiceMicBtn('ai-supls-instruction')}
+      </div>
+      <button class="btn btn-primary" onclick="applyAISuplsInstruction(this)" style="margin-top:10px;width:100%">
+        <i class="ti ti-wand"></i> Aplicar cambios con IA
+      </button>
+      <div id="ai-supls-result" style="margin-top:10px;font-size:12px;display:none"></div>
+    </div>
     <div class="card">
       <div class="card-title"><i class="ti ti-pill"></i> Suplementación</div>
       <div id="supls-admin-list">
@@ -1276,7 +1439,20 @@ async function renderCardioTab(el) {
   const stepsWithData = allLogs.filter(l => l.steps > 0)
 
   el.innerHTML = `
-    ${notesCard('cardio-notes', c.notes_cardio, 'notes_cardio', 'ti-run', 'Instrucciones de cardio')}
+    <div class="card" style="margin-bottom:12px;border-color:var(--blue)44">
+      <div class="card-title" style="color:var(--blue)"><i class="ti ti-robot"></i> Editar cardio con IA</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
+        Di o escribe qué quieres cambiar. Ej: <em>"Pon el objetivo de pasos a 10.000"</em>, <em>"Añade ciclismo y natación"</em>, <em>"Cambia el cardio semanal a 200 minutos"</em>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <textarea id="ai-cardio-instruction" style="flex:1;min-height:60px;resize:vertical;font-size:13px" placeholder="Instrucción para modificar el cardio..."></textarea>
+        ${voiceMicBtn('ai-cardio-instruction')}
+      </div>
+      <button class="btn btn-primary" onclick="applyAICardioInstruction(this)" style="margin-top:10px;width:100%">
+        <i class="ti ti-wand"></i> Aplicar cambios con IA
+      </button>
+      <div id="ai-cardio-result" style="margin-top:10px;font-size:12px;display:none"></div>
+    </div>
     <div class="metric-grid">
       <div class="metric">
         <div class="metric-label">Media pasos/día</div>
@@ -1456,6 +1632,20 @@ async function renderMeasuresTab(el) {
   }
 
   el.innerHTML = `
+    <div class="card" style="margin-bottom:12px;border-color:var(--blue)44">
+      <div class="card-title" style="color:var(--blue)"><i class="ti ti-robot"></i> Registrar medidas con IA</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
+        Dicta las medidas y la IA las registra automáticamente. Ej: <em>"Peso 71 kilos, cintura 76 cm, brazo derecho 33 cm, cadera 94 cm"</em>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <textarea id="ai-measures-instruction" style="flex:1;min-height:60px;resize:vertical;font-size:13px" placeholder="Dicta las medidas del cliente..."></textarea>
+        ${voiceMicBtn('ai-measures-instruction')}
+      </div>
+      <button class="btn btn-primary" onclick="applyAIMeasuresInstruction(this)" style="margin-top:10px;width:100%">
+        <i class="ti ti-wand"></i> Registrar con IA
+      </button>
+      <div id="ai-measures-result" style="margin-top:10px;font-size:12px;display:none"></div>
+    </div>
     <div class="card">
       <div class="card-title"><i class="ti ti-plus"></i> Añadir medición</div>
       <div class="form-group">
