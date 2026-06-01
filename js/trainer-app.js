@@ -330,6 +330,9 @@ function renderProfileTab(el) {
       </div>
     </div>
     <button class="btn btn-primary" onclick="saveProfile()" style="width:100%">Guardar perfil</button>
+    <button class="btn" onclick="inviteClient()" style="width:100%;margin-top:8px;background:var(--bg3);border-color:var(--green);color:var(--green)">
+      <i class="ti ti-send"></i> Invitar cliente
+    </button>
   `
 }
 
@@ -382,6 +385,67 @@ window.saveProfile = async function() {
   } else {
     showNotif('Error al guardar: ' + error.message)
   }
+}
+
+window.inviteClient = async function() {
+  const c = SELECTED_CLIENT_DATA.client
+  const clientName = c.profiles?.full_name || 'tu cliente'
+  const trainerName = TRAINER_PROFILE_SNAPSHOT?.full_name || 'Tu Preparador'
+
+  const btn = document.querySelector('button[onclick="inviteClient()"]')
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando enlace...' }
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/generate-invite-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ clientId: SELECTED_CLIENT })
+    })
+    const data = await res.json()
+    if (data.error) throw new Error(data.error)
+
+    const link = data.link
+    const msg = `¡Hola ${clientName}! 👋\n\nTe doy la bienvenida a *Tu Preparador*, la app con la que vamos a trabajar juntos tu plan de entrenamiento y nutrición.\n\nSoy ${trainerName}, tu preparador personal. A partir de ahora podrás ver tu plan, registrar tu progreso diario y seguir tu evolución directamente desde la app.\n\n👉 Accede aquí con tu enlace personal (válido para una sola sesión):\n${link}\n\nUna vez dentro, ya podrás iniciar sesión cuando quieras desde:\n🌐 www.tupreparador.es\n\n¡Cualquier duda, estoy aquí! 💪`
+
+    showInviteModal(msg)
+  } catch (e) {
+    showNotif('Error al generar enlace: ' + e.message)
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Invitar cliente' }
+  }
+}
+
+function showInviteModal(msg) {
+  const existing = document.getElementById('invite-modal-overlay')
+  if (existing) existing.remove()
+
+  const overlay = document.createElement('div')
+  overlay.id = 'invite-modal-overlay'
+  overlay.className = 'modal-overlay'
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:500px;width:90%">
+      <div class="card-title" style="margin-bottom:12px"><i class="ti ti-send" style="color:var(--green)"></i> Mensaje de bienvenida</div>
+      <textarea id="invite-msg-text" style="min-height:260px;font-size:13px;line-height:1.6;white-space:pre-wrap">${msg.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-primary" style="flex:1" onclick="copyInviteMsg()"><i class="ti ti-copy"></i> Copiar</button>
+        <button class="btn" style="flex:1;background:#25D366;color:#fff;border-color:#25D366" onclick="shareInviteWhatsApp()"><i class="ti ti-brand-whatsapp"></i> WhatsApp</button>
+        <button class="btn" style="background:var(--bg3)" onclick="document.getElementById('invite-modal-overlay').remove()"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+  `
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove() })
+  document.body.appendChild(overlay)
+}
+
+window.copyInviteMsg = function() {
+  const text = document.getElementById('invite-msg-text').value
+  navigator.clipboard.writeText(text).then(() => showNotif('Mensaje copiado ✓'))
+}
+
+window.shareInviteWhatsApp = function() {
+  const text = document.getElementById('invite-msg-text').value
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank')
 }
 
 window.toggleClientActive = async function(active) {
