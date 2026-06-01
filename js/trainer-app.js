@@ -2558,8 +2558,6 @@ window.runBulkImport = async function() {
     `
   }
 }
-        password: r.password,
-        options: { data: { role: 'client', full_name: r.nombre } }
 
 function updateImportProgress(done, total, name) {
   const pct = Math.round((done / total) * 100)
