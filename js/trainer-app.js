@@ -2574,6 +2574,9 @@ function updateImportProgress(done, total, name) {
 function renderImportResults(results) {
   const ok = results.filter(r => r.ok)
   const fail = results.filter(r => !r.ok)
+  // Store results so the download button can access them without inline JSON
+  window._lastImportOk = ok
+
   document.getElementById('import-progress-view').innerHTML = `
     <div style="text-align:center;margin-bottom:16px">
       <i class="ti ti-circle-check" style="font-size:32px;color:var(--green);display:block;margin-bottom:8px"></i>
@@ -2590,8 +2593,8 @@ function renderImportResults(results) {
             <span style="color:var(--text2);font-family:monospace">${escHtml(r.password)}</span>
           </div>`).join('')}
       </div>
-      <button class="btn" onclick="downloadImportResults(${JSON.stringify(ok).replace(/</g,'\\u003c')})" style="width:100%;margin-top:10px;font-size:12px">
-        <i class="ti ti-download"></i> Descargar contraseñas temporales
+      <button class="btn" onclick="downloadImportResults()" style="width:100%;margin-top:10px;font-size:12px">
+        <i class="ti ti-download"></i> Descargar contraseñas temporales (CSV)
       </button>
     </div>` : ''}
     ${fail.length ? `
@@ -2603,8 +2606,11 @@ function renderImportResults(results) {
   `
 }
 
-window.downloadImportResults = function(rows) {
-  const csv = 'nombre,email,contraseña_temporal\n' + rows.map(r => `${r.nombre},${r.email},${r.password}`).join('\n')
+window.downloadImportResults = function() {
+  const rows = window._lastImportOk || []
+  if (!rows.length) return
+  const esc = v => `"${String(v).replace(/"/g, '""')}"`
+  const csv = 'nombre,email,contraseña_temporal\n' + rows.map(r => `${esc(r.nombre)},${esc(r.email)},${esc(r.password)}`).join('\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
