@@ -9,16 +9,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **URL producción (temporal):** fitness-uri.vercel.app
 - **Supabase proyecto:** cwwvwrzqlavuyqhyeepu
 - **Stack:** Vanilla HTML/CSS/JS + Supabase (Auth + PostgreSQL) + Vercel (estático)
-- **Deploy:** push a `main` → Vercel despliega automáticamente. Desarrollar en `claude/exciting-maxwell-3GNsG`, mergear a `main` para ver cambios en producción.
+- **Deploy:** push a `main` → Vercel despliega automáticamente. Desarrollar en `claude/wizardly-wright-kr57y`, mergear a `main` para ver cambios en producción.
 
 ## Estructura de archivos
 ```
 fitness-uri/
-├── index.html              # Login + recuperación de contraseña (vista inline)
+├── index.html              # Landing page pública (hero + features + pricing + CTA)
+├── login.html              # Login + recuperación de contraseña (vista inline)
+├── register.html           # Registro de preparador (trial 14 días)
 ├── reset-password.html     # Nueva contraseña tras link de email
+├── invite.html             # Activación de cuenta de cliente (vía invitación)
 ├── client.html             # Portal del cliente (mobile-first, max-width 480px)
 ├── trainer.html            # Portal del preparador (desktop, max-width 900px, sidebar + main)
 ├── admin.html              # Panel admin
+├── Logopreparador.png      # Logo oficial Tu Preparador (PNG con transparencia RGBA)
 ├── css/shared.css          # Design system completo — NO tocar sin revisar qué usa
 ├── js/
 │   ├── supabase-client.js  # Init Supabase (credenciales ya configuradas)
@@ -127,6 +131,16 @@ Sidebar superior: logo 72px (clickable para subir imagen, camera overlay), nombr
 Componentes: `.card`, `.btn`, `.btn-primary`, `.metric`, `.pill`, `.pill-s`, `.pill-i`, `.tag`, `.form-group`, `.form-label`, `.prog-wrap` + `.prog-fill`, `.cal-day`, `.modal-overlay` + `.modal`
 Iconos: Tabler Icons (`ti ti-*`)
 
+## Design system — páginas públicas (auth + landing)
+Todas las páginas públicas comparten el mismo sistema visual:
+- **Fondo:** `#0A0F1E` con speed lines `-52deg` vía `body::before` (z-index:0)
+- **Logo:** `<img src="Logopreparador.png">` — 300px en heroes de auth, 56px en nav de landing
+- **Hero:** radial-gradient cyan en la parte superior, línea divisoria cyan abajo
+- **Animaciones:** `logoIn` (.7s), `heroIn` (.7s .1s/.2s/.3s), `cardIn` (.6s .15s) — todos cubic-bezier(.22,1,.36,1)
+- **Card formulario:** `rgba(3,4,94,0.7)` con `backdrop-filter:blur(20px)`, border-top cyan 2px
+- **Tipografía:** Barlow Condensed (headings, uppercase) + Barlow (body)
+- **Botón primario:** `.btn-login` — fondo `var(--blue)`, texto `#0A0F1E`, hover glow cyan
+
 ## Usuarios en producción
 - **Admin:** oalamanortiz@gmail.com
 - **Trainer U BODY COACH:** oalaman@icloud.com (ID: `53ef0bfc-df61-4904-8a4e-fb24b3040874`)
@@ -166,6 +180,9 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - `010_workout_day_notes` — `notes TEXT` en workout_days (instrucciones por día visibles en cliente)
 
 ## Funcionalidades implementadas (producción)
+- [x] Landing page pública (`index.html`) — hero, features, how-it-works, pricing, CTA, footer
+- [x] Páginas de auth rediseñadas (`login.html`, `register.html`, `reset-password.html`, `invite.html`) — hero con logo real, speed lines, animaciones staggered
+- [x] Logo oficial `Logopreparador.png` (RGBA transparente) en todas las páginas públicas
 - [x] Sistema de puntuación diaria (entrenamiento 40% + nutrición 40% + cardio 20%)
 - [x] Botón "completado" en entrenamiento, nutrición y cardio (one-per-day)
 - [x] Calendario mensual con % coloreado (verde ≥80%, ámbar ≥50%, rojo <50%)
@@ -190,6 +207,12 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - `SUPL_TIMINGS` y `CARDIO_TYPES` son constantes definidas en `trainer-app.js`; los mismos valores están duplicados inline en `client-app.js` (candidato a extraer a un módulo compartido)
 - Drag & drop de comidas usa HTML5 nativo (`draggable`), activado solo desde el handle `.drag-handle` vía `mousedown` para evitar conflictos con inputs
 - El snapshot de "Mi Perfil" se guarda en `TRAINER_PROFILE_SNAPSHOT`; al guardar se actualiza el snapshot y el nombre en sidebar
+
+## Notas de arquitectura (sesión 02/06)
+- Páginas públicas usan `Logopreparador.png` (300px en auth heroes, 56px en nav landing) en lugar de SVG placeholder
+- Speed lines background: `body::before` fixed, z-index:0; todo el contenido en z-index:1
+- `register.html` mantiene tagline "LA PLATAFORMA PARA PREPARADORES ÉLITE" debajo del logo; `invite.html` mantiene "BIENVENIDO A TU PORTAL DE CLIENTE"
+- `login.html` y `reset-password.html` eliminaron brand-name y brand-tagline (ya incluidos en el logo)
 
 ## Notas de arquitectura (sesión 25/05)
 - `notesCard(fieldId, value, dbColumn, icon, label)` — helper en trainer-app.js que genera tarjeta con textarea + mic + botón guardar; llama a `saveNotes(dbColumn, fieldId, btn)` que hace update directo a `clients`
