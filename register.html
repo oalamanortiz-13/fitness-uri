@@ -5,18 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0a0a">
-<title>Fitness URI — Registro de preparador</title>
+<meta name="theme-color" content="#03045E">
+<title>Tu Preparador — Registro de preparador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="stylesheet" href="css/shared.css">
 <style>
   body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
   .register-wrap{width:100%;max-width:380px}
-  .logo{text-align:center;margin-bottom:32px}
-  .logo i{font-size:48px;color:var(--blue);display:block;margin-bottom:8px}
-  .logo h1{font-size:24px;font-weight:700}
-  .logo p{font-size:13px;color:var(--text2);margin-top:4px}
-  .register-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+  .logo{text-align:center;margin-bottom:32px;animation:shimmer .6s ease-out both}
+  .logo svg{display:block;margin:0 auto 14px}
+  .logo h1{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--text)}
+  .logo p{font-size:10px;color:var(--text2);margin-top:6px;letter-spacing:.2em;text-transform:uppercase}
+  .register-card{
+    background:var(--bg2);border:1px solid rgba(0,212,255,0.2);
+    border-top:2px solid var(--blue);border-radius:var(--radius);padding:24px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.5)
+  }
   .error-msg{background:#E24B4A22;border:1px solid #E24B4A44;color:#F09595;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:12px;display:none}
   .success-box{text-align:center;padding:24px 16px;display:none}
   .success-box i{font-size:48px;color:var(--green);display:block;margin-bottom:12px}
@@ -31,9 +37,22 @@
 
 <div class="register-wrap">
   <div class="logo">
-    <i class="ti ti-barbell"></i>
-    <h1>Fitness URI</h1>
-    <p>Registro de preparador físico</p>
+    <svg width="72" height="66" viewBox="0 0 72 66" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="tpT2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="100%" stop-color="#a8eeff"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="40" height="11" rx="2" fill="url(#tpT2)"/>
+      <rect x="14" y="0" width="12" height="60" rx="2" fill="url(#tpT2)"/>
+      <rect x="32" y="18" width="11" height="48" rx="2" fill="#00D4FF"/>
+      <rect x="32" y="18" width="34" height="10" rx="2" fill="#00D4FF"/>
+      <rect x="55" y="18" width="11" height="32" rx="2" fill="#00D4FF"/>
+      <rect x="32" y="40" width="34" height="10" rx="2" fill="#00D4FF"/>
+    </svg>
+    <h1>TU PREPARADOR</h1>
+    <p>REGISTRO DE <span style="color:var(--blue)">PREPARADOR</span></p>
   </div>
 
   <div class="register-card">
