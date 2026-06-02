@@ -9,55 +9,225 @@
 <title>Tu Preparador — Registro de preparador</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,600;1,700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="stylesheet" href="css/shared.css">
 <style>
-  body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-  .register-wrap{width:100%;max-width:380px}
-  .logo{text-align:center;margin-bottom:32px;animation:shimmer .6s ease-out both}
-  .logo svg{display:block;margin:0 auto 14px}
-  .logo h1{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--text)}
-  .logo p{font-size:10px;color:var(--text2);margin-top:6px;letter-spacing:.2em;text-transform:uppercase}
-  .register-card{
-    background:var(--bg2);border:1px solid rgba(0,212,255,0.2);
-    border-top:2px solid var(--blue);border-radius:var(--radius);padding:24px;
-    box-shadow:0 8px 40px rgba(0,0,0,0.5)
-  }
-  .error-msg{background:#E24B4A22;border:1px solid #E24B4A44;color:#F09595;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:12px;display:none}
-  .success-box{text-align:center;padding:24px 16px;display:none}
-  .success-box i{font-size:48px;color:var(--green);display:block;margin-bottom:12px}
-  .success-box h2{font-size:18px;font-weight:700;margin-bottom:8px}
-  .success-box p{font-size:13px;color:var(--text2);line-height:1.5}
-  .divider{text-align:center;font-size:12px;color:var(--text3);margin:16px 0}
-  .link-btn{background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline}
-  .trial-badge{background:var(--green)22;border:1px solid var(--green)44;color:#6fcfa8;border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;text-align:center;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:6px}
+body{
+  display:flex;flex-direction:column;min-height:100vh;
+  padding:0;overflow-x:hidden;
+  background:#0A0F1E;
+}
+
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    repeating-linear-gradient(
+      -52deg,
+      transparent 0px,transparent 48px,
+      rgba(0,212,255,0.04) 48px,rgba(0,212,255,0.04) 50px
+    ),
+    repeating-linear-gradient(
+      -52deg,
+      transparent 0px,transparent 120px,
+      rgba(0,212,255,0.025) 120px,rgba(0,212,255,0.025) 122px
+    );
+}
+
+.login-hero{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;
+  padding:36px 24px 28px;
+  background:
+    radial-gradient(ellipse 100% 70% at 50% 0%,rgba(0,212,255,0.1) 0%,transparent 65%),
+    radial-gradient(ellipse 60% 40% at 50% 100%,rgba(3,4,94,0.6) 0%,transparent 80%);
+}
+.login-hero::after{
+  content:'';
+  position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,0.5) 40%,rgba(0,212,255,0.5) 60%,transparent);
+}
+
+.tp-logo{
+  display:block;margin:0 auto 16px;
+  filter:drop-shadow(0 0 20px rgba(0,212,255,0.35));
+  animation:logoIn .7s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes logoIn{
+  from{opacity:0;transform:translateY(-16px) scale(.92)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+.brand-name{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(28px,7vw,40px);
+  font-weight:700;text-transform:uppercase;
+  letter-spacing:.12em;color:#fff;
+  line-height:1;margin-bottom:8px;
+  animation:heroIn .7s .1s cubic-bezier(.22,1,.36,1) both;
+}
+.brand-tagline{
+  font-size:11px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--text2);margin-bottom:24px;
+  animation:heroIn .7s .2s cubic-bezier(.22,1,.36,1) both;
+}
+.brand-tagline span{color:var(--blue)}
+@keyframes heroIn{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.values-row{
+  display:flex;gap:0;width:100%;max-width:380px;
+  animation:heroIn .7s .3s cubic-bezier(.22,1,.36,1) both;
+}
+.value-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:10px 6px;
+  border:1px solid rgba(0,212,255,0.12);
+  border-right:none;
+  background:rgba(0,212,255,0.03);
+}
+.value-item:first-child{border-radius:8px 0 0 8px}
+.value-item:last-child{border-radius:0 8px 8px 0;border-right:1px solid rgba(0,212,255,0.12)}
+.value-icon{
+  width:32px;height:32px;border-radius:7px;
+  background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--blue);font-size:16px;flex-shrink:0;
+}
+.value-label{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:#fff;
+}
+
+.login-form-wrap{
+  position:relative;z-index:1;
+  width:100%;max-width:420px;
+  margin:0 auto;
+  padding:24px 20px 40px;
+}
+
+.login-card{
+  background:rgba(3,4,94,0.7);
+  border:1px solid rgba(0,212,255,0.18);
+  border-top:2px solid var(--blue);
+  border-radius:var(--radius);padding:24px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 0 1px rgba(0,212,255,0.04);
+  animation:cardIn .6s .15s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes cardIn{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.login-title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:18px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:#fff;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.login-title::before{
+  content:'';width:3px;height:20px;background:var(--blue);
+  border-radius:2px;flex-shrink:0;
+  box-shadow:0 0 8px rgba(0,212,255,0.6);
+}
+
+.trial-badge{
+  background:rgba(29,158,117,0.12);border:1px solid rgba(29,158,117,0.3);
+  color:#6fcfa8;border-radius:var(--radius-sm);
+  padding:8px 12px;font-size:12px;text-align:center;
+  margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+
+.error-msg{
+  background:rgba(226,75,74,0.12);border:1px solid rgba(226,75,74,0.3);
+  color:#F09595;border-radius:var(--radius-sm);padding:10px 14px;
+  font-size:13px;margin-bottom:12px;display:none;
+}
+
+.success-box{text-align:center;padding:24px 16px;display:none}
+.success-box i{font-size:48px;color:var(--green);display:block;margin-bottom:12px}
+.success-box h2{font-size:18px;font-weight:700;margin-bottom:8px;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.success-box p{font-size:13px;color:var(--text2);line-height:1.5}
+
+.btn-login{
+  width:100%;min-height:50px;margin-top:6px;
+  background:var(--blue);border:none;border-radius:6px;
+  color:#0A0F1E;font-family:'Barlow Condensed',sans-serif;
+  font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.btn-login:hover{
+  box-shadow:0 0 28px rgba(0,212,255,0.55);
+  background:#18DCFF;transform:translateY(-1px);
+}
+.btn-login:active{transform:scale(.98)}
+.btn-login:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+.login-links{margin-top:16px;text-align:center}
+.login-links a{font-size:12px;color:var(--text2);text-decoration:none;transition:color .2s}
+.login-links a:hover{color:var(--blue)}
+.login-links .accent{color:var(--blue);font-weight:600}
 </style>
 </head>
 <body>
 
-<div class="register-wrap">
-  <div class="logo">
-    <svg width="72" height="66" viewBox="0 0 72 66" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="tpT2" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#ffffff"/>
-          <stop offset="100%" stop-color="#a8eeff"/>
-        </linearGradient>
-      </defs>
-      <rect x="0" y="0" width="40" height="11" rx="2" fill="url(#tpT2)"/>
-      <rect x="14" y="0" width="12" height="60" rx="2" fill="url(#tpT2)"/>
-      <rect x="32" y="18" width="11" height="48" rx="2" fill="#00D4FF"/>
-      <rect x="32" y="18" width="34" height="10" rx="2" fill="#00D4FF"/>
-      <rect x="55" y="18" width="11" height="32" rx="2" fill="#00D4FF"/>
-      <rect x="32" y="40" width="34" height="10" rx="2" fill="#00D4FF"/>
-    </svg>
-    <h1>TU PREPARADOR</h1>
-    <p>REGISTRO DE <span style="color:var(--blue)">PREPARADOR</span></p>
-  </div>
+<!-- ═══ HERO ═══ -->
+<div class="login-hero">
+  <svg class="tp-logo" width="88" height="62" viewBox="0 0 110 78" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="tpRegT" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="100%" stop-color="#b0eeff"/>
+      </linearGradient>
+      <filter id="tpRegGlow">
+        <feGaussianBlur stdDeviation="2" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <g transform="skewX(-10) translate(6,0)">
+      <rect x="0" y="2" width="46" height="13" rx="2.5" fill="url(#tpRegT)"/>
+      <rect x="16" y="2" width="13" height="64" rx="2.5" fill="url(#tpRegT)"/>
+    </g>
+    <g transform="skewX(-10) translate(40,0)" filter="url(#tpRegGlow)">
+      <rect x="0" y="20" width="12" height="56" rx="2.5" fill="#00D4FF"/>
+      <rect x="0" y="20" width="36" height="12" rx="2.5" fill="#00D4FF"/>
+      <rect x="24" y="20" width="12" height="30" rx="2.5" fill="#00D4FF"/>
+      <rect x="0" y="38" width="36" height="12" rx="2.5" fill="#00D4FF"/>
+    </g>
+  </svg>
 
-  <div class="register-card">
-    <!-- Formulario de registro -->
+  <div class="brand-name">TU PREPARADOR</div>
+  <div class="brand-tagline">LA PLATAFORMA PARA <span>PREPARADORES ÉLITE</span></div>
+
+  <div class="values-row">
+    <div class="value-item">
+      <div class="value-icon"><i class="ti ti-users"></i></div>
+      <div class="value-label">Gestiona</div>
+    </div>
+    <div class="value-item">
+      <div class="value-icon"><i class="ti ti-barbell"></i></div>
+      <div class="value-label">Planifica</div>
+    </div>
+    <div class="value-item">
+      <div class="value-icon"><i class="ti ti-chart-line"></i></div>
+      <div class="value-label">Evoluciona</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FORM ═══ -->
+<div class="login-form-wrap">
+  <div class="login-card">
+
     <div id="form-view">
+      <div class="login-title">Crea tu cuenta gratis</div>
+
       <div class="trial-badge">
         <i class="ti ti-gift" style="font-size:14px"></i>
         14 días gratis · Sin tarjeta de crédito
@@ -86,17 +256,17 @@
 
       <div class="error-msg" id="error-msg"></div>
 
-      <button class="btn btn-primary" id="register-btn" onclick="doRegister()" style="width:100%;margin-top:4px">
-        Crear cuenta gratis
+      <button class="btn-login" id="register-btn" onclick="doRegister()">
+        <i class="ti ti-user-plus"></i>
+        <span>Crear cuenta gratis</span>
       </button>
 
-      <div class="divider">¿Ya tienes cuenta?</div>
-      <button class="link-btn" onclick="window.location.href='login.html'" style="width:100%;text-align:center">
-        Iniciar sesión
-      </button>
+      <div class="login-links">
+        ¿Ya tienes cuenta?
+        <a href="login.html" class="accent"> Iniciar sesión</a>
+      </div>
     </div>
 
-    <!-- Estado de éxito -->
     <div class="success-box" id="success-view">
       <i class="ti ti-circle-check"></i>
       <h2>¡Cuenta creada!</h2>
@@ -109,7 +279,6 @@
 import { supabase } from './js/supabase-client.js'
 import { getRole, redirectByRole } from './js/auth.js'
 
-// Si ya hay sesión activa, redirigir
 const { data: { session } } = await supabase.auth.getSession()
 if (session) {
   const profile = await getRole(session.user.id)
@@ -121,13 +290,13 @@ document.getElementById('password2').addEventListener('keydown', e => {
 })
 
 window.doRegister = async function() {
-  const name     = document.getElementById('name').value.trim()
-  const email    = document.getElementById('email').value.trim()
+  const name      = document.getElementById('name').value.trim()
+  const email     = document.getElementById('email').value.trim()
   const specialty = document.getElementById('specialty').value.trim()
-  const password = document.getElementById('password').value
+  const password  = document.getElementById('password').value
   const password2 = document.getElementById('password2').value
-  const btn      = document.getElementById('register-btn')
-  const errEl    = document.getElementById('error-msg')
+  const btn       = document.getElementById('register-btn')
+  const errEl     = document.getElementById('error-msg')
 
   errEl.style.display = 'none'
 
@@ -137,7 +306,7 @@ window.doRegister = async function() {
   if (password.length < 8) { showError('La contraseña debe tener al menos 8 caracteres.'); return }
   if (password !== password2) { showError('Las contraseñas no coinciden.'); return }
 
-  btn.textContent = 'Creando cuenta...'
+  btn.innerHTML = '<span>Creando cuenta...</span>'
   btn.disabled = true
 
   const { data, error } = await supabase.auth.signUp({
@@ -152,18 +321,16 @@ window.doRegister = async function() {
     showError(error.message === 'User already registered'
       ? 'Este email ya está registrado. ¿Quieres iniciar sesión?'
       : error.message)
-    btn.textContent = 'Crear cuenta gratis'
+    btn.innerHTML = '<i class="ti ti-user-plus"></i><span>Crear cuenta gratis</span>'
     btn.disabled = false
     return
   }
 
-  // Si hay sesión activa (email confirm desactivado), redirigir directo
   if (data.session) {
     document.getElementById('form-view').style.display = 'none'
     document.getElementById('success-view').style.display = 'block'
     setTimeout(() => window.location.href = 'trainer.html', 1500)
   } else {
-    // Email confirm activado: mostrar mensaje de revisión de email
     document.getElementById('form-view').style.display = 'none'
     const sv = document.getElementById('success-view')
     sv.style.display = 'block'
