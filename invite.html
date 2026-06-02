@@ -51,6 +51,7 @@ body::before{
 
 .tp-logo{
   display:block;margin:0 auto 16px;
+  width:220px;height:auto;
   filter:drop-shadow(0 0 20px rgba(0,212,255,0.35));
   animation:logoIn .7s cubic-bezier(.22,1,.36,1) both;
 }
@@ -161,31 +162,7 @@ body::before{
 
 <!-- ═══ HERO ═══ -->
 <div class="login-hero">
-  <svg class="tp-logo" width="88" height="62" viewBox="0 0 110 78" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="tpInvT" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#ffffff"/>
-        <stop offset="100%" stop-color="#b0eeff"/>
-      </linearGradient>
-      <filter id="tpInvGlow">
-        <feGaussianBlur stdDeviation="2" result="blur"/>
-        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-    </defs>
-    <g transform="skewX(-10) translate(6,0)">
-      <rect x="0" y="2" width="46" height="13" rx="2.5" fill="url(#tpInvT)"/>
-      <rect x="16" y="2" width="13" height="64" rx="2.5" fill="url(#tpInvT)"/>
-    </g>
-    <g transform="skewX(-10) translate(40,0)" filter="url(#tpInvGlow)">
-      <rect x="0" y="20" width="12" height="56" rx="2.5" fill="#00D4FF"/>
-      <rect x="0" y="20" width="36" height="12" rx="2.5" fill="#00D4FF"/>
-      <rect x="24" y="20" width="12" height="30" rx="2.5" fill="#00D4FF"/>
-      <rect x="0" y="38" width="36" height="12" rx="2.5" fill="#00D4FF"/>
-    </g>
-  </svg>
-
-  <div class="brand-name">TU PREPARADOR</div>
-  <div class="brand-tagline">BIENVENIDO A TU <span>PORTAL DE CLIENTE</span></div>
+  <img class="tp-logo" src="logo.png" alt="Tu Preparador">
 </div>
 
 <!-- ═══ FORM ═══ -->
