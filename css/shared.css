@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Exo+2:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,600;1,700&family=Barlow:wght@300;400;500;600;700&display=swap');
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -12,14 +12,17 @@
 body{
   background:var(--bg);
   color:var(--text);
-  font-family:'Exo 2',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-family:'Barlow',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   min-height:100vh;
   padding-bottom:80px;
   background-image:
     radial-gradient(ellipse 90% 50% at 50% -5%,rgba(0,212,255,0.07) 0%,transparent 70%),
     repeating-linear-gradient(-55deg,transparent,transparent 80px,rgba(0,212,255,0.012) 80px,rgba(0,212,255,0.012) 82px);
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  font-size:16px;
 }
-.app{max-width:480px;margin:0 auto;padding:0 16px;position:relative;z-index:1}
+.app{max-width:480px;margin:0 auto;padding:0 16px;position:relative;z-index:1;overscroll-behavior:contain}
 
 /* NAV BOTTOM */
 .nav{
@@ -33,7 +36,7 @@ body{
   flex:1;padding:10px 4px 8px;border:none;background:transparent;
   color:var(--text2);font-size:8px;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;gap:3px;
-  transition:color .2s;font-family:'Exo 2',inherit;
+  transition:color .2s;font-family:'Barlow',inherit;
   text-transform:uppercase;letter-spacing:.06em;font-weight:600
 }
 .nav button i{font-size:20px}
@@ -46,7 +49,7 @@ body{
 /* HEADER */
 .page-header{margin-bottom:16px}
 .page-header h1{
-  font-family:'Rajdhani',sans-serif;
+  font-family:'Barlow Condensed',sans-serif;
   font-size:28px;font-weight:700;
   text-transform:uppercase;letter-spacing:.06em;color:var(--text)
 }
@@ -70,7 +73,7 @@ body{
   font-size:11px;font-weight:700;color:var(--text);
   margin-bottom:12px;display:flex;align-items:center;gap:6px;
   text-transform:uppercase;letter-spacing:.1em;
-  font-family:'Exo 2',sans-serif
+  font-family:'Barlow',sans-serif
 }
 .card-title i{color:var(--blue);font-size:16px}
 
@@ -94,7 +97,7 @@ body{
 }
 .metric-val{
   font-size:22px;font-weight:700;color:var(--text);
-  font-family:'Rajdhani',sans-serif;line-height:1.1
+  font-family:'Barlow Condensed',sans-serif;line-height:1.1
 }
 .metric-sub{font-size:10px;color:var(--text3);margin-top:2px}
 
@@ -121,7 +124,7 @@ body{
   border:1px solid var(--border2);
   background:var(--bg3);color:var(--text);
   font-size:13px;cursor:pointer;
-  font-family:'Exo 2',inherit;
+  font-family:'Barlow',inherit;
   transition:all .2s;letter-spacing:.03em
 }
 .btn:hover{border-color:var(--blue);box-shadow:0 0 10px rgba(0,212,255,0.15)}
@@ -151,7 +154,7 @@ body{
 .timer-big{
   font-size:56px;font-weight:700;text-align:center;
   color:var(--blue);letter-spacing:-2px;margin:8px 0;
-  font-family:'Rajdhani',sans-serif;
+  font-family:'Barlow Condensed',sans-serif;
   text-shadow:0 0 24px rgba(0,212,255,0.45)
 }
 
@@ -196,7 +199,7 @@ textarea{resize:vertical;min-height:80px}
   height:36px;border-radius:6px;display:flex;align-items:center;
   justify-content:center;font-size:12px;
   background:var(--bg3);color:var(--text2);border:1px solid transparent;
-  font-family:'Exo 2',sans-serif
+  font-family:'Barlow',sans-serif
 }
 .cal-day.done{
   background:rgba(29,158,117,0.2);color:#5DCAA5;
@@ -217,7 +220,7 @@ textarea{resize:vertical;min-height:80px}
   border:1px solid var(--border2);
   background:var(--bg3);color:var(--text2);
   font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0;
-  font-family:'Exo 2',inherit;transition:all .2s;
+  font-family:'Barlow',inherit;transition:all .2s;
   text-transform:uppercase;letter-spacing:.04em
 }
 .day-sel button.active{
@@ -232,7 +235,7 @@ textarea{resize:vertical;min-height:80px}
   width:36px;height:36px;border-radius:50%;
   border:1px solid var(--border2);background:var(--bg3);
   color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;
-  transition:all .2s;font-family:'Exo 2',sans-serif
+  transition:all .2s;font-family:'Barlow',sans-serif
 }
 .rpe-btn:hover{border-color:var(--blue);color:var(--blue)}
 .rpe-btn.sel{
@@ -243,7 +246,7 @@ textarea{resize:vertical;min-height:80px}
 /* STREAK */
 .streak-big{
   font-size:48px;font-weight:700;color:var(--amber);text-align:center;
-  font-family:'Rajdhani',sans-serif;
+  font-family:'Barlow Condensed',sans-serif;
   text-shadow:0 0 24px rgba(186,117,23,0.5)
 }
 
@@ -284,7 +287,7 @@ textarea{resize:vertical;min-height:80px}
 .proj-wk{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em}
 .proj-val{
   font-size:18px;font-weight:700;color:var(--blue);margin:4px 0;
-  font-family:'Rajdhani',sans-serif
+  font-family:'Barlow Condensed',sans-serif
 }
 .proj-desc{font-size:9px;color:var(--text2);line-height:1.4}
 
@@ -316,7 +319,7 @@ textarea{resize:vertical;min-height:80px}
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .modal-title{
   font-size:15px;font-weight:700;color:var(--text);
-  font-family:'Rajdhani',sans-serif;text-transform:uppercase;letter-spacing:.08em
+  font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.08em
 }
 .modal-close{
   background:none;border:none;color:var(--text2);
@@ -346,7 +349,7 @@ textarea{resize:vertical;min-height:80px}
   border:1px solid var(--border2);
   background:var(--bg3);color:var(--text2);
   font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0;
-  font-family:'Exo 2',inherit;transition:all .2s;
+  font-family:'Barlow',inherit;transition:all .2s;
   text-transform:uppercase;letter-spacing:.05em
 }
 .tab-btn.active{
@@ -373,7 +376,7 @@ textarea{resize:vertical;min-height:80px}
   display:flex;align-items:center;justify-content:center;
   font-size:16px;font-weight:700;color:#fff;flex-shrink:0;
   box-shadow:0 0 10px rgba(0,212,255,0.25);
-  font-family:'Rajdhani',sans-serif
+  font-family:'Barlow Condensed',sans-serif
 }
 
 /* LOADING */
@@ -394,3 +397,47 @@ textarea{resize:vertical;min-height:80px}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.3);border-radius:2px}
+
+/* SKELETON LOADING — skill: use skeleton screens for operations >300ms */
+.skel{
+  background:linear-gradient(90deg,var(--bg3) 25%,rgba(0,212,255,0.07) 50%,var(--bg3) 75%);
+  background-size:200% 100%;
+  animation:skelAnim 1.6s ease-in-out infinite;
+  border-radius:var(--radius-sm)
+}
+@keyframes skelAnim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* SKELETON LAYOUT */
+.skel-wrap{width:100%;max-width:480px;padding:16px;margin:0 auto}
+.skel-row{display:flex;gap:10px;margin-bottom:10px}
+.skel-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+
+/* FINISH BUTTONS — sport style */
+.finish-btn{
+  width:100%;min-height:52px;
+  padding:14px 18px;
+  border-radius:var(--radius-sm);
+  border:2px solid rgba(0,212,255,0.2);
+  background:rgba(0,212,255,0.04);
+  color:var(--text2);
+  cursor:pointer;font-size:15px;font-weight:700;
+  font-family:'Barlow Condensed',sans-serif;
+  letter-spacing:.08em;text-transform:uppercase;
+  transition:all .25s;
+  display:flex;align-items:center;justify-content:center;gap:8px
+}
+.finish-btn:hover{
+  border-color:var(--blue);color:var(--blue);
+  box-shadow:0 0 16px rgba(0,212,255,0.2)
+}
+.finish-btn.done{
+  border-color:var(--green);
+  background:rgba(29,158,117,0.12);
+  color:#5DCAA5
+}
+
+/* ACCESSIBILITY — prefers-reduced-motion */
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+  .skel{animation:none;background:var(--bg3)}
+}

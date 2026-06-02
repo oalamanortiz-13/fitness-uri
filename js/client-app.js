@@ -838,20 +838,23 @@ function updateNutriFinishBtn() {
   const sc = S.calScores[getToday()]
 
   if (S.nutDone) {
-    btn.style.background = 'var(--bg3)'
-    btn.style.color = 'var(--green)'
-    btn.style.borderColor = 'var(--green)'
-    btn.textContent = `✅ Nutrición guardada — ${sc?.nutrition ?? pct}%`
+    btn.classList.add('done')
+    btn.style.background = ''
+    btn.style.color = ''
+    btn.style.borderColor = ''
+    btn.innerHTML = `<i class="ti ti-circle-check"></i> Nutrición guardada — ${sc?.nutrition ?? pct}%`
   } else if (pct >= 80) {
-    btn.style.background = 'var(--green)'
-    btn.style.color = '#fff'
+    btn.classList.remove('done')
+    btn.style.background = 'rgba(29,158,117,0.18)'
+    btn.style.color = '#5DCAA5'
     btn.style.borderColor = 'var(--green)'
-    btn.textContent = `🥗 ¡Plan completado! Guardar nutrición`
+    btn.innerHTML = `<i class="ti ti-apple"></i> ¡Plan completado! Guardar nutrición`
   } else {
-    btn.style.background = 'var(--bg3)'
-    btn.style.color = 'var(--text2)'
-    btn.style.borderColor = 'var(--border2)'
-    btn.textContent = `🥗 Guardar nutrición del día (${checked}/${totalFoods} alimentos)`
+    btn.classList.remove('done')
+    btn.style.background = ''
+    btn.style.color = ''
+    btn.style.borderColor = ''
+    btn.innerHTML = `<i class="ti ti-apple"></i> Guardar nutrición del día (${checked}/${totalFoods} alimentos)`
   }
 }
 
@@ -866,20 +869,23 @@ function updateCardioFinishBtn() {
   const sc = S.calScores[getToday()]
 
   if (S.cardioDone) {
-    btn.style.background = 'var(--bg3)'
-    btn.style.color = 'var(--green)'
-    btn.style.borderColor = 'var(--green)'
-    btn.textContent = `✅ Cardio guardado — ${sc?.cardio ?? pct}%`
+    btn.classList.add('done')
+    btn.style.background = ''
+    btn.style.color = ''
+    btn.style.borderColor = ''
+    btn.innerHTML = `<i class="ti ti-circle-check"></i> Cardio guardado — ${sc?.cardio ?? pct}%`
   } else if (pct >= 80) {
-    btn.style.background = 'var(--amber)'
-    btn.style.color = '#fff'
-    btn.style.borderColor = 'var(--amber)'
-    btn.textContent = `👟 ¡Objetivo conseguido! Guardar cardio`
+    btn.classList.remove('done')
+    btn.style.background = 'rgba(0,212,255,0.12)'
+    btn.style.color = 'var(--blue)'
+    btn.style.borderColor = 'var(--blue)'
+    btn.innerHTML = `<i class="ti ti-run"></i> ¡Objetivo conseguido! Guardar cardio`
   } else {
-    btn.style.background = 'var(--bg3)'
-    btn.style.color = 'var(--text2)'
-    btn.style.borderColor = 'var(--border2)'
-    btn.textContent = `👟 Guardar cardio del día (${S.steps.toLocaleString('es-ES')} pasos · ${S.cardioDay} min)`
+    btn.classList.remove('done')
+    btn.style.background = ''
+    btn.style.color = ''
+    btn.style.borderColor = ''
+    btn.innerHTML = `<i class="ti ti-run"></i> Guardar cardio del día (${S.steps.toLocaleString('es-ES')} pasos · ${S.cardioDay} min)`
   }
 }
 
