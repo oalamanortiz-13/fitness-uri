@@ -2,7 +2,7 @@
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#0A0F1E;--bg2:#03045E;--bg3:#050A3A;
+  --bg:#0A0F1E;--bg2:rgba(3,4,94,0.45);--bg3:rgba(5,10,58,0.5);
   --text:#FFFFFF;--text2:#8899BB;--text3:#4a5a7a;
   --border:rgba(0,212,255,0.15);--border2:rgba(0,212,255,0.28);
   --blue:#00D4FF;--green:#1D9E75;--amber:#BA7517;--red:#E24B4A;--purple:#7F77DD;
@@ -62,7 +62,8 @@ body{
   border-left:3px solid var(--blue);
   border-radius:var(--radius);
   padding:16px;margin-bottom:12px;
-  position:relative;overflow:hidden
+  position:relative;overflow:hidden;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)
 }
 .card::before{
   content:'';position:absolute;top:0;left:0;right:0;height:1px;
@@ -310,11 +311,12 @@ textarea{resize:vertical;min-height:80px}
 }
 .modal-overlay.open{display:flex}
 .modal{
-  background:var(--bg2);
+  background:rgba(3,4,94,0.85);
   border:1px solid rgba(0,212,255,0.2);
   border-radius:var(--radius) var(--radius) 0 0;
   padding:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;
-  box-shadow:0 -4px 40px rgba(0,0,0,0.6),0 -1px 0 rgba(0,212,255,0.15)
+  box-shadow:0 -4px 40px rgba(0,0,0,0.6),0 -1px 0 rgba(0,212,255,0.15);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)
 }
 .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .modal-title{
