@@ -8,12 +8,13 @@
 <title>Tu Preparador — Conecta · Entrena · Evoluciona</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,600;1,700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --navy:#03045E;
-  --navy2:#020035;
+  --navy:#0A0F1E;
+  --navy2:#03045E;
   --cyan:#00D4FF;
   --cyan2:#0096C7;
   --white:#FFFFFF;
@@ -24,108 +25,365 @@
   --radius:12px;
 }
 html{scroll-behavior:smooth}
-body{font-family:'Inter',sans-serif;background:var(--navy);color:var(--white);overflow-x:hidden}
+body{
+  font-family:'Barlow',sans-serif;
+  background:var(--navy);
+  color:var(--white);
+  overflow-x:hidden;
+}
+
+/* SPEED LINES */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    repeating-linear-gradient(
+      -52deg,
+      transparent 0px,transparent 48px,
+      rgba(0,212,255,0.04) 48px,rgba(0,212,255,0.04) 50px
+    ),
+    repeating-linear-gradient(
+      -52deg,
+      transparent 0px,transparent 120px,
+      rgba(0,212,255,0.025) 120px,rgba(0,212,255,0.025) 122px
+    );
+}
 
 /* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 24px;height:68px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#03045Eee 0%,#03045E00 100%);backdrop-filter:blur(12px);border-bottom:1px solid #ffffff10}
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:0 24px;height:68px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(180deg,#03045Eee 0%,#03045E00 100%);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid #ffffff10;
+}
 .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-.nav-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--cyan),var(--cyan2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;color:var(--navy);letter-spacing:-1px}
-.nav-logo-text{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;letter-spacing:1px;color:var(--white)}
+.nav-logo-svg{width:32px;height:32px;display:block;filter:drop-shadow(0 0 8px rgba(0,212,255,0.2))}
+.nav-logo-text{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:1px;color:var(--white);text-transform:uppercase}
 .nav-logo-text span{color:var(--cyan)}
 .nav-actions{display:flex;align-items:center;gap:12px}
 .nav-link{color:var(--gray);text-decoration:none;font-size:14px;font-weight:500;padding:8px 12px;border-radius:8px;transition:color .2s}
 .nav-link:hover{color:var(--white)}
-.btn-nav{background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:var(--navy);font-size:14px;font-weight:700;padding:9px 20px;border-radius:8px;text-decoration:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s}
-.btn-nav:hover{opacity:.9}
+.btn-nav{
+  background:var(--cyan);
+  color:var(--navy);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px;font-weight:700;
+  padding:9px 18px;border-radius:6px;
+  text-decoration:none;border:none;cursor:pointer;
+  transition:all .2s;
+  text-transform:uppercase;letter-spacing:.08em;
+}
+.btn-nav:hover{box-shadow:0 0 20px rgba(0,212,255,0.5);transform:translateY(-1px)}
 
 /* HERO */
-.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:100px 24px 80px;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,#00D4FF18 0%,transparent 70%)}
-.hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
-.hero-tag{display:inline-flex;align-items:center;gap:8px;background:var(--cyan)15;border:1px solid var(--cyan)40;color:var(--cyan);font-size:12px;font-weight:600;letter-spacing:2px;padding:6px 16px;border-radius:100px;margin-bottom:28px;text-transform:uppercase}
-.hero-tag::before{content:'';width:6px;height:6px;background:var(--cyan);border-radius:50%;animation:pulse 2s infinite}
+.hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  text-align:center;
+  padding:100px 24px 80px;
+  position:relative;overflow:hidden;
+  background:radial-gradient(ellipse 100% 70% at 50% 0%,rgba(0,212,255,0.1) 0%,transparent 65%),
+             radial-gradient(ellipse 60% 40% at 50% 100%,rgba(3,4,94,0.6) 0%,transparent 80%);
+}
+.hero::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,0.5) 40%,rgba(0,212,255,0.5) 60%,transparent);
+}
+
+.hero-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.3);
+  color:var(--cyan);font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:2px;
+  padding:6px 16px;border-radius:100px;
+  margin-bottom:24px;text-transform:uppercase;
+  animation:tagIn .7s .1s cubic-bezier(.22,1,.36,1) both;
+}
+.hero-tag::before{
+  content:'';width:6px;height:6px;background:var(--cyan);
+  border-radius:50%;animation:pulse 2s infinite;
+}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
-.hero h1{font-family:'Rajdhani',sans-serif;font-size:clamp(42px,7vw,88px);font-weight:700;line-height:1;letter-spacing:-1px;margin-bottom:12px;text-transform:uppercase}
+@keyframes tagIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.hero h1{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(42px,7vw,88px);
+  font-weight:700;line-height:1.1;letter-spacing:-.02em;
+  margin-bottom:16px;text-transform:uppercase;
+  animation:heroIn .7s .2s cubic-bezier(.22,1,.36,1) both;
+}
 .hero h1 span{color:var(--cyan)}
-.hero-sub{font-size:clamp(14px,2vw,18px);color:var(--gray);max-width:560px;margin:16px auto 40px;line-height:1.6}
-.hero-cta{display:flex;flex-direction:column;align-items:center;gap:16px}
-.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:var(--navy);font-size:16px;font-weight:700;padding:16px 40px;border-radius:10px;text-decoration:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;display:inline-flex;align-items:center;gap:10px;letter-spacing:.3px}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 32px var(--cyan)40}
-.btn-primary svg{transition:transform .2s}
-.btn-primary:hover svg{transform:translateX(4px)}
-.btn-secondary{background:transparent;color:var(--white);font-size:15px;font-weight:500;padding:15px 32px;border-radius:10px;text-decoration:none;border:1px solid var(--border);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s}
-.btn-secondary:hover{border-color:var(--cyan);color:var(--cyan)}
-.price-badge{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--gray)}
-.price-badge .old{text-decoration:line-through;color:var(--gray2)}
-.price-badge .new{font-size:20px;font-weight:700;color:var(--white)}
-.price-badge .period{font-size:12px;color:var(--gray)}
-.hero-logos{margin-top:60px;display:flex;flex-direction:column;align-items:center;gap:12px}
-.hero-logos p{font-size:12px;color:var(--gray2);letter-spacing:1px;text-transform:uppercase}
-.hero-stats{display:flex;gap:32px;flex-wrap:wrap;justify-content:center}
+
+.hero-sub{
+  font-size:clamp(14px,2vw,18px);
+  color:var(--gray);max-width:560px;
+  margin:16px auto 40px;line-height:1.6;
+  animation:heroIn .7s .3s cubic-bezier(.22,1,.36,1) both;
+}
+
+@keyframes heroIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.hero-cta{
+  display:flex;flex-direction:column;
+  align-items:center;gap:16px;
+  animation:heroIn .7s .4s cubic-bezier(.22,1,.36,1) both;
+}
+
+.btn-primary{
+  background:var(--cyan);
+  color:var(--navy);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:15px;font-weight:700;
+  padding:16px 36px;border-radius:8px;
+  text-decoration:none;border:none;cursor:pointer;
+  transition:all .2s;
+  display:inline-flex;align-items:center;gap:10px;
+  letter-spacing:.12em;text-transform:uppercase;
+}
+.btn-primary:hover{
+  box-shadow:0 0 28px rgba(0,212,255,0.55);
+  background:#18DCFF;transform:translateY(-1px);
+}
+.btn-primary:active{transform:scale(.98)}
+
+.price-badge{
+  display:flex;align-items:center;gap:12px;
+  font-size:14px;color:var(--gray);
+}
+.price-badge .old{
+  text-decoration:line-through;color:var(--gray2);
+}
+.price-badge .new{
+  font-size:20px;font-weight:700;
+  color:var(--white);
+}
+.price-badge .period{
+  font-size:12px;color:var(--gray2);
+}
+
+.hero-logos{
+  margin-top:56px;
+  display:flex;flex-direction:column;
+  align-items:center;gap:12px;
+  animation:heroIn .7s .5s cubic-bezier(.22,1,.36,1) both;
+}
+.hero-logos p{
+  font-size:12px;color:var(--gray2);
+  letter-spacing:1px;text-transform:uppercase;
+}
+
+.hero-stats{
+  display:flex;gap:32px;flex-wrap:wrap;justify-content:center;
+}
 .stat{text-align:center}
-.stat-num{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:var(--cyan)}
-.stat-label{font-size:11px;color:var(--gray);margin-top:2px}
+.stat-num{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:28px;font-weight:700;
+  color:var(--cyan);
+}
+.stat-label{
+  font-size:11px;color:var(--gray);margin-top:2px;
+}
 
 /* DIVIDER */
-.section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0 24px}
+.section-divider{
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--border),transparent);
+  margin:0 24px;
+}
 
 /* FEATURES */
-.section{padding:80px 24px;max-width:1100px;margin:0 auto}
-.section-tag{font-size:12px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--cyan);text-align:center;margin-bottom:12px}
-.section-title{font-family:'Rajdhani',sans-serif;font-size:clamp(28px,4vw,44px);font-weight:700;text-align:center;line-height:1.1;margin-bottom:16px;text-transform:uppercase}
+.section{padding:80px 24px;max-width:1100px;margin:0 auto;position:relative;z-index:1}
+.section-tag{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;font-weight:700;
+  letter-spacing:3px;text-transform:uppercase;
+  color:var(--cyan);text-align:center;margin-bottom:12px;
+}
+.section-title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(28px,4vw,44px);
+  font-weight:700;text-align:center;
+  line-height:1.1;margin-bottom:16px;text-transform:uppercase;
+}
 .section-title span{color:var(--cyan)}
-.section-sub{font-size:15px;color:var(--gray);text-align:center;max-width:520px;margin:0 auto 56px;line-height:1.6}
-.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
-.feature-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;transition:border-color .2s,transform .2s}
-.feature-card:hover{border-color:var(--cyan)40;transform:translateY(-3px)}
-.feature-icon{width:48px;height:48px;background:var(--cyan)15;border:1px solid var(--cyan)30;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:22px}
-.feature-title{font-size:16px;font-weight:700;margin-bottom:8px;font-family:'Rajdhani',sans-serif;letter-spacing:.5px;font-size:18px}
-.feature-desc{font-size:14px;color:var(--gray);line-height:1.6}
+.section-sub{
+  font-size:15px;color:var(--gray);
+  text-align:center;max-width:520px;
+  margin:0 auto 56px;line-height:1.6;
+}
+.features-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;
+}
+.feature-card{
+  background:rgba(3,4,94,0.3);
+  border:1px solid rgba(0,212,255,0.15);
+  border-radius:var(--radius);padding:28px;
+  transition:border-color .2s,transform .2s;
+}
+.feature-card:hover{
+  border-color:rgba(0,212,255,0.4);
+  transform:translateY(-3px);
+}
+.feature-icon{
+  width:48px;height:48px;
+  background:rgba(0,212,255,0.1);
+  border:1px solid rgba(0,212,255,0.2);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:16px;font-size:22px;
+}
+.feature-title{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:17px;font-weight:700;
+  margin-bottom:8px;letter-spacing:.5px;
+}
+.feature-desc{
+  font-size:14px;color:var(--gray);line-height:1.6;
+}
 
 /* HOW IT WORKS */
-.how-section{padding:80px 24px;background:linear-gradient(180deg,transparent,#00D4FF08,transparent)}
+.how-section{
+  padding:80px 24px;
+  position:relative;z-index:1;
+  background:linear-gradient(180deg,transparent,rgba(0,212,255,0.08),transparent);
+}
 .how-inner{max-width:900px;margin:0 auto}
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:32px;margin-top:56px;position:relative}
-.steps::before{content:'';position:absolute;top:28px;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan)40,transparent);display:none}
+.steps{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:32px;margin-top:56px;position:relative;
+}
+.steps::before{
+  content:'';position:absolute;top:28px;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,0.3),transparent);
+  display:none;
+}
 @media(min-width:768px){.steps::before{display:block}}
 .step{text-align:center}
-.step-num{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--cyan2));display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:22px;color:var(--navy);position:relative;z-index:1}
-.step h3{font-size:17px;font-weight:700;margin-bottom:8px;font-family:'Rajdhani',sans-serif;letter-spacing:.5px}
+.step-num{
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--cyan),var(--cyan2));
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;font-size:22px;color:var(--navy);
+  position:relative;z-index:1;
+}
+.step h3{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:17px;font-weight:700;
+  margin-bottom:8px;letter-spacing:.5px;
+}
 .step p{font-size:14px;color:var(--gray);line-height:1.6}
 
 /* PRICING */
-.pricing-section{padding:80px 24px}
+.pricing-section{padding:80px 24px;position:relative;z-index:1}
 .pricing-inner{max-width:480px;margin:0 auto}
-.pricing-card{background:var(--card);border:1px solid var(--cyan)40;border-radius:16px;padding:40px;text-align:center;position:relative;overflow:hidden}
-.pricing-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cyan2),var(--cyan))}
-.pricing-label{display:inline-block;background:var(--cyan)20;border:1px solid var(--cyan)40;color:var(--cyan);font-size:11px;font-weight:700;letter-spacing:2px;padding:5px 14px;border-radius:100px;text-transform:uppercase;margin-bottom:20px}
-.pricing-name{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;letter-spacing:1px;margin-bottom:24px}
+.pricing-card{
+  background:rgba(3,4,94,0.5);
+  border:1px solid rgba(0,212,255,0.25);
+  border-top:2px solid var(--cyan);
+  border-radius:16px;padding:40px;
+  text-align:center;position:relative;overflow:hidden;
+  backdrop-filter:blur(10px);
+}
+.pricing-label{
+  display:inline-block;
+  background:rgba(0,212,255,0.15);
+  border:1px solid rgba(0,212,255,0.3);
+  color:var(--cyan);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:10px;font-weight:700;
+  letter-spacing:2px;
+  padding:5px 14px;border-radius:100px;
+  text-transform:uppercase;margin-bottom:20px;
+}
+.pricing-name{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:26px;font-weight:700;
+  letter-spacing:.04em;margin-bottom:24px;text-transform:uppercase;
+}
 .pricing-price{margin-bottom:8px}
-.pricing-price .old-price{font-size:16px;color:var(--gray2);text-decoration:line-through;margin-bottom:4px}
-.pricing-price .amount{font-family:'Rajdhani',sans-serif;font-size:56px;font-weight:700;color:var(--cyan);line-height:1}
-.pricing-price .amount sup{font-size:24px;vertical-align:top;margin-top:10px;display:inline-block}
-.pricing-price .period{font-size:14px;color:var(--gray);margin-top:4px}
-.pricing-features{list-style:none;text-align:left;margin:28px 0;display:flex;flex-direction:column;gap:12px}
-.pricing-features li{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--gray)}
-.pricing-features li::before{content:'✓';width:20px;height:20px;background:var(--cyan)20;border:1px solid var(--cyan)40;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--cyan);flex-shrink:0;text-align:center;line-height:20px}
-.pricing-note{font-size:12px;color:var(--gray2);margin-top:16px}
+.pricing-price .old-price{
+  font-size:16px;color:var(--gray2);
+  text-decoration:line-through;margin-bottom:4px;
+}
+.pricing-price .amount{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:56px;font-weight:700;
+  color:var(--cyan);line-height:1;
+}
+.pricing-price .amount sup{
+  font-size:24px;vertical-align:top;margin-top:10px;display:inline-block;
+}
+.pricing-price .period{
+  font-size:14px;color:var(--gray);margin-top:4px;
+}
+.pricing-features{
+  list-style:none;text-align:left;
+  margin:28px 0;display:flex;flex-direction:column;gap:12px;
+}
+.pricing-features li{
+  display:flex;align-items:center;gap:12px;
+  font-size:14px;color:var(--gray);
+}
+.pricing-features li::before{
+  content:'✓';width:20px;height:20px;
+  background:rgba(0,212,255,0.15);border:1px solid rgba(0,212,255,0.3);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--cyan);flex-shrink:0;
+  text-align:center;line-height:20px;
+}
+.pricing-note{
+  font-size:12px;color:var(--gray2);margin-top:16px;
+}
 
 /* CTA FINAL */
-.cta-section{padding:80px 24px;text-align:center;position:relative;overflow:hidden}
-.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 50% 50%,#00D4FF12 0%,transparent 70%)}
+.cta-section{
+  padding:80px 24px;text-align:center;
+  position:relative;overflow:hidden;z-index:1;
+}
+.cta-section::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(0,212,255,0.08) 0%,transparent 70%);
+}
 .cta-section .section-title{margin-bottom:16px}
 .cta-section .section-sub{margin-bottom:36px}
 
 /* FOOTER */
-footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center}
-.footer-inner{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:16px}
-.footer-logo{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:20px;letter-spacing:1px}
+footer{
+  border-top:1px solid var(--border);
+  padding:32px 24px;text-align:center;
+  position:relative;z-index:1;
+}
+.footer-inner{
+  max-width:1100px;margin:0 auto;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+}
+.footer-logo{
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:700;font-size:18px;
+  letter-spacing:.06em;text-transform:uppercase;
+}
 .footer-logo span{color:var(--cyan)}
-.footer-tagline{font-size:12px;letter-spacing:3px;color:var(--gray2);text-transform:uppercase}
-.footer-links{display:flex;gap:24px;flex-wrap:wrap;justify-content:center}
-.footer-links a{font-size:13px;color:var(--gray2);text-decoration:none;transition:color .2s}
+.footer-tagline{
+  font-size:11px;letter-spacing:2px;
+  color:var(--gray2);text-transform:uppercase;
+}
+.footer-links{
+  display:flex;gap:24px;flex-wrap:wrap;justify-content:center;
+}
+.footer-links a{
+  font-size:13px;color:var(--gray2);
+  text-decoration:none;transition:color .2s;
+}
 .footer-links a:hover{color:var(--cyan)}
-.footer-copy{font-size:12px;color:var(--gray2)}
+.footer-copy{
+  font-size:12px;color:var(--gray2);
+}
 
 /* MOBILE */
 @media(max-width:640px){
@@ -143,7 +401,28 @@ footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center}
 <!-- NAV -->
 <nav>
   <a href="/" class="nav-logo">
-    <div class="nav-logo-icon">TP</div>
+    <svg class="nav-logo-svg" viewBox="0 0 110 78" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="tpNavT" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="100%" stop-color="#b0eeff"/>
+        </linearGradient>
+        <filter id="tpNavGlow">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g transform="skewX(-10) translate(6,0)">
+        <rect x="0" y="2" width="46" height="13" rx="2.5" fill="url(#tpNavT)"/>
+        <rect x="16" y="2" width="13" height="64" rx="2.5" fill="url(#tpNavT)"/>
+      </g>
+      <g transform="skewX(-10) translate(40,0)" filter="url(#tpNavGlow)">
+        <rect x="0" y="20" width="12" height="56" rx="2.5" fill="#00D4FF"/>
+        <rect x="0" y="20" width="36" height="12" rx="2.5" fill="#00D4FF"/>
+        <rect x="24" y="20" width="12" height="30" rx="2.5" fill="#00D4FF"/>
+        <rect x="0" y="38" width="36" height="12" rx="2.5" fill="#00D4FF"/>
+      </g>
+    </svg>
     <span class="nav-logo-text"><span>TU</span> PREPARADOR</span>
   </a>
   <div class="nav-actions">
@@ -155,12 +434,12 @@ footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center}
 <!-- HERO -->
 <section class="hero">
   <div class="hero-tag">Precio de lanzamiento</div>
-  <h1>CONECTA<br><span>ENTRENA</span><br>EVOLUCIONA</h1>
+  <h1>Conecta<br><span>Entrena</span><br>Evoluciona</h1>
   <p class="hero-sub">La plataforma que tus clientes necesitan. El negocio que mereces. Gestiona entrenamientos, nutrición y progreso desde un solo lugar.</p>
   <div class="hero-cta">
     <a href="/register.html" class="btn-primary">
       Empieza gratis 14 días
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      <i class="ti ti-arrow-right"></i>
     </a>
     <div class="price-badge">
       <span class="old">€9,90</span>
@@ -182,39 +461,39 @@ footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center}
 <div class="section-divider"></div>
 
 <!-- FEATURES -->
-<div style="max-width:1100px;margin:0 auto">
+<div style="max-width:1100px;margin:0 auto;position:relative;z-index:1">
 <section class="section">
   <div class="section-tag">Funcionalidades</div>
-  <h2 class="section-title">TODO LO QUE NECESITAS<br><span>EN UN SOLO LUGAR</span></h2>
+  <h2 class="section-title">Todo lo que necesitas<br><span>en un solo lugar</span></h2>
   <p class="section-sub">Diseñado específicamente para preparadores físicos que quieren crecer sin perder tiempo.</p>
   <div class="features-grid">
     <div class="feature-card">
-      <div class="feature-icon">🏋️</div>
+      <div class="feature-icon"><i class="ti ti-barbell" style="color:var(--cyan)"></i></div>
       <div class="feature-title">Planes de entrenamiento</div>
       <p class="feature-desc">Crea y asigna planes personalizados por días. Tus clientes registran sus cargas y progresan visualmente sesión a sesión.</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">🥗</div>
+      <div class="feature-icon"><i class="ti ti-apple" style="color:var(--cyan)"></i></div>
       <div class="feature-title">Nutrición completa</div>
       <p class="feature-desc">Plan dietético con macros, suplementación con horarios y seguimiento de adherencia diario. Todo integrado.</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">❤️</div>
+      <div class="feature-icon"><i class="ti ti-run" style="color:var(--cyan)"></i></div>
       <div class="feature-title">Cardio y pasos</div>
       <p class="feature-desc">Objetivos de pasos y cardio por cliente. Gráficas de actividad diaria y recordatorio anti-sedentarismo configurable.</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">📊</div>
+      <div class="feature-icon"><i class="ti ti-chart-line" style="color:var(--cyan)"></i></div>
       <div class="feature-title">Medidas corporales</div>
       <p class="feature-desc">Registra peso, grasa corporal y 11 medidas con seguimiento de deltas. Tu cliente ve su evolución en tiempo real.</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">🤖</div>
+      <div class="feature-icon"><i class="ti ti-brain" style="color:var(--cyan)"></i></div>
       <div class="feature-title">Editor IA de planes</div>
       <p class="feature-desc">Modifica planes de entrenamiento por voz o texto con IA. Añade, edita o elimina ejercicios en segundos.</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">⭐</div>
+      <div class="feature-icon"><i class="ti ti-star" style="color:var(--cyan)"></i></div>
       <div class="feature-title">Puntuación diaria</div>
       <p class="feature-desc">Sistema de scoring automático: entrenamiento 40% + nutrición 40% + cardio 20%. Tu cliente sabe cada día cómo lo hace.</p>
     </div>
@@ -228,7 +507,7 @@ footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center}
 <div class="how-section">
   <div class="how-inner">
     <div class="section-tag">Cómo funciona</div>
-    <h2 class="section-title" style="text-align:center">EN MARCHA<br><span>EN MINUTOS</span></h2>
+    <h2 class="section-title">En marcha<br><span>en minutos</span></h2>
     <div class="steps">
       <div class="step">
         <div class="step-num">1</div>
@@ -253,9 +532,9 @@ footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center}
 
 <!-- PRICING -->
 <section class="pricing-section">
-  <div class="section-tag" style="text-align:center">Precio</div>
-  <h2 class="section-title">SIMPLE Y<br><span>TRANSPARENTE</span></h2>
-  <p class="section-sub" style="text-align:center;max-width:420px;margin:0 auto 40px;color:var(--gray)">Sin planes confusos. Pagas solo por los clientes activos que tienes.</p>
+  <div class="section-tag">Precio</div>
+  <h2 class="section-title">Simple y<br><span>transparente</span></h2>
+  <p class="section-sub">Sin planes confusos. Pagas solo por los clientes activos que tienes.</p>
   <div class="pricing-inner">
     <div class="pricing-card">
       <span class="pricing-label">Precio lanzamiento</span>
@@ -274,9 +553,9 @@ footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center}
         <li>Importación masiva CSV / Excel</li>
         <li>Soporte incluido</li>
       </ul>
-      <a href="/register.html" class="btn-primary" style="width:100%;justify-content:center;font-size:15px">
+      <a href="/register.html" class="btn-primary" style="width:100%;justify-content:center;font-size:14px">
         Empieza gratis 14 días
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <i class="ti ti-arrow-right"></i>
       </a>
       <p class="pricing-note">14 días gratis · Sin tarjeta · Cancela cuando quieras</p>
     </div>
@@ -287,11 +566,11 @@ footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center}
 
 <!-- CTA FINAL -->
 <section class="cta-section">
-  <h2 class="section-title">¿LISTO PARA<br><span>DAR EL PASO?</span></h2>
+  <h2 class="section-title">¿Listo para<br><span>dar el paso?</span></h2>
   <p class="section-sub">Únete a los preparadores que ya gestionan su negocio desde Tu Preparador.</p>
-  <a href="/register.html" class="btn-primary" style="font-size:16px">
+  <a href="/register.html" class="btn-primary">
     Crear cuenta gratis
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    <i class="ti ti-arrow-right"></i>
   </a>
   <p style="font-size:12px;color:var(--gray2);margin-top:16px">€4,90 / cliente activo / mes tras el trial</p>
 </section>
@@ -299,7 +578,7 @@ footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center}
 <!-- FOOTER -->
 <footer>
   <div class="footer-inner">
-    <div class="footer-logo"><span>TU</span> PREPARADOR</div>
+    <div class="footer-logo"><span>Tu</span> Preparador</div>
     <div class="footer-tagline">Conecta · Entrena · Evoluciona</div>
     <div class="footer-links">
       <a href="/login.html">Acceder</a>
