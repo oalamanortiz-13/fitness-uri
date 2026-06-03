@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0c0c0c">
+<title>Tu Preparador — Acceso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+body{
+  display:flex;flex-direction:column;min-height:100vh;
+  padding:0;padding-bottom:0;overflow-x:hidden;
+  background:#0c0c0c;
+  background-image:none;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    repeating-linear-gradient(-52deg,transparent 0px,transparent 60px,rgba(255,255,255,0.012) 60px,rgba(255,255,255,0.012) 62px),
+    repeating-linear-gradient(-52deg,transparent 0px,transparent 140px,rgba(255,255,255,0.007) 140px,rgba(255,255,255,0.007) 142px);
+}
+.login-hero{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;
+  padding:56px 24px 40px;
+  flex:1;min-height:50vh;
+  background:radial-gradient(ellipse 100% 60% at 50% 0%,rgba(0,210,255,0.07) 0%,transparent 70%);
+}
+.login-hero::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 40%,rgba(255,255,255,0.12) 60%,transparent);
+}
+.tp-logo{
+  display:block;margin:0 auto 24px;
+  width:280px;height:auto;
+  filter:drop-shadow(0 0 24px rgba(0,210,255,0.25));
+  animation:logoIn .7s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes logoIn{from{opacity:0;transform:translateY(-12px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes heroIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.values-row{
+  display:flex;gap:0;width:100%;max-width:360px;
+  animation:heroIn .7s .3s cubic-bezier(.22,1,.36,1) both;
+}
+.value-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:14px 8px;
+  border:1px solid rgba(255,255,255,0.07);border-right:none;
+  background:rgba(255,255,255,0.02);
+}
+.value-item:first-child{border-radius:8px 0 0 8px}
+.value-item:last-child{border-radius:0 8px 8px 0;border-right:1px solid rgba(255,255,255,0.07)}
+.value-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:rgba(0,210,255,0.08);border:1px solid rgba(0,210,255,0.15);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--blue);font-size:16px;
+}
+.value-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#fff}
+.value-desc{font-size:9px;color:rgba(255,255,255,0.4);text-align:center;line-height:1.4}
+.login-form-wrap{
+  position:relative;z-index:1;
+  width:100%;max-width:400px;margin:0 auto;padding:28px 20px 48px;
+}
+.login-card{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);
+  border-top:1px solid rgba(255,255,255,0.18);
+  border-radius:16px;padding:24px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:0 24px 64px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08);
+  animation:cardIn .6s .15s cubic-bezier(.22,1,.36,1) both;
+}
+.login-title{
+  font-size:17px;font-weight:700;color:#fff;margin-bottom:20px;
+  letter-spacing:-.01em;
+}
+.error-msg{
+  background:rgba(226,75,74,0.1);border:1px solid rgba(226,75,74,0.25);
+  color:#F09595;border-radius:var(--radius-sm);padding:10px 14px;
+  font-size:13px;margin-bottom:12px;display:none;
+}
+.btn-login{
+  width:100%;min-height:48px;margin-top:6px;
+  background:white;border:none;border-radius:9999px;
+  color:#0c0c0c;font-family:'Inter',inherit;
+  font-size:15px;font-weight:600;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-login:hover{background:rgba(255,255,255,0.9);box-shadow:0 0 24px rgba(255,255,255,0.15)}
+.btn-login:active{transform:scale(.98)}
+.btn-login:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-login .arrow{transition:transform .2s}
+.btn-login:hover .arrow{transform:translateX(3px)}
+.login-links{margin-top:16px;display:flex;flex-direction:column;gap:8px;text-align:center}
+.login-links a{font-size:12px;color:rgba(255,255,255,0.4);text-decoration:none;transition:color .2s}
+.login-links a:hover{color:white}
+.login-links .accent{color:var(--blue);font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<div class="login-hero">
+
+  <img class="tp-logo" src="logo.png" alt="Tu Preparador">
+
+  <!-- 3 valores — del mockup -->
+  <div class="values-row">
+    <div class="value-item">
+      <div class="value-icon"><i class="ti ti-users"></i></div>
+      <div class="value-label">Conecta</div>
+      <div class="value-desc">Tu preparador,<br>tu equipo</div>
+    </div>
+    <div class="value-item">
+      <div class="value-icon"><i class="ti ti-barbell"></i></div>
+      <div class="value-label">Entrena</div>
+      <div class="value-desc">Plan 100%<br>personalizado</div>
+    </div>
+    <div class="value-item">
+      <div class="value-icon"><i class="ti ti-trending-up"></i></div>
+      <div class="value-label">Evoluciona</div>
+      <div class="value-desc">Resultados<br>medibles</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ FORM ═══ -->
+<div class="login-form-wrap">
+
+  <!-- Vista: Login -->
+  <div class="login-card" id="view-login">
+    <div class="login-title">Accede a tu portal</div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" id="email" placeholder="tu@email.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contraseña</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="error-msg" id="error-msg"></div>
+    <button class="btn-login" id="login-btn" onclick="doLogin()">
+      <span>Entrar</span>
+      <i class="ti ti-arrow-right arrow"></i>
+    </button>
+    <div class="login-links">
+      <a href="#" onclick="showForgot()">¿Olvidaste tu contraseña?</a>
+      <div style="font-size:12px;color:var(--text2)">
+        ¿Eres preparador?
+        <a href="register.html" class="accent"> Regístrate gratis</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista: Sesión activa -->
+  <div class="login-card" id="view-session" style="display:none">
+    <div class="login-title">Sesión activa</div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:14px;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:var(--radius-sm)">
+      <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#010235,var(--blue));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 12px rgba(0,212,255,0.3)">
+        <i class="ti ti-user" style="color:#fff;font-size:20px"></i>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em" id="sess-name">—</div>
+        <div style="font-size:11px;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin-top:2px" id="sess-role">—</div>
+      </div>
+    </div>
+    <button class="btn-login" id="sess-go-btn" onclick="goToPortal()" style="margin-bottom:10px">
+      <span>Ir a mi portal</span>
+      <i class="ti ti-arrow-right arrow"></i>
+    </button>
+    <button class="btn" onclick="switchAccount()" style="width:100%;font-size:13px">
+      <i class="ti ti-switch-horizontal"></i> Cambiar de cuenta
+    </button>
+  </div>
+
+  <!-- Vista: Recuperar contraseña -->
+  <div class="login-card" id="view-forgot" style="display:none">
+    <div class="login-title">Recuperar acceso</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5">
+      Te enviaremos un enlace para crear una nueva contraseña.
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" id="forgot-email" placeholder="tu@email.com" autocomplete="email">
+    </div>
+    <div class="error-msg" id="forgot-error"></div>
+    <div id="forgot-ok" style="background:rgba(29,158,117,0.12);border:1px solid rgba(29,158,117,0.3);color:#6fcfa8;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:12px;display:none">
+      <i class="ti ti-circle-check"></i> Revisa tu email — enlace enviado.
+    </div>
+    <button class="btn-login" id="forgot-btn" onclick="doForgot()">
+      <span>Enviar enlace</span>
+      <i class="ti ti-send arrow"></i>
+    </button>
+    <div class="login-links" style="margin-top:14px">
+      <a href="#" onclick="showLogin()">← Volver al login</a>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+import { supabase } from './js/supabase-client.js'
+import { getRole, redirectByRole } from './js/auth.js'
+
+const ROLE_LABEL = { admin: 'Administrador', trainer: 'Preparador físico', client: 'Cliente' }
+let ACTIVE_PROFILE = null
+let ACTIVE_SESSION = null
+
+const { data: { session } } = await supabase.auth.getSession()
+if (session) {
+  const profile = await getRole(session.user.id)
+  if (profile) {
+    ACTIVE_PROFILE = profile
+    ACTIVE_SESSION = session
+    document.getElementById('sess-name').textContent = profile.full_name || session.user.email
+    document.getElementById('sess-role').textContent = ROLE_LABEL[profile.role] || profile.role
+    document.getElementById('view-login').style.display = 'none'
+    document.getElementById('view-session').style.display = 'block'
+  }
+}
+
+window.goToPortal = function() {
+  if (ACTIVE_PROFILE) redirectByRole(ACTIVE_PROFILE.role)
+}
+
+window.switchAccount = async function() {
+  await supabase.auth.signOut()
+  ACTIVE_PROFILE = null; ACTIVE_SESSION = null
+  document.getElementById('view-session').style.display = 'none'
+  document.getElementById('view-login').style.display = 'block'
+  document.getElementById('email').focus()
+}
+
+document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin() })
+document.getElementById('email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('password').focus() })
+document.getElementById('forgot-email').addEventListener('keydown', e => { if (e.key === 'Enter') doForgot() })
+
+window.showForgot = function() {
+  document.getElementById('view-login').style.display = 'none'
+  document.getElementById('view-forgot').style.display = 'block'
+  const loginEmail = document.getElementById('email').value
+  if (loginEmail) document.getElementById('forgot-email').value = loginEmail
+  document.getElementById('forgot-email').focus()
+}
+
+window.showLogin = function() {
+  document.getElementById('view-forgot').style.display = 'none'
+  document.getElementById('view-login').style.display = 'block'
+  document.getElementById('forgot-error').style.display = 'none'
+  document.getElementById('forgot-ok').style.display = 'none'
+}
+
+window.doLogin = async function() {
+  const email = document.getElementById('email').value.trim()
+  const password = document.getElementById('password').value
+  const btn = document.getElementById('login-btn')
+  const errEl = document.getElementById('error-msg')
+
+  if (!email || !password) { showError('Introduce email y contraseña.'); return }
+
+  btn.innerHTML = '<span>Entrando...</span>'
+  btn.disabled = true
+  errEl.style.display = 'none'
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+
+  if (error) {
+    showError('Email o contraseña incorrectos.')
+    btn.innerHTML = '<span>Entrar</span><i class="ti ti-arrow-right arrow"></i>'
+    btn.disabled = false
+    return
+  }
+
+  const profile = await getRole(data.user.id)
+  if (!profile) {
+    showError('Usuario sin perfil asignado. Contacta con el administrador.')
+    btn.innerHTML = '<span>Entrar</span><i class="ti ti-arrow-right arrow"></i>'
+    btn.disabled = false
+    return
+  }
+
+  redirectByRole(profile.role)
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg')
+  el.textContent = msg
+  el.style.display = 'block'
+}
+
+window.doForgot = async function() {
+  const email = document.getElementById('forgot-email').value.trim()
+  const btn = document.getElementById('forgot-btn')
+  const errEl = document.getElementById('forgot-error')
+  const okEl = document.getElementById('forgot-ok')
+
+  errEl.style.display = 'none'
+  okEl.style.display = 'none'
+
+  if (!email) {
+    errEl.textContent = 'Introduce tu email.'
+    errEl.style.display = 'block'
+    return
+  }
+
+  btn.innerHTML = '<span>Enviando...</span>'
+  btn.disabled = true
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/reset-password.html'
+  })
+
+  btn.innerHTML = '<span>Enviar enlace</span><i class="ti ti-send arrow"></i>'
+  btn.disabled = false
+
+  if (error) {
+    errEl.textContent = 'Error al enviar el email. Inténtalo de nuevo.'
+    errEl.style.display = 'block'
+  } else {
+    okEl.style.display = 'block'
+    btn.style.display = 'none'
+  }
+}
+</script>
+</body>
+</html>

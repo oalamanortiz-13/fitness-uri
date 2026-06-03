@@ -5,40 +5,77 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0a0a">
-<title>Fitness URI — Registro de preparador</title>
+<meta name="theme-color" content="#0c0c0c">
+<title>Tu Preparador — Registro de preparador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="stylesheet" href="css/shared.css">
 <style>
-  body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-  .register-wrap{width:100%;max-width:380px}
-  .logo{text-align:center;margin-bottom:32px}
-  .logo i{font-size:48px;color:var(--blue);display:block;margin-bottom:8px}
-  .logo h1{font-size:24px;font-weight:700}
-  .logo p{font-size:13px;color:var(--text2);margin-top:4px}
-  .register-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
-  .error-msg{background:#E24B4A22;border:1px solid #E24B4A44;color:#F09595;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:12px;display:none}
-  .success-box{text-align:center;padding:24px 16px;display:none}
-  .success-box i{font-size:48px;color:var(--green);display:block;margin-bottom:12px}
-  .success-box h2{font-size:18px;font-weight:700;margin-bottom:8px}
-  .success-box p{font-size:13px;color:var(--text2);line-height:1.5}
-  .divider{text-align:center;font-size:12px;color:var(--text3);margin:16px 0}
-  .link-btn{background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline}
-  .trial-badge{background:var(--green)22;border:1px solid var(--green)44;color:#6fcfa8;border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;text-align:center;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:6px}
+body{display:flex;flex-direction:column;min-height:100vh;padding:0;overflow-x:hidden;background:#0c0c0c;background-image:none}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:repeating-linear-gradient(-52deg,transparent 0px,transparent 60px,rgba(255,255,255,0.012) 60px,rgba(255,255,255,0.012) 62px),repeating-linear-gradient(-52deg,transparent 0px,transparent 140px,rgba(255,255,255,0.007) 140px,rgba(255,255,255,0.007) 142px)}
+.login-hero{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px 28px;background:radial-gradient(ellipse 100% 60% at 50% 0%,rgba(0,210,255,0.07) 0%,transparent 70%)}
+.login-hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12) 40%,rgba(255,255,255,0.12) 60%,transparent)}
+.tp-logo{display:block;margin:0 auto 20px;width:260px;height:auto;filter:drop-shadow(0 0 24px rgba(0,210,255,0.25));animation:logoIn .7s cubic-bezier(.22,1,.36,1) both}
+@keyframes logoIn{from{opacity:0;transform:translateY(-12px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes heroIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.brand-tagline{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:20px;animation:heroIn .7s .2s cubic-bezier(.22,1,.36,1) both}
+.values-row{display:flex;gap:0;width:100%;max-width:340px;animation:heroIn .7s .3s cubic-bezier(.22,1,.36,1) both}
+.value-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border:1px solid rgba(255,255,255,0.07);border-right:none;background:rgba(255,255,255,0.02)}
+.value-item:first-child{border-radius:8px 0 0 8px}
+.value-item:last-child{border-radius:0 8px 8px 0;border-right:1px solid rgba(255,255,255,0.07)}
+.value-icon{width:30px;height:30px;border-radius:7px;background:rgba(0,210,255,0.08);border:1px solid rgba(0,210,255,0.15);display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:15px}
+.value-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#fff}
+.login-form-wrap{position:relative;z-index:1;width:100%;max-width:400px;margin:0 auto;padding:24px 20px 40px}
+.login-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-top:1px solid rgba(255,255,255,0.18);border-radius:16px;padding:24px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 24px 64px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.08);animation:cardIn .6s .15s cubic-bezier(.22,1,.36,1) both}
+.login-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:16px;letter-spacing:-.01em}
+.trial-badge{background:rgba(29,158,117,0.1);border:1px solid rgba(29,158,117,0.2);color:#6fcfa8;border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;text-align:center;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:6px}
+.error-msg{background:rgba(226,75,74,0.1);border:1px solid rgba(226,75,74,0.25);color:#F09595;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:12px;display:none}
+.success-box{text-align:center;padding:24px 16px;display:none}
+.success-box i{font-size:48px;color:var(--green);display:block;margin-bottom:12px}
+.success-box h2{font-size:18px;font-weight:700;margin-bottom:8px;letter-spacing:-.01em}
+.success-box p{font-size:13px;color:rgba(255,255,255,0.5);line-height:1.5}
+.btn-login{width:100%;min-height:48px;margin-top:6px;background:white;border:none;border-radius:9999px;color:#0c0c0c;font-family:'Inter',inherit;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-login:hover{background:rgba(255,255,255,0.9);box-shadow:0 0 24px rgba(255,255,255,0.15)}
+.btn-login:active{transform:scale(.98)}
+.btn-login:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.login-links{margin-top:16px;text-align:center}
+.login-links a{font-size:12px;color:rgba(255,255,255,0.4);text-decoration:none;transition:color .2s}
+.login-links a:hover{color:white}
+.login-links .accent{color:var(--blue);font-weight:600}
 </style>
 </head>
 <body>
 
-<div class="register-wrap">
-  <div class="logo">
-    <i class="ti ti-barbell"></i>
-    <h1>Fitness URI</h1>
-    <p>Registro de preparador físico</p>
-  </div>
+<!-- ═══ HERO ═══ -->
+<div class="login-hero">
+  <img class="tp-logo" src="logo.png" alt="Tu Preparador">
+  <div class="brand-tagline">LA PLATAFORMA PARA <span>PREPARADORES ÉLITE</span></div>
 
-  <div class="register-card">
-    <!-- Formulario de registro -->
+  <div class="values-row">
+    <div class="value-item">
+      <div class="value-icon"><i class="ti ti-users"></i></div>
+      <div class="value-label">Gestiona</div>
+    </div>
+    <div class="value-item">
+      <div class="value-icon"><i class="ti ti-barbell"></i></div>
+      <div class="value-label">Planifica</div>
+    </div>
+    <div class="value-item">
+      <div class="value-icon"><i class="ti ti-chart-line"></i></div>
+      <div class="value-label">Evoluciona</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FORM ═══ -->
+<div class="login-form-wrap">
+  <div class="login-card">
+
     <div id="form-view">
+      <div class="login-title">Crea tu cuenta gratis</div>
+
       <div class="trial-badge">
         <i class="ti ti-gift" style="font-size:14px"></i>
         14 días gratis · Sin tarjeta de crédito
@@ -67,17 +104,17 @@
 
       <div class="error-msg" id="error-msg"></div>
 
-      <button class="btn btn-primary" id="register-btn" onclick="doRegister()" style="width:100%;margin-top:4px">
-        Crear cuenta gratis
+      <button class="btn-login" id="register-btn" onclick="doRegister()">
+        <i class="ti ti-user-plus"></i>
+        <span>Crear cuenta gratis</span>
       </button>
 
-      <div class="divider">¿Ya tienes cuenta?</div>
-      <button class="link-btn" onclick="window.location.href='index.html'" style="width:100%;text-align:center">
-        Iniciar sesión
-      </button>
+      <div class="login-links">
+        ¿Ya tienes cuenta?
+        <a href="login.html" class="accent"> Iniciar sesión</a>
+      </div>
     </div>
 
-    <!-- Estado de éxito -->
     <div class="success-box" id="success-view">
       <i class="ti ti-circle-check"></i>
       <h2>¡Cuenta creada!</h2>
@@ -90,7 +127,6 @@
 import { supabase } from './js/supabase-client.js'
 import { getRole, redirectByRole } from './js/auth.js'
 
-// Si ya hay sesión activa, redirigir
 const { data: { session } } = await supabase.auth.getSession()
 if (session) {
   const profile = await getRole(session.user.id)
@@ -102,13 +138,13 @@ document.getElementById('password2').addEventListener('keydown', e => {
 })
 
 window.doRegister = async function() {
-  const name     = document.getElementById('name').value.trim()
-  const email    = document.getElementById('email').value.trim()
+  const name      = document.getElementById('name').value.trim()
+  const email     = document.getElementById('email').value.trim()
   const specialty = document.getElementById('specialty').value.trim()
-  const password = document.getElementById('password').value
+  const password  = document.getElementById('password').value
   const password2 = document.getElementById('password2').value
-  const btn      = document.getElementById('register-btn')
-  const errEl    = document.getElementById('error-msg')
+  const btn       = document.getElementById('register-btn')
+  const errEl     = document.getElementById('error-msg')
 
   errEl.style.display = 'none'
 
@@ -118,14 +154,14 @@ window.doRegister = async function() {
   if (password.length < 8) { showError('La contraseña debe tener al menos 8 caracteres.'); return }
   if (password !== password2) { showError('Las contraseñas no coinciden.'); return }
 
-  btn.textContent = 'Creando cuenta...'
+  btn.innerHTML = '<span>Creando cuenta...</span>'
   btn.disabled = true
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { role: 'trainer', full_name: name }
+      data: { role: 'trainer', full_name: name, specialty: specialty || '' }
     }
   })
 
@@ -133,39 +169,21 @@ window.doRegister = async function() {
     showError(error.message === 'User already registered'
       ? 'Este email ya está registrado. ¿Quieres iniciar sesión?'
       : error.message)
-    btn.textContent = 'Crear cuenta gratis'
+    btn.innerHTML = '<i class="ti ti-user-plus"></i><span>Crear cuenta gratis</span>'
     btn.disabled = false
     return
   }
 
-  if (data.user) {
-    // Upsert profile (el trigger lo crea pero nos aseguramos de tener todo)
-    await supabase.from('profiles').upsert({
-      id: data.user.id,
-      role: 'trainer',
-      full_name: name,
-      email,
-    })
-
-    // Insertar registro de trainer
-    await supabase.from('trainers').upsert({
-      id: data.user.id,
-      specialty: specialty || null,
-    })
-  }
-
-  // Si hay sesión activa (email confirm desactivado), redirigir directo
   if (data.session) {
     document.getElementById('form-view').style.display = 'none'
     document.getElementById('success-view').style.display = 'block'
     setTimeout(() => window.location.href = 'trainer.html', 1500)
   } else {
-    // Email confirm activado: mostrar mensaje de revisión de email
     document.getElementById('form-view').style.display = 'none'
     const sv = document.getElementById('success-view')
     sv.style.display = 'block'
     document.getElementById('success-msg').innerHTML =
-      `Hemos enviado un email de confirmación a <strong>${email}</strong>.<br><br>Confírmalo y después <a href="index.html" style="color:var(--blue)">inicia sesión aquí</a>.`
+      `Hemos enviado un email de confirmación a <strong>${email}</strong>.<br><br>Confírmalo y después <a href="login.html" style="color:var(--blue)">inicia sesión aquí</a>.`
   }
 }
 
