@@ -204,7 +204,6 @@ async function loadTodayLog() {
   updateCardioUI(S.cardioDay)
 
   // Update score ring from loaded data (or live calc if no stored score)
-  const today = getToday()
   if (S.calScores[today]) {
     updateScoreRing(S.calScores[today])
   }
