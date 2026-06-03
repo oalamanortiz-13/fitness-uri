@@ -2329,8 +2329,19 @@ window.copyInviteLink = function() {
 let TRAINER_PROFILE_SNAPSHOT = null
 
 window.openMyProfile = async function() {
-  document.getElementById('my-profile-btn').style.color = 'var(--blue)'
-  document.getElementById('my-profile-btn').style.borderColor = 'var(--blue)'
+  const profileBtn = document.getElementById('my-profile-btn')
+  if (profileBtn) { profileBtn.style.color = 'var(--blue)'; profileBtn.style.borderColor = 'var(--blue)' }
+
+  // Mobile: show main panel like selecting a client
+  if (window.innerWidth <= 640) {
+    document.body.classList.add('mobile-detail')
+    document.querySelector('.main').style.display = 'block'
+    const ms = document.getElementById('mobile-search')
+    if (ms) ms.style.display = 'none'
+    document.querySelectorAll('.mnav-tab').forEach(el => el.classList.remove('active'))
+    const panelTab = document.getElementById('mnav-panel')
+    if (panelTab) panelTab.classList.add('active')
+  }
 
   const main = document.getElementById('main-content')
   main.innerHTML = '<div style="display:flex;justify-content:center;padding:40px"><div class="spinner"></div></div>'
@@ -2413,7 +2424,14 @@ function renderMyProfileView({ snap, email, activeClients, inactiveClients, glob
   const scoreBar = s => `<div style="height:4px;border-radius:2px;background:var(--border);margin-top:4px"><div style="height:4px;border-radius:2px;background:${scoreColor(s)};width:${s}%"></div></div>`
 
   main.innerHTML = `
+    <!-- BACK BUTTON (solo móvil) -->
+    <div class="detail-topbar">
+      <span class="d-btn" id="mobile-back-btn" onclick="mobileBackToList()" title="Volver" style="display:none"><i class="ti ti-arrow-left"></i></span>
+      <span class="d-btn-spacer"></span>
+    </div>
+
     <!-- CABECERA -->
+    <div style="padding:0 20px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
       <div>
         <h2 style="font-size:20px;font-weight:700;margin:0">${escHtml(snap.full_name) || 'Mi negocio'}</h2>
@@ -2536,7 +2554,14 @@ function renderMyProfileView({ snap, email, activeClients, inactiveClients, glob
         </div>
       </div>
     </div>
+    </div>
   `
+
+  // Show back button on mobile
+  if (window.innerWidth <= 640) {
+    const backBtn = document.getElementById('mobile-back-btn')
+    if (backBtn) backBtn.style.display = 'inline-flex'
+  }
 
   const inputs = ['tp-name', 'tp-specialty', 'tp-max', 'tp-bio']
   inputs.forEach(id => {
