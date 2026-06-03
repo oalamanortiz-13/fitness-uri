@@ -23,6 +23,9 @@ const CARDIO_TYPES = [
 
 let TRAINER_ID = null
 let ALL_CLIENTS = []
+let TODAY_LOGS = {}
+let CURRENT_FILTER = 'all'
+let CURRENT_LABEL_FILTER = null
 let SELECTED_CLIENT = null
 let SELECTED_CLIENT_DATA = null
 let ACTIVE_TAB = 'profile'
@@ -30,6 +33,28 @@ let ACTIVE_DAY = 0
 let ACTIVE_MEAL_ID = null
 let EDITING_EX_ID = null
 let SUBSCRIPTION_STATUS = 'trial'
+
+const LABEL_COLORS = ['#00d2ff','#1D9E75','#BA7517','#E24B4A','#9B59B6','#E67E22','#27AE60','#2980B9']
+function labelColor(str) {
+  if (!str) return '#555'
+  let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) & 0xFFFF
+  return LABEL_COLORS[h % LABEL_COLORS.length]
+}
+function avatarColor(str) {
+  const colors = ['#E85454','#E89A54','#54B4E8','#1D9E75','#9B59B6','#E854B6','#00d2ff','#BA7517']
+  let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) & 0xFFFF
+  return colors[h % colors.length]
+}
+function relativeTime(isoStr) {
+  if (!isoStr) return ''
+  const diff = Date.now() - new Date(isoStr).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'ahora'
+  if (m < 60) return `${m}min`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h`
+  return 'Ayer'
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   const auth = await requireRole('trainer')
@@ -177,52 +202,143 @@ window.uploadTrainerLogo = async function(e) {
 async function loadClients() {
   const { data } = await supabase
     .from('clients')
-    .select('id, active, weight_goal, plan_weeks, profiles(full_name, email)')
+    .select('id, active, weight_goal, plan_weeks, goal_label, profiles(full_name, email)')
     .eq('trainer_id', TRAINER_ID)
     .order('active', { ascending: false })
   ALL_CLIENTS = data || []
-  renderClientList(ALL_CLIENTS)
+
+  const today = new Date().toISOString().split('T')[0]
+  const ids = ALL_CLIENTS.map(c => c.id)
+  if (ids.length) {
+    const { data: logs } = await supabase
+      .from('daily_logs')
+      .select('client_id, score, score_training, score_nutrition, score_cardio, updated_at')
+      .in('client_id', ids)
+      .eq('log_date', today)
+    TODAY_LOGS = {}
+    ;(logs || []).forEach(l => { TODAY_LOGS[l.client_id] = l })
+  }
+
+  renderNavBadges()
+  renderNavLabels()
+  applyCurrentFilter()
 }
 
 function renderClientList(clients) {
   const el = document.getElementById('client-list')
   if (!clients.length) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:20px">Sin clientes todavía</div>'
+    el.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:24px">Sin clientes</div>'
     return
   }
   el.innerHTML = clients.map(c => {
     const name = c.profiles?.full_name || c.profiles?.email || '—'
     const initials = name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
     const selected = SELECTED_CLIENT === c.id
-    return `<div class="client-card${selected ? ' selected' : ''}" onclick="selectClient('${c.id}')">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div class="client-avatar">${initials}</div>
-        <div>
-          <div style="font-size:13px;font-weight:600">${name}</div>
-          <div style="font-size:11px;color:var(--text2)">${c.profiles?.email || ''}</div>
-        </div>
-        <div style="margin-left:auto">
-          <span class="badge ${c.active ? 'badge-green' : 'badge-gray'}">${c.active ? 'Activo' : 'Inactivo'}</span>
-        </div>
+    const log = TODAY_LOGS[c.id]
+    const score = log?.score ?? null
+    const scoreColor = score === null ? '' : score >= 80 ? '#1D9E75' : score >= 50 ? '#BA7517' : '#E24B4A'
+
+    let statusText = 'Sin registro hoy'
+    let statusColor = 'rgba(255,255,255,0.25)'
+    let statusIcon = '<i class="ti ti-alert-circle" style="font-size:10px;color:#BA7517"></i>'
+    if (log) {
+      const st = log.score_training || 0, sn = log.score_nutrition || 0, sc = log.score_cardio || 0
+      if (st >= 90 && sn >= 90 && sc >= 60) {
+        statusText = `Todo completado · Score ${score}%`; statusColor = '#1D9E75'; statusIcon = ''
+      } else if (sc < 30 && (st > 0 || sn > 0)) {
+        statusText = `Sin cardio hoy · Score ${score}%`; statusColor = 'rgba(255,255,255,0.4)'; statusIcon = ''
+      } else if (st >= 70) {
+        statusText = `Entreno completado · Score ${score}%`; statusColor = 'rgba(255,255,255,0.4)'; statusIcon = ''
+      } else {
+        statusText = `Nutrición ${sn}% · Score ${score}%`; statusColor = 'rgba(255,255,255,0.4)'; statusIcon = ''
+      }
+    }
+
+    const timeStr = log ? relativeTime(log.updated_at) : (c.active === false ? 'Archivado' : '')
+
+    return `<div class="cr${selected ? ' selected' : ''}" onclick="selectClient('${c.id}')">
+      <div class="cr-avatar" style="background:${avatarColor(name)}">${initials}</div>
+      <div class="cr-body">
+        <div class="cr-name">${name}</div>
+        <div class="cr-status" style="color:${statusColor}">${statusIcon}${statusText}</div>
+        ${score !== null ? `<div class="cr-bar"><div class="cr-bar-fill" style="width:${score}%;background:${scoreColor}"></div></div>` : ''}
       </div>
+      <div class="cr-time">${timeStr}</div>
     </div>`
   }).join('')
 }
 
+function applyCurrentFilter() {
+  let list = ALL_CLIENTS
+  if (CURRENT_FILTER === 'active') list = list.filter(c => c.active !== false)
+  else if (CURRENT_FILTER === 'archived') list = list.filter(c => c.active === false)
+  else if (CURRENT_FILTER === 'noreg') list = list.filter(c => !TODAY_LOGS[c.id] && c.active !== false)
+  if (CURRENT_LABEL_FILTER) list = list.filter(c => c.goal_label === CURRENT_LABEL_FILTER)
+  renderClientList(list)
+}
+
+window.setFilter = function(filter) {
+  CURRENT_FILTER = filter
+  CURRENT_LABEL_FILTER = null
+  document.querySelectorAll('.nav-item[id^="nav-"]').forEach(el => el.classList.remove('active'))
+  const el = document.getElementById('nav-' + filter)
+  if (el) el.classList.add('active')
+  document.querySelectorAll('.nav-label-item').forEach(el => el.classList.remove('active'))
+  applyCurrentFilter()
+}
+
+window.setLabelFilter = function(label) {
+  CURRENT_LABEL_FILTER = label
+  CURRENT_FILTER = 'all'
+  document.querySelectorAll('.nav-item[id^="nav-"]').forEach(el => el.classList.remove('active'))
+  document.querySelectorAll('.nav-label-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.label === label)
+  })
+  applyCurrentFilter()
+}
+
+function renderNavBadges() {
+  const active = ALL_CLIENTS.filter(c => c.active !== false).length
+  const noreg = ALL_CLIENTS.filter(c => !TODAY_LOGS[c.id] && c.active !== false).length
+  const allBadge = document.getElementById('nav-count-all')
+  const activeBadge = document.getElementById('nav-count-active')
+  const noregBadge = document.getElementById('nav-count-noreg')
+  if (allBadge) allBadge.textContent = ALL_CLIENTS.length || ''
+  if (activeBadge) activeBadge.textContent = active || ''
+  if (noregBadge) { noregBadge.textContent = noreg || ''; noregBadge.style.display = noreg ? '' : 'none' }
+}
+
+function renderNavLabels() {
+  const el = document.getElementById('nav-labels')
+  if (!el) return
+  const labels = [...new Set(ALL_CLIENTS.map(c => c.goal_label).filter(Boolean))]
+  if (!labels.length) { el.innerHTML = '<div style="padding:4px 18px;font-size:11px;color:rgba(255,255,255,0.2)">Sin etiquetas</div>'; return }
+  el.innerHTML = labels.map(l => `
+    <div class="nav-label-item" data-label="${l}" onclick="setLabelFilter('${l}')">
+      <div class="nav-label-dot" style="background:${labelColor(l)}"></div>
+      ${l}
+    </div>`).join('')
+}
+
 window.filterClients = function(q) {
   const lq = q.toLowerCase()
-  renderClientList(ALL_CLIENTS.filter(c =>
+  let list = ALL_CLIENTS
+  if (CURRENT_FILTER === 'active') list = list.filter(c => c.active !== false)
+  else if (CURRENT_FILTER === 'archived') list = list.filter(c => c.active === false)
+  else if (CURRENT_FILTER === 'noreg') list = list.filter(c => !TODAY_LOGS[c.id] && c.active !== false)
+  if (CURRENT_LABEL_FILTER) list = list.filter(c => c.goal_label === CURRENT_LABEL_FILTER)
+  if (lq) list = list.filter(c =>
     (c.profiles?.full_name || '').toLowerCase().includes(lq) ||
     (c.profiles?.email || '').toLowerCase().includes(lq)
-  ))
+  )
+  renderClientList(list)
 }
 
 window.selectClient = async function(clientId) {
   SELECTED_CLIENT = clientId
-  // Quitar highlight de "Mi perfil"
   const profileBtn = document.getElementById('my-profile-btn')
-  if (profileBtn) { profileBtn.style.color = ''; profileBtn.style.borderColor = '' }
-  renderClientList(ALL_CLIENTS.filter(() => true)) // re-render to update selected
+  if (profileBtn) profileBtn.classList.remove('active')
+  applyCurrentFilter()
   await loadClientDetail(clientId)
 }
 
@@ -453,7 +569,8 @@ window.toggleClientActive = async function(active) {
   SELECTED_CLIENT_DATA.client.active = active
   const idx = ALL_CLIENTS.findIndex(c => c.id === SELECTED_CLIENT)
   if (idx >= 0) ALL_CLIENTS[idx].active = active
-  renderClientList(ALL_CLIENTS)
+  renderNavBadges()
+  applyCurrentFilter()
 }
 
 // ─── TAB: ENTRENO ─────────────────────────────────────────────────────────────

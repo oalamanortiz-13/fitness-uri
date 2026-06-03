@@ -8,104 +8,221 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="stylesheet" href="css/shared.css">
 <style>
-  body{padding-bottom:0}
-  .layout{display:flex;max-width:900px;margin:0 auto;min-height:100vh}
-  .sidebar{width:260px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.08);padding:16px;position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--bg2)}
-  .main{flex:1;padding:20px;overflow-y:auto}
-  @media(max-width:600px){
-    .layout{flex-direction:column}
-    .sidebar{width:100%;height:auto;position:relative;border-right:none;border-bottom:1px solid var(--border)}
+  body{padding-bottom:0;overflow:hidden}
+  .layout{display:flex;height:100vh;overflow:hidden}
+
+  /* ── NAV SIDEBAR ───────────────────────────────── */
+  .nav-sidebar{
+    width:200px;flex-shrink:0;display:flex;flex-direction:column;
+    border-right:1px solid rgba(255,255,255,0.06);
+    background:rgba(255,255,255,0.015);
+    overflow-y:auto;padding:0
   }
-  .sidebar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-  .sidebar-title{font-size:14px;font-weight:600}
-  .search-input{padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;width:100%;margin-bottom:10px}
+  .nav-logo-area{
+    padding:16px 14px 14px;border-bottom:1px solid rgba(255,255,255,0.06);
+    display:flex;flex-direction:column;align-items:center;gap:8px
+  }
+  .nav-trainer-logo{
+    width:48px;height:48px;border-radius:12px;overflow:hidden;
+    border:1.5px solid rgba(255,255,255,0.12);background:var(--bg3);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative
+  }
+  .nav-trainer-logo img{width:100%;height:100%;object-fit:cover;display:none}
+  .nav-trainer-logo i{font-size:22px;color:var(--blue)}
+  .nav-trainer-name{font-size:12px;font-weight:600;text-align:center;color:#fff;line-height:1.3}
+  .nav-new-btn{
+    margin:10px;padding:8px 10px;border-radius:8px;
+    background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+    color:#fff;font-size:12px;font-weight:600;cursor:pointer;
+    display:flex;align-items:center;gap:6px;transition:background .2s
+  }
+  .nav-new-btn:hover{background:rgba(255,255,255,0.1)}
+  .nav-section{padding:6px 8px}
+  .nav-item{
+    display:flex;align-items:center;gap:8px;padding:7px 10px;
+    border-radius:7px;font-size:12.5px;color:rgba(255,255,255,0.5);
+    cursor:pointer;margin-bottom:1px;transition:all .15s;user-select:none
+  }
+  .nav-item:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8)}
+  .nav-item.active{background:rgba(255,255,255,0.08);color:#fff;font-weight:600}
+  .nav-item .nav-count{
+    margin-left:auto;background:rgba(255,255,255,0.12);
+    border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;color:rgba(255,255,255,0.7)
+  }
+  .nav-item .nav-count.red{background:rgba(226,75,74,0.2);color:#F09595}
+  .nav-section-title{
+    padding:10px 18px 4px;font-size:10px;font-weight:700;
+    letter-spacing:.1em;color:rgba(255,255,255,0.25);text-transform:uppercase
+  }
+  .nav-label-item{
+    display:flex;align-items:center;gap:8px;padding:6px 18px;
+    font-size:12px;color:rgba(255,255,255,0.5);cursor:pointer;transition:color .15s
+  }
+  .nav-label-item:hover, .nav-label-item.active{color:#fff}
+  .nav-label-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .nav-bottom{margin-top:auto;border-top:1px solid rgba(255,255,255,0.06);padding:8px}
+
+  /* ── CLIENT PANEL ──────────────────────────────── */
+  .client-panel{
+    width:290px;flex-shrink:0;display:flex;flex-direction:column;
+    border-right:1px solid rgba(255,255,255,0.06);overflow:hidden
+  }
+  .client-panel-top{padding:12px 12px 8px;flex-shrink:0}
+  .search-input{
+    padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.05);color:var(--text);font-size:12px;
+    font-family:inherit;width:100%;outline:none;transition:border-color .2s
+  }
+  .search-input:focus{border-color:rgba(255,255,255,0.2)}
+  .client-panel-actions{display:flex;gap:6px;margin-top:8px}
+  .client-panel-actions button{
+    flex:1;padding:6px;border-radius:7px;font-size:11px;font-weight:600;
+    cursor:pointer;transition:all .15s;border:1px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.6)
+  }
+  .client-panel-actions button:hover{background:rgba(255,255,255,0.08);color:#fff}
+  .client-panel-actions button.primary{
+    background:rgba(255,255,255,0.9);color:#0c0c0c;border-color:transparent
+  }
+  .client-panel-actions button.primary:hover{background:#fff}
+  #client-list{flex:1;overflow-y:auto;padding:4px 0}
+
+  /* ── CLIENT ROW ────────────────────────────────── */
+  .cr{
+    display:flex;align-items:flex-start;gap:10px;padding:10px 14px;
+    cursor:pointer;transition:background .15s;position:relative
+  }
+  .cr:hover{background:rgba(255,255,255,0.04)}
+  .cr.selected{background:rgba(255,255,255,0.07)}
+  .cr.selected::before{
+    content:'';position:absolute;left:0;top:0;bottom:0;
+    width:2px;background:var(--blue)
+  }
+  .cr-avatar{
+    width:36px;height:36px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:700;color:#fff
+  }
+  .cr-body{flex:1;min-width:0}
+  .cr-name{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cr-status{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;display:flex;align-items:center;gap:3px}
+  .cr-bar{height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:6px;overflow:hidden}
+  .cr-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+  .cr-time{font-size:10px;color:rgba(255,255,255,0.3);white-space:nowrap;margin-top:2px;flex-shrink:0}
+
+  /* ── MAIN ──────────────────────────────────────── */
+  .main{flex:1;overflow-y:auto;padding:20px}
+
+  /* ── RESPONSIVE ────────────────────────────────── */
+  @media(max-width:700px){
+    .nav-sidebar{display:none}
+    .client-panel{width:200px}
+  }
+  @media(max-width:500px){
+    .layout{flex-direction:column;height:auto}
+    .client-panel{width:100%;height:280px}
+    .main{overflow:auto}
+    body{overflow:auto}
+  }
 </style>
 </head>
 <body>
 
-<div id="loading-screen" style="display:flex;min-height:100vh;max-width:900px;margin:0 auto">
-  <!-- Sidebar skeleton -->
-  <div style="width:260px;flex-shrink:0;padding:16px;border-right:1px solid rgba(255,255,255,0.08)">
-    <div style="text-align:center;padding:16px 0 12px;margin-bottom:14px">
-      <div class="skel" style="width:72px;height:72px;border-radius:16px;margin:0 auto 12px"></div>
-      <div class="skel" style="width:120px;height:14px;margin:0 auto 6px"></div>
-      <div class="skel" style="width:80px;height:10px;margin:0 auto"></div>
-    </div>
-    <div class="skel" style="height:38px;border-radius:4px;margin-bottom:12px"></div>
-    <div class="skel" style="height:36px;border-radius:var(--radius-sm);margin-bottom:10px"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <div class="skel" style="height:36px;border-radius:4px"></div>
-      <div class="skel" style="height:36px;border-radius:4px"></div>
-    </div>
-    <div class="skel" style="height:60px;border-radius:12px;margin-bottom:8px"></div>
-    <div class="skel" style="height:60px;border-radius:12px;margin-bottom:8px"></div>
-    <div class="skel" style="height:60px;border-radius:12px"></div>
+<div id="loading-screen" style="display:flex;height:100vh;overflow:hidden">
+  <div style="width:200px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.06);padding:14px">
+    <div class="skel" style="width:48px;height:48px;border-radius:12px;margin:0 auto 8px"></div>
+    <div class="skel" style="width:90px;height:10px;margin:0 auto 16px"></div>
+    <div class="skel" style="height:30px;border-radius:8px;margin-bottom:6px"></div>
+    <div class="skel" style="height:28px;border-radius:7px;margin-bottom:4px"></div>
+    <div class="skel" style="height:28px;border-radius:7px;margin-bottom:4px"></div>
+    <div class="skel" style="height:28px;border-radius:7px"></div>
   </div>
-  <!-- Main skeleton -->
+  <div style="width:290px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.06);padding:12px">
+    <div class="skel" style="height:34px;border-radius:8px;margin-bottom:10px"></div>
+    <div class="skel" style="height:52px;border-radius:8px;margin-bottom:6px"></div>
+    <div class="skel" style="height:52px;border-radius:8px;margin-bottom:6px"></div>
+    <div class="skel" style="height:52px;border-radius:8px;margin-bottom:6px"></div>
+    <div class="skel" style="height:52px;border-radius:8px"></div>
+  </div>
   <div style="flex:1;padding:20px">
-    <div class="skel" style="width:180px;height:28px;margin-bottom:20px"></div>
+    <div class="skel" style="width:200px;height:28px;margin-bottom:20px"></div>
     <div style="display:flex;gap:6px;margin-bottom:20px">
       <div class="skel" style="width:70px;height:28px;border-radius:20px"></div>
       <div class="skel" style="width:80px;height:28px;border-radius:20px"></div>
       <div class="skel" style="width:60px;height:28px;border-radius:20px"></div>
     </div>
     <div class="skel" style="height:120px;border-radius:12px;margin-bottom:12px"></div>
-    <div class="skel" style="height:80px;border-radius:12px;margin-bottom:12px"></div>
     <div class="skel" style="height:200px;border-radius:12px"></div>
   </div>
 </div>
 
 <div class="layout" id="app" style="display:none">
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <!-- Logo del preparador -->
-    <div style="text-align:center;padding:16px 0 12px;border-bottom:1px solid var(--border);margin-bottom:14px">
-      <div style="position:relative;display:inline-block">
-        <div id="trainer-logo-wrap" onclick="document.getElementById('logo-input').click()"
-          style="width:72px;height:72px;border-radius:16px;overflow:hidden;border:2px solid var(--border2);
-          background:var(--bg3);display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0 auto">
-          <img id="trainer-logo-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
-          <i id="trainer-logo-icon" class="ti ti-barbell" style="font-size:32px;color:var(--blue)"></i>
-        </div>
-        <div onclick="document.getElementById('logo-input').click()"
-          style="position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;background:var(--blue);
-          border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg2)">
-          <i class="ti ti-camera" style="font-size:12px;color:#fff"></i>
-        </div>
-        <input type="file" id="logo-input" accept="image/*" style="display:none" onchange="uploadTrainerLogo(event)">
+
+  <!-- ── NAV SIDEBAR ── -->
+  <div class="nav-sidebar">
+    <div class="nav-logo-area">
+      <div class="nav-trainer-logo" id="trainer-logo-wrap" onclick="document.getElementById('logo-input').click()">
+        <img id="trainer-logo-img" src="" alt="">
+        <i id="trainer-logo-icon" class="ti ti-barbell"></i>
       </div>
-      <div style="font-size:13px;font-weight:600;margin-top:10px" id="trainer-name-logo">—</div>
-      <div style="font-size:10px;color:var(--text2);margin-top:2px">Preparador físico</div>
+      <div class="nav-trainer-name" id="trainer-name-logo">—</div>
+      <input type="file" id="logo-input" accept="image/*" style="display:none" onchange="uploadTrainerLogo(event)">
     </div>
 
-    <button class="btn" id="my-profile-btn" onclick="openMyProfile()"
-      style="width:100%;font-size:12px;margin-bottom:12px;border-color:var(--border2);color:var(--text2);justify-content:flex-start;gap:8px">
-      <i class="ti ti-user-circle"></i> Mi perfil
+    <button class="nav-new-btn" onclick="openNewClientModal()">
+      <i class="ti ti-user-plus"></i> Nuevo cliente
     </button>
 
-    <div class="sidebar-header" style="margin-bottom:12px">
-      <div class="sidebar-title">Mis clientes</div>
-      <button class="btn" onclick="doLogout()" style="font-size:11px;padding:6px 10px"><i class="ti ti-logout"></i> Salir</button>
+    <div class="nav-section">
+      <div class="nav-item active" id="nav-all" onclick="setFilter('all')">
+        <i class="ti ti-layout-dashboard"></i> Panel
+        <span class="nav-count" id="nav-count-all"></span>
+      </div>
+      <div class="nav-item" id="nav-active" onclick="setFilter('active')">
+        <i class="ti ti-users"></i> Activos
+        <span class="nav-count" id="nav-count-active"></span>
+      </div>
+      <div class="nav-item" id="nav-noreg" onclick="setFilter('noreg')">
+        <i class="ti ti-alert-circle"></i> Sin registro
+        <span class="nav-count red" id="nav-count-noreg"></span>
+      </div>
+      <div class="nav-item" id="nav-archived" onclick="setFilter('archived')">
+        <i class="ti ti-archive"></i> Archivados
+      </div>
     </div>
-    <input type="text" class="search-input" placeholder="Buscar cliente..." oninput="filterClients(this.value)">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <button class="btn btn-primary" onclick="openNewClientModal()" style="font-size:12px">
-        <i class="ti ti-user-plus"></i> Nuevo
-      </button>
-      <button class="btn" onclick="openInviteModal()" style="font-size:12px;border-color:var(--blue);color:var(--blue)">
-        <i class="ti ti-link"></i> Invitar
-      </button>
+
+    <div class="nav-section-title">Etiquetas</div>
+    <div id="nav-labels"></div>
+
+    <div class="nav-bottom">
+      <div class="nav-item" id="my-profile-btn" onclick="openMyProfile()">
+        <i class="ti ti-user-circle"></i> Mi perfil
+      </div>
+      <div class="nav-item" onclick="doLogout()">
+        <i class="ti ti-logout"></i> Salir
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CLIENT PANEL ── -->
+  <div class="client-panel">
+    <div class="client-panel-top">
+      <input type="text" class="search-input" placeholder="Buscar cliente..." oninput="filterClients(this.value)">
+      <div class="client-panel-actions">
+        <button onclick="openInviteModal()"><i class="ti ti-link"></i> Invitar</button>
+        <button class="primary" onclick="openNewClientModal()"><i class="ti ti-user-plus"></i> Nuevo</button>
+      </div>
     </div>
     <div id="client-list"></div>
   </div>
 
-  <!-- MAIN -->
+  <!-- ── MAIN ── -->
   <div class="main">
     <div id="main-content">
       <div class="empty-state">
         <i class="ti ti-users"></i>
         <div style="font-size:16px;font-weight:600;margin-bottom:8px">Selecciona un cliente</div>
-        <div style="font-size:13px">Elige un cliente de la lista o crea uno nuevo</div>
+        <div style="font-size:13px;color:var(--text2)">Elige un cliente de la lista o crea uno nuevo</div>
       </div>
     </div>
   </div>
