@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setAIGreeting()
   updateNutriFinishBtn()
   updateCardioFinishBtn()
+  loadProgressPhotos()
 
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'})
 
@@ -1451,14 +1452,58 @@ window.triggerPhoto = function(slot) {
   document.getElementById('photo-input').click()
 }
 
-window.handlePhoto = function(e) {
+window.handlePhoto = async function(e) {
   const f = e.target.files[0]; if (!f) return
-  const r = new FileReader()
-  r.onload = ev => {
-    const el = document.getElementById(`photo-${S.photoSlot}`)
+  if (f.size > 10 * 1024 * 1024) { showNotif('Imagen demasiado grande (máx. 10 MB)'); return }
+
+  const slot = S.photoSlot
+  const el = document.getElementById(`photo-${slot}`)
+
+  // Preview inmediato
+  const reader = new FileReader()
+  reader.onload = ev => {
     el.innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`
   }
-  r.readAsDataURL(f)
+  reader.readAsDataURL(f)
+
+  showNotif('Subiendo foto...')
+
+  const path = `progress-${USER_ID}-${slot}`
+  const ext = f.name.split('.').pop() || 'jpg'
+  const fullPath = `${path}.${ext}`
+
+  // Borrar el anterior (si existe con otra extensión) e ignorar error
+  await supabase.storage.from('avatars').remove([`${path}.jpg`, `${path}.jpeg`, `${path}.png`, `${path}.webp`])
+
+  const { error } = await supabase.storage
+    .from('avatars')
+    .upload(fullPath, f, { upsert: true, contentType: f.type })
+
+  if (error) { showNotif('Error al guardar la foto'); console.error(error); return }
+
+  const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fullPath)
+  el.innerHTML = `<img src="${publicUrl}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`
+  showNotif('Foto guardada ✓')
+  e.target.value = ''
+}
+
+async function loadProgressPhotos() {
+  for (const slot of [0, 1]) {
+    const el = document.getElementById(`photo-${slot}`)
+    if (!el) continue
+    const label = slot === 0 ? 'Esta semana' : 'Semana anterior'
+    // Try common extensions
+    for (const ext of ['jpg', 'jpeg', 'png', 'webp']) {
+      const path = `progress-${USER_ID}-${slot}.${ext}`
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+      // Test if the file actually exists
+      const resp = await fetch(publicUrl, { method: 'HEAD' })
+      if (resp.ok) {
+        el.innerHTML = `<img src="${publicUrl}?t=${Date.now()}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`
+        break
+      }
+    }
+  }
 }
 
 // ─── CHAT IA ──────────────────────────────────────────────────────────────────
