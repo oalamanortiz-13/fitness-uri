@@ -84,6 +84,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('loading-screen').style.display = 'none'
   document.getElementById('app').style.display = 'block'
   document.getElementById('bottom-nav').style.display = 'flex'
+
+  // Trigger dashboard card entrance animation on first load
+  requestAnimationFrame(() => {
+    document.querySelectorAll('#dash .card, #dash .score-ring-card, #dash .metric-grid').forEach((el, i) => {
+      el.style.animationDelay = `${i * 60}ms`
+      el.classList.add('card-anim')
+    })
+    // Animate score ring after a brief delay so transition is visible
+    setTimeout(() => {
+      const today = getToday()
+      updateScoreRing(S.calScores[today] || calcDayScore())
+    }, 300)
+  })
 })
 
 window.doLogout = logout
@@ -189,6 +202,12 @@ async function loadTodayLog() {
   // Cardio slider
   document.getElementById('cardio-sl').value = S.cardioDay
   updateCardioUI(S.cardioDay)
+
+  // Update score ring from loaded data (or live calc if no stored score)
+  const today = getToday()
+  if (S.calScores[today]) {
+    updateScoreRing(S.calScores[today])
+  }
 }
 
 async function loadWeekCardio() {
@@ -535,12 +554,20 @@ async function saveLog() {
 window.show = function(id, btn) {
   document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'))
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'))
-  document.getElementById(id).classList.add('active')
+  const sec = document.getElementById(id)
+  sec.classList.add('active')
   if (btn) btn.classList.add('active')
   if (id === 'train') { renderDaySel(); renderWorkout(S.curDay) }
   if (id === 'prog') renderProg()
   if (id === 'cal') loadMonthLogs().then(renderCalendar)
   if (id === 'cardio') renderWkBars()
+  // staggered card entrance animation
+  sec.querySelectorAll('.card,.score-ring-card,.metric-grid,.finish-btn').forEach((el, i) => {
+    el.classList.remove('card-anim')
+    void el.offsetWidth
+    el.style.animationDelay = `${i * 55}ms`
+    el.classList.add('card-anim')
+  })
 }
 
 // ─── CHECKLIST ────────────────────────────────────────────────────────────────
@@ -707,6 +734,27 @@ function renderExtraFoods() {
 
 // ─── WORKOUT ──────────────────────────────────────────────────────────────────
 
+function getMuscleGroup(name) {
+  const n = (name || '').toLowerCase()
+  if (/press|pecho|pectoral|bench|push.?up|fondos|dip|apert|fly/.test(n))
+    return { cls: 'muscle-push', icon: 'ti-arrows-horizontal', label: 'Pecho' }
+  if (/deltoid|hombro|shoulder|lateral|frontal|militar|press arriba|overhead/.test(n))
+    return { cls: 'muscle-push', icon: 'ti-trending-up', label: 'Hombros' }
+  if (/trícep|tricep|extens/.test(n))
+    return { cls: 'muscle-push', icon: 'ti-arrow-down', label: 'Tríceps' }
+  if (/bícep|bicep|curl|remo|jalón|jalón|dominada|pull|espalda|dorsal|remo|trapecio/.test(n))
+    return { cls: 'muscle-pull', icon: 'ti-arrows-horizontal', label: 'Espalda' }
+  if (/sentailla|squat|pierna|leg|femoral|cuádrip|cuadricep|glúteo|gluteo|lunges|estocada|hip|rumano/.test(n))
+    return { cls: 'muscle-legs', icon: 'ti-run', label: 'Piernas' }
+  if (/gemelo|calf|pantorril/.test(n))
+    return { cls: 'muscle-legs', icon: 'ti-run', label: 'Gemelos' }
+  if (/abdomen|abdom|core|plancha|crunch|oblicuo|hipopres/.test(n))
+    return { cls: 'muscle-core', icon: 'ti-circle', label: 'Core' }
+  if (/cardio|correr|bici|elíptic|remo|saltar|skipping|burpee/.test(n))
+    return { cls: 'muscle-cardio', icon: 'ti-heart-rate-monitor', label: 'Cardio' }
+  return null
+}
+
 function renderDaySel() {
   document.getElementById('day-sel').innerHTML = DAYS.map((d, i) =>
     `<button class="${i === S.curDay ? 'active' : ''}" onclick="selDay(${i})">${d}</button>`
@@ -745,12 +793,16 @@ function renderWorkout(dayIdx) {
 
   exs.forEach(ex => {
     const done = S.exDone[key].includes(ex.id)
-    h += `<div class="row">
-      <div style="flex:1">
-        <div class="row-name">${ex.name}</div>
+    const mb = getMuscleGroup(ex.name)
+    h += `<div class="row" style="${done ? 'opacity:.65' : ''}">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
+          <span class="row-name">${ex.name}</span>
+          ${mb ? `<span class="muscle-badge ${mb.cls}"><i class="ti ${mb.icon}"></i> ${mb.label}</span>` : ''}
+        </div>
         ${ex.note ? `<div class="row-note">${ex.note}</div>` : ''}
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
         <span class="tag">${ex.sets_reps}</span>
         <button class="check-btn${done ? ' on' : ''}" onclick="toggleEx('${wo.id}','${ex.id}',${dayIdx})">${done ? '✓' : ''}</button>
       </div>
@@ -795,7 +847,40 @@ async function saveScoreComponent(field, value) {
     score_cardio: cardio,
   }, { onConflict: 'client_id,log_date' })
 
+  updateScoreRing({ total, training, nutrition, cardio })
   return { total, training, nutrition, cardio }
+}
+
+function updateScoreRing(sc) {
+  if (!sc) sc = calcDayScore()
+  const circumference = 326.73
+  const pct = Math.min(100, Math.max(0, sc.total || 0))
+  const offset = circumference * (1 - pct / 100)
+  const color = pct >= 80 ? 'var(--green)' : pct >= 50 ? 'var(--amber)' : pct > 0 ? 'var(--red)' : 'rgba(0,212,255,0.3)'
+
+  const fill = document.getElementById('ring-fill')
+  if (fill) {
+    fill.style.strokeDashoffset = offset
+    fill.style.stroke = color
+  }
+  const numEl = document.getElementById('score-num')
+  if (numEl) {
+    numEl.textContent = pct > 0 ? pct + '%' : '—'
+    numEl.style.color = pct > 0 ? color : 'var(--text2)'
+  }
+
+  const setMini = (barId, pctId, val, barColor) => {
+    const b = document.getElementById(barId)
+    const p = document.getElementById(pctId)
+    if (b) b.style.width = (val || 0) + '%'
+    if (p) p.textContent = val != null ? val + '%' : '—'
+    if (b && barColor) b.style.background = barColor
+  }
+  const trainColor = (sc.training||0) >= 80 ? 'var(--green)' : (sc.training||0) >= 50 ? 'var(--amber)' : 'rgba(0,212,255,0.7)'
+  const nutriColor = (sc.nutrition||0) >= 80 ? 'var(--green)' : (sc.nutrition||0) >= 50 ? 'var(--amber)' : 'rgba(0,212,255,0.7)'
+  setMini('sb-train', 'sb-train-pct', sc.training, trainColor)
+  setMini('sb-nutri', 'sb-nutri-pct', sc.nutrition, nutriColor)
+  setMini('sb-cardio', 'sb-cardio-pct', sc.cardio, null)
 }
 
 function finishModal({ emoji, title, subtitle, scorePct, scoreColor, extraRows, streak }) {

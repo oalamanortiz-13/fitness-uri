@@ -62,11 +62,33 @@
     </div>
   </div>
 
+  <!-- SCORE RING -->
+  <div class="score-ring-card">
+    <div class="ring-wrap">
+      <svg class="score-ring" viewBox="0 0 120 120">
+        <circle class="ring-bg" cx="60" cy="60" r="52"/>
+        <circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="52"/>
+      </svg>
+      <div class="ring-center">
+        <div class="ring-pct" id="score-num">—</div>
+        <div class="ring-sub">Score</div>
+      </div>
+    </div>
+    <div class="score-info">
+      <div class="score-info-title">Rendimiento hoy</div>
+      <div id="score-breakdown">
+        <div class="mini-score-row"><span class="mini-score-label">Entreno</span><div class="mini-bar-wrap"><div class="mini-bar" id="sb-train"></div></div><span class="mini-score-pct" id="sb-train-pct">—</span></div>
+        <div class="mini-score-row"><span class="mini-score-label">Nutrición</span><div class="mini-bar-wrap"><div class="mini-bar" id="sb-nutri"></div></div><span class="mini-score-pct" id="sb-nutri-pct">—</span></div>
+        <div class="mini-score-row"><span class="mini-score-label">Cardio</span><div class="mini-bar-wrap"><div class="mini-bar" id="sb-cardio" style="background:var(--amber)"></div></div><span class="mini-score-pct" id="sb-cardio-pct">—</span></div>
+      </div>
+    </div>
+  </div>
+
   <div class="metric-grid">
-    <div class="metric"><div class="metric-label">Peso</div><div class="metric-val" id="d-peso">— kg</div><div class="metric-sub" id="d-peso-sub">Cargando...</div></div>
-    <div class="metric"><div class="metric-label">Racha</div><div class="metric-val" id="d-streak">0 🔥</div><div class="metric-sub">días consecutivos</div></div>
-    <div class="metric"><div class="metric-label">Proteína</div><div class="metric-val" id="d-prot">0 g</div><div class="metric-sub" id="d-prot-sub">Obj: — g</div></div>
-    <div class="metric"><div class="metric-label">Pasos</div><div class="metric-val" id="d-steps">0</div><div class="metric-sub" id="d-steps-sub">Obj: —</div></div>
+    <div class="metric"><div class="metric-label">Peso</div><div class="metric-val" id="d-peso">— kg</div><div class="metric-sub" id="d-peso-sub">Cargando...</div><i class="ti ti-scale metric-icon"></i></div>
+    <div class="metric"><div class="metric-label">Racha</div><div class="metric-val" id="d-streak">0 🔥</div><div class="metric-sub">días consecutivos</div><i class="ti ti-flame metric-icon" style="color:var(--amber);opacity:.1"></i></div>
+    <div class="metric"><div class="metric-label">Proteína</div><div class="metric-val" id="d-prot">0 g</div><div class="metric-sub" id="d-prot-sub">Obj: — g</div><i class="ti ti-meat metric-icon" style="color:var(--green);opacity:.09"></i></div>
+    <div class="metric"><div class="metric-label">Pasos</div><div class="metric-val" id="d-steps">0</div><div class="metric-sub" id="d-steps-sub">Obj: —</div><i class="ti ti-shoe metric-icon"></i></div>
   </div>
 
   <div class="card">
