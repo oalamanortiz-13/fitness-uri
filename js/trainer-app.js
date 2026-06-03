@@ -22,6 +22,7 @@ const CARDIO_TYPES = [
 ]
 
 let TRAINER_ID = null
+let TRAINER_NAME = ''
 let ALL_CLIENTS = []
 let TODAY_LOGS = {}
 let CURRENT_FILTER = 'all'
@@ -60,8 +61,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const auth = await requireRole('trainer')
   if (!auth) return
   TRAINER_ID = auth.session.user.id
-  const trainerName = auth.profile.full_name || auth.session.user.email
-  document.getElementById('trainer-name-logo').textContent = trainerName
+  TRAINER_NAME = (auth.profile.full_name || auth.session.user.email).split(' ')[0]
+  document.getElementById('trainer-name-logo').textContent = auth.profile.full_name || auth.session.user.email
 
   await loadSubscriptionStatus()
   await loadTrainerLogo()
@@ -280,8 +281,9 @@ function applyCurrentFilter() {
 window.setFilter = function(filter) {
   CURRENT_FILTER = filter
   CURRENT_LABEL_FILTER = null
-  document.querySelectorAll('.nav-item[id^="nav-"]').forEach(el => el.classList.remove('active'))
-  const el = document.getElementById('nav-' + filter)
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'))
+  const idMap = { all: 'nav-all', active: 'nav-active', noreg: 'nav-noreg', archived: 'nav-archived' }
+  const el = document.getElementById(idMap[filter])
   if (el) el.classList.add('active')
   document.querySelectorAll('.nav-label-item').forEach(el => el.classList.remove('active'))
   applyCurrentFilter()
@@ -298,14 +300,18 @@ window.setLabelFilter = function(label) {
 }
 
 function renderNavBadges() {
+  const total = ALL_CLIENTS.length
   const active = ALL_CLIENTS.filter(c => c.active !== false).length
   const noreg = ALL_CLIENTS.filter(c => !TODAY_LOGS[c.id] && c.active !== false).length
-  const allBadge = document.getElementById('nav-count-all')
-  const activeBadge = document.getElementById('nav-count-active')
-  const noregBadge = document.getElementById('nav-count-noreg')
-  if (allBadge) allBadge.textContent = ALL_CLIENTS.length || ''
-  if (activeBadge) activeBadge.textContent = active || ''
-  if (noregBadge) { noregBadge.textContent = noreg || ''; noregBadge.style.display = noreg ? '' : 'none' }
+  const set = (id, val, hide0) => {
+    const el = document.getElementById(id)
+    if (!el) return
+    el.textContent = val || ''
+    if (hide0) el.style.display = val ? '' : 'none'
+  }
+  set('nav-count-all', total)
+  set('nav-count-active', active)
+  set('nav-count-noreg', noreg, true)
 }
 
 function renderNavLabels() {
@@ -346,14 +352,17 @@ async function loadClientDetail(clientId) {
   const main = document.getElementById('main-content')
   main.innerHTML = '<div class="loading"><div class="spinner"></div>Cargando...</div>'
 
-  const [{ data: client }, { data: woData }, { data: dietData }, { data: supls }] = await Promise.all([
+  const today = new Date().toISOString().split('T')[0]
+  const [{ data: client }, { data: woData }, { data: dietData }, { data: supls }, { data: todayLog }] = await Promise.all([
     supabase.from('clients').select('*, profiles(full_name, email)').eq('id', clientId).single(),
     supabase.from('workout_days').select('*, workout_exercises(*)').eq('client_id', clientId).order('day_index'),
     supabase.from('diet_plans').select('*, diet_meals(*, diet_foods(*))').eq('client_id', clientId).eq('active', true).single(),
     supabase.from('supplements').select('*').eq('client_id', clientId).order('order_index'),
+    supabase.from('daily_logs').select('*').eq('client_id', clientId).eq('log_date', today).maybeSingle(),
   ])
 
-  SELECTED_CLIENT_DATA = { client, workouts: woData || [], diet: dietData, supplements: supls || [] }
+  SELECTED_CLIENT_DATA = { client, workouts: woData || [], diet: dietData, supplements: supls || [], todayLog: todayLog || null }
+  if (todayLog) TODAY_LOGS[clientId] = todayLog
   if (dietData?.diet_meals) {
     dietData.diet_meals.sort((a, b) => a.order_index - b.order_index)
     dietData.diet_meals.forEach(m => m.diet_foods.sort((a, b) => a.order_index - b.order_index))
@@ -363,34 +372,130 @@ async function loadClientDetail(clientId) {
 }
 
 function renderClientDetail() {
-  const { client } = SELECTED_CLIENT_DATA
+  const { client, todayLog } = SELECTED_CLIENT_DATA
   const name = client.profiles?.full_name || client.profiles?.email || '—'
+  const firstName = name.split(' ')[0]
+  const initials = name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()
+  const color = avatarColor(name)
+  const log = todayLog || TODAY_LOGS[SELECTED_CLIENT] || null
+
+  // Client status line
+  const isActive = client.active !== false
+  const logTime = log?.updated_at
+    ? new Date(log.updated_at).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})
+    : null
+  const statusSub = isActive
+    ? (logTime ? `Activo · Hoy ${logTime}` : 'Activo · Sin registro hoy')
+    : 'Inactivo'
+
+  // Label badge
+  const lc = client.goal_label ? labelColor(client.goal_label) : null
+  const labelHtml = lc
+    ? `<div class="cia-label" style="background:${lc}18;border:1px solid ${lc}40;color:${lc}">${escHtml(client.goal_label)}</div>`
+    : ''
+
+  // Generate day summary text
+  const { summaryLine, msgBody } = buildDayResumen(client, log)
+
+  // Plan attachment name
+  const weekNum = client.plan_weeks || 4
+  const planLabel = `plan-semana-${weekNum}.pdf`
 
   document.getElementById('main-content').innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-      <div class="client-avatar" style="width:48px;height:48px;font-size:20px">${name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase()}</div>
-      <div>
-        <div style="font-size:18px;font-weight:600">${name}</div>
-        <div style="font-size:12px;color:var(--text2)">${client.profiles?.email || ''}</div>
+    <div class="detail-topbar">
+      <span class="d-btn" onclick="loadClientDetail('${client.id}')" title="Actualizar"><i class="ti ti-refresh"></i></span>
+      <span class="d-btn" onclick="switchTab('profile')" title="Editar perfil"><i class="ti ti-pencil"></i></span>
+      <span class="d-btn" onclick="switchTab('measures')" title="Medidas"><i class="ti ti-ruler-measure"></i></span>
+      <span class="d-btn red" onclick="if(confirm('¿Archivar este cliente?'))toggleClientActive(false)" title="Archivar"><i class="ti ti-archive"></i></span>
+      <span class="d-btn-spacer"></span>
+      <span class="d-btn" title="Más opciones"><i class="ti ti-dots"></i></span>
+    </div>
+
+    <div class="resumen-wrap">
+      <div class="day-title">Resumen del día — ${escHtml(firstName)}</div>
+
+      <div class="cia-card">
+        <div class="cia-av" style="background:${color}">${initials}</div>
+        <div style="flex:1;min-width:0">
+          <div class="cia-name">${escHtml(name)}</div>
+          <div class="cia-sub">${statusSub}</div>
+        </div>
+        ${labelHtml}
       </div>
-      <label style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer">
-        <input type="checkbox" ${client.active ? 'checked' : ''} onchange="toggleClientActive(this.checked)"> Activo
-      </label>
+
+      <div class="ai-card">
+        <div class="ai-card-hd">
+          <i class="ti ti-stack-2" style="font-size:13px"></i>
+          Resumen por IA
+        </div>
+        <div class="ai-card-txt">${summaryLine}</div>
+      </div>
+
+      <div class="msg-body">${msgBody}</div>
+      <div class="msg-sig">— ${escHtml(TRAINER_NAME)}, Tu Preparador</div>
+
+      <div class="attach-pill" onclick="switchTab('workout')">
+        <i class="ti ti-paperclip" style="font-size:13px"></i>
+        ${planLabel}
+      </div>
     </div>
 
-    <div class="tabs">
-      <button class="tab-btn${ACTIVE_TAB==='profile'?' active':''}" data-tab="profile" onclick="switchTab('profile')"><i class="ti ti-user"></i> Perfil</button>
-      <button class="tab-btn${ACTIVE_TAB==='workout'?' active':''}" data-tab="workout" onclick="switchTab('workout')"><i class="ti ti-barbell"></i> Entreno</button>
-      <button class="tab-btn${ACTIVE_TAB==='diet'?' active':''}" data-tab="diet" onclick="switchTab('diet')"><i class="ti ti-apple"></i> Nutrición</button>
-      <button class="tab-btn${ACTIVE_TAB==='cardio'?' active':''}" data-tab="cardio" onclick="switchTab('cardio')"><i class="ti ti-run"></i> Cardio</button>
-      <button class="tab-btn${ACTIVE_TAB==='supplements'?' active':''}" data-tab="supplements" onclick="switchTab('supplements')"><i class="ti ti-pill"></i> Supls</button>
-      <button class="tab-btn${ACTIVE_TAB==='measures'?' active':''}" data-tab="measures" onclick="switchTab('measures')"><i class="ti ti-ruler"></i> Medidas</button>
-      <button class="tab-btn${ACTIVE_TAB==='progress'?' active':''}" data-tab="progress" onclick="switchTab('progress')"><i class="ti ti-chart-line"></i> Progreso</button>
+    <div class="detail-tabs-wrap">
+      <div class="tabs" style="padding:12px 0 0">
+        <button class="tab-btn${ACTIVE_TAB==='profile'?' active':''}" data-tab="profile" onclick="switchTab('profile')"><i class="ti ti-user"></i> Perfil</button>
+        <button class="tab-btn${ACTIVE_TAB==='workout'?' active':''}" data-tab="workout" onclick="switchTab('workout')"><i class="ti ti-barbell"></i> Entreno</button>
+        <button class="tab-btn${ACTIVE_TAB==='diet'?' active':''}" data-tab="diet" onclick="switchTab('diet')"><i class="ti ti-apple"></i> Nutrición</button>
+        <button class="tab-btn${ACTIVE_TAB==='cardio'?' active':''}" data-tab="cardio" onclick="switchTab('cardio')"><i class="ti ti-run"></i> Cardio</button>
+        <button class="tab-btn${ACTIVE_TAB==='supplements'?' active':''}" data-tab="supplements" onclick="switchTab('supplements')"><i class="ti ti-pill"></i> Supls</button>
+        <button class="tab-btn${ACTIVE_TAB==='measures'?' active':''}" data-tab="measures" onclick="switchTab('measures')"><i class="ti ti-ruler"></i> Medidas</button>
+        <button class="tab-btn${ACTIVE_TAB==='progress'?' active':''}" data-tab="progress" onclick="switchTab('progress')"><i class="ti ti-chart-line"></i> Progreso</button>
+      </div>
+      <div id="tab-content" style="padding:16px 0 40px"></div>
     </div>
-
-    <div id="tab-content"></div>
   `
   renderTab()
+}
+
+function buildDayResumen(client, log) {
+  const firstName = (client.profiles?.full_name || 'Cliente').split(' ')[0]
+  if (!log) {
+    return {
+      summaryLine: 'Sin registro hoy. El cliente aún no ha completado ninguna actividad.',
+      msgBody: `Hola ${firstName},\n\nHoy no hemos recibido ningún registro de actividad. Recuerda completar tu seguimiento diario en la app.\n\n¡Ánimo!`
+    }
+  }
+  const score = log.score || 0
+  const st = Math.round(log.score_training || 0)
+  const sn = Math.round(log.score_nutrition || 0)
+  const sc = Math.round(log.score_cardio || 0)
+  const steps = log.steps || 0
+  const stepsGoal = client.steps_goal || 10000
+  const stepsStr = `${steps.toLocaleString('es-ES')}/${stepsGoal.toLocaleString('es-ES')}`
+  const incident = score >= 80 ? 'Sin incidencias detectadas.' : score >= 50 ? 'Adherencia mejorable.' : 'Revisar adherencia al plan.'
+
+  const summaryLine = `Score del día: ${score}%. Entrenamiento al ${st}%, nutrición al ${sn}%, pasos ${stepsStr}. ${incident}`
+
+  const quality = score >= 90 ? 'excelente' : score >= 75 ? 'muy buena' : score >= 60 ? 'buena' : 'correcta'
+  const phase = client.phase_name ? ` de ${client.phase_name.toLowerCase()}` : ''
+  let lines = [`Hola ${firstName},`, '']
+
+  if (st >= 90 && sn >= 80) {
+    lines.push(`Tu sesión de hoy ha sido ${quality}. Completaste todos los ejercicios con las cargas establecidas y la adherencia nutricional está en línea con el objetivo${phase}.`)
+  } else if (st >= 70) {
+    lines.push(`Tu sesión de hoy ha sido ${quality}. Completaste el ${st}% del entrenamiento previsto.`)
+    if (sn < 75) lines.push(`La nutrición está al ${sn}% — revisa los alimentos pendientes del plan.`)
+  } else if (st > 0 || sn > 0) {
+    lines.push(`Adherencia ${quality} hoy.`)
+    if (st < 50) lines.push(`Entrenamiento al ${st}% — intenta completar todos los bloques.`)
+    if (sn < 50) lines.push(`Nutrición al ${sn}% — presta más atención al seguimiento de comidas.`)
+  } else {
+    lines.push(`Hoy no hay actividad registrada. Comprueba que el cliente está usando la app correctamente.`)
+  }
+
+  if (steps >= stepsGoal) lines.push(`Pasos completados: ${steps.toLocaleString('es-ES')} — ¡objetivo superado!`)
+  else if (steps > 0 && steps < stepsGoal * 0.7) lines.push(`Pasos: ${stepsStr} — empuja un poco más en los próximos días.`)
+
+  return { summaryLine, msgBody: lines.join('\n') }
 }
 
 window.switchTab = function(tab) {
