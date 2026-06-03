@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0a0a">
+<meta name="theme-color" content="#060c18">
 <title>Tu Preparador — Acceso</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="stylesheet" href="css/shared.css">
@@ -13,19 +13,25 @@
   body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;padding-bottom:20px}
   .login-wrap{width:100%;max-width:380px}
   .logo{text-align:center;margin-bottom:32px}
-  .logo i{font-size:48px;color:var(--blue);display:block;margin-bottom:8px}
-  .logo h1{font-size:24px;font-weight:700}
-  .logo p{font-size:13px;color:var(--text2);margin-top:4px}
-  .login-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
-  .error-msg{background:#E24B4A22;border:1px solid #E24B4A44;color:#F09595;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:12px;display:none}
+  .logo-icon{
+    width:64px;height:64px;border-radius:18px;
+    background:linear-gradient(135deg,#0066cc,var(--blue));
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 14px;box-shadow:0 8px 24px #00c2e040;
+  }
+  .logo-icon i{font-size:32px;color:#fff}
+  .logo h1{font-size:26px;font-weight:800;letter-spacing:-.5px}
+  .logo p{font-size:13px;color:var(--text2);margin-top:6px}
+  .login-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:0 8px 40px #00000060}
+  .error-msg{background:#f04c5a15;border:1px solid #f04c5a30;color:#f4979d;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:12px;display:none}
 </style>
 </head>
 <body>
 
 <div class="login-wrap">
   <div class="logo">
-    <i class="ti ti-barbell"></i>
-    <h1>Fitness URI</h1>
+    <div class="logo-icon"><i class="ti ti-barbell"></i></div>
+    <h1>Tu Preparador</h1>
     <p>Plataforma para preparadores físicos</p>
   </div>
 
