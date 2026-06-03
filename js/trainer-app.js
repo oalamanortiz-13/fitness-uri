@@ -345,7 +345,24 @@ window.selectClient = async function(clientId) {
   const profileBtn = document.getElementById('my-profile-btn')
   if (profileBtn) profileBtn.classList.remove('active')
   applyCurrentFilter()
+  // Mobile: switch to detail view
+  if (window.innerWidth <= 640) {
+    document.body.classList.add('mobile-detail')
+    document.querySelector('.main').style.display = 'block'
+  }
   await loadClientDetail(clientId)
+  // Show back button on mobile after render
+  if (window.innerWidth <= 640) {
+    const backBtn = document.getElementById('mobile-back-btn')
+    if (backBtn) backBtn.style.display = 'inline-flex'
+  }
+}
+
+window.mobileBackToList = function() {
+  document.body.classList.remove('mobile-detail')
+  document.querySelector('.main').style.display = ''
+  SELECTED_CLIENT = null
+  applyCurrentFilter()
 }
 
 async function loadClientDetail(clientId) {
@@ -403,6 +420,7 @@ function renderClientDetail() {
 
   document.getElementById('main-content').innerHTML = `
     <div class="detail-topbar">
+      <span class="d-btn" id="mobile-back-btn" onclick="mobileBackToList()" title="Volver" style="display:none"><i class="ti ti-arrow-left"></i></span>
       <span class="d-btn" onclick="loadClientDetail('${client.id}')" title="Actualizar"><i class="ti ti-refresh"></i></span>
       <span class="d-btn" onclick="switchTab('profile')" title="Editar perfil"><i class="ti ti-pencil"></i></span>
       <span class="d-btn" onclick="switchTab('measures')" title="Medidas"><i class="ti ti-ruler-measure"></i></span>

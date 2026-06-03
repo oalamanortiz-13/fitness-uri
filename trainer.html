@@ -184,14 +184,28 @@
     background:rgba(255,255,255,0.01);padding:0 20px
   }
 
-  /* ── RESPONSIVE ── */
-  @media(max-width:760px){.nav-sidebar{display:none}.client-panel{width:220px}}
-  @media(max-width:520px){.layout{flex-direction:column;height:auto}body{overflow:auto}.client-panel{width:100%;height:260px}.main{overflow:auto}}
+  /* ── RESPONSIVE MOBILE ── */
+  @media(max-width:760px){ .nav-sidebar{ display:none !important } }
+  @media(max-width:640px){
+    /* Mobile: una sola columna, un panel a la vez */
+    body{ overflow:auto }
+    .layout{ display:block; height:auto; overflow:visible }
+    .client-panel{
+      width:100% !important; height:auto; flex:none;
+      border-right:none; border-bottom:1px solid rgba(255,255,255,0.06);
+      max-height:none; position:relative
+    }
+    #client-list{ max-height:60vh; overflow-y:auto }
+    .main{ width:100%; display:none }
+    /* Cuando hay cliente seleccionado: ocultar lista, mostrar detalle */
+    body.mobile-detail .client-panel{ display:none }
+    body.mobile-detail .main{ display:block }
+  }
 </style>
 </head>
 <body>
 
-<div id="loading-screen" style="display:flex;height:100vh;overflow:hidden">
+<div id="loading-screen" style="display:flex;min-height:100vh;overflow:hidden">
   <div style="width:200px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.06);padding:14px">
     <div class="skel" style="width:48px;height:48px;border-radius:12px;margin:0 auto 8px"></div>
     <div class="skel" style="width:90px;height:10px;margin:0 auto 16px"></div>
