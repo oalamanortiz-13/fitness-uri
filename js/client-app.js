@@ -204,6 +204,15 @@ async function loadTodayLog() {
   document.getElementById('cardio-sl').value = S.cardioDay
   updateCardioUI(S.cardioDay)
 
+  // Body fat slider
+  if (log.body_fat_pct != null) {
+    const sl = document.getElementById('bf-sl')
+    if (sl) {
+      sl.value = log.body_fat_pct
+      document.getElementById('bf-pct').textContent = log.body_fat_pct + '%'
+    }
+  }
+
   // Update score ring from loaded data (or live calc if no stored score)
   if (S.calScores[today]) {
     updateScoreRing(S.calScores[today])
@@ -536,6 +545,7 @@ async function saveLog() {
   const today = getToday()
   const todayIdx = getTodayIdx()
 
+  const bfVal = parseFloat(document.getElementById('bf-sl')?.value)
   await supabase.from('daily_logs').upsert({
     client_id: USER_ID,
     log_date: today,
@@ -546,6 +556,7 @@ async function saveLog() {
     exercises_done: S.exDone[`d${todayIdx}`] || [],
     loads: S.loads[todayIdx] || {},
     foods_checked: S.foodsChecked,
+    body_fat_pct: isNaN(bfVal) ? null : bfVal,
   }, { onConflict: 'client_id,log_date' })
 }
 
