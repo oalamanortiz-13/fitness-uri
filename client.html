@@ -5,59 +5,132 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#03045E">
+<meta name="theme-color" content="#0c0c0c">
 <title>Tu Preparador</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="stylesheet" href="css/shared.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+body{padding-bottom:72px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(-52deg,transparent 0,transparent 60px,rgba(255,255,255,0.008) 60px,rgba(255,255,255,0.008) 62px),
+             repeating-linear-gradient(-52deg,transparent 0,transparent 140px,rgba(255,255,255,0.004) 140px,rgba(255,255,255,0.004) 142px)}
+
+/* ── Top header ── */
+#client-header{
+  position:sticky;top:0;z-index:50;
+  background:rgba(12,12,12,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,0.07);
+  padding:10px 16px;display:none;align-items:center;justify-content:space-between
+}
+#client-header img{height:26px;filter:drop-shadow(0 0 8px rgba(0,210,255,0.18))}
+#header-right{display:flex;align-items:center;gap:8px}
+#header-phase{
+  display:none;align-items:center;gap:6px;
+  background:rgba(0,210,255,0.08);color:var(--blue);
+  font-size:9px;font-weight:700;padding:4px 10px;border-radius:20px;
+  border:1px solid rgba(0,210,255,0.18);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap
+}
+#header-logout{
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+  color:var(--text2);padding:6px 10px;border-radius:8px;cursor:pointer;
+  font-family:inherit;font-size:11px;display:flex;align-items:center;gap:4px;
+  transition:all .2s;font-weight:500
+}
+#header-logout:hover{color:var(--text);border-color:rgba(255,255,255,0.2)}
+
+/* ── Dashboard intro ── */
+.dash-intro{display:flex;justify-content:space-between;align-items:flex-start;padding-top:14px;margin-bottom:14px}
+.dash-intro-left .dash-date-lbl{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.12em;font-weight:600;margin-bottom:3px}
+.dash-intro-left h1{font-size:21px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+
+/* ── Profile card ── */
+#client-profile-card{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  border-top:1px solid rgba(255,255,255,0.16);
+  border-radius:var(--radius);padding:18px;margin-bottom:12px;
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  box-shadow:0 8px 32px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.07)
+}
+.profile-avatar-ring{
+  width:60px;height:60px;border-radius:50%;overflow:hidden;
+  border:1.5px solid rgba(255,255,255,0.18);
+  background:rgba(255,255,255,0.06);
+  display:flex;align-items:center;justify-content:center;cursor:pointer
+}
+.avatar-cam-btn{
+  position:absolute;bottom:0;right:0;width:18px;height:18px;
+  background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;backdrop-filter:blur(8px)
+}
+.trainer-logo-box{
+  width:42px;height:42px;border-radius:10px;overflow:hidden;
+  border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0
+}
+
+/* ── Bottom nav improved ── */
+.nav{padding:6px 0 calc(6px + env(safe-area-inset-bottom))}
+.nav button{font-size:7px;gap:2px;padding:6px 2px}
+.nav button i{font-size:21px}
+</style>
 </head>
 <body>
+
+<!-- ── TOP HEADER ── -->
+<div id="client-header">
+  <img src="logo.png" alt="Tu Preparador">
+  <div id="header-right">
+    <div id="header-phase"><i class="ti ti-target"></i><span id="phase-label">—</span></div>
+    <button id="header-logout" onclick="doLogout()"><i class="ti ti-logout"></i> Salir</button>
+  </div>
+</div>
 
 <div class="notif" id="notif"></div>
 
 <div class="app" id="app" style="display:none">
 
-<!-- DASHBOARD -->
+<!-- ════════════════ DASHBOARD ════════════════ -->
 <div class="sec active" id="dash">
-  <div class="page-header" style="padding-top:8px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div class="phase-pill" id="phase-pill"><i class="ti ti-target"></i> <span id="phase-label">Cargando...</span></div>
-      <button class="btn" onclick="doLogout()" style="font-size:11px;padding:5px 10px;color:var(--text2)"><i class="ti ti-logout"></i> Salir</button>
+
+  <div class="dash-intro">
+    <div class="dash-intro-left">
+      <div class="dash-date-lbl" id="dash-date"></div>
+      <h1 id="dash-day-title">Cargando...</h1>
     </div>
-    <h1 id="dash-day-title">Cargando...</h1>
-    <p id="dash-date"></p>
+    <div class="phase-pill" id="phase-pill" style="margin:0;max-width:160px;white-space:normal;text-align:right;line-height:1.3;display:none">
+      <i class="ti ti-target"></i> <span id="phase-label-dash">—</span>
+    </div>
   </div>
 
   <!-- PERFIL DEL CLIENTE -->
-  <div class="card" style="padding:0;overflow:hidden">
-    <div style="background:linear-gradient(135deg,#020236,#03045E);padding:20px 20px 16px;border-bottom:1px solid rgba(0,212,255,0.15)">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between">
-        <!-- Avatar cliente -->
-        <div style="display:flex;align-items:center;gap:14px">
-          <div style="position:relative">
-            <div id="client-avatar-wrap" style="width:64px;height:64px;border-radius:50%;overflow:hidden;border:2px solid var(--blue);background:var(--bg3);display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="document.getElementById('avatar-input').click()">
-              <img id="client-avatar-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
-              <i id="client-avatar-icon" class="ti ti-user" style="font-size:28px;color:var(--text2)"></i>
-            </div>
-            <div onclick="document.getElementById('avatar-input').click()" style="position:absolute;bottom:0;right:0;width:20px;height:20px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer">
-              <i class="ti ti-camera" style="font-size:11px;color:#fff"></i>
-            </div>
-            <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar(event)">
+  <div id="client-profile-card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="position:relative">
+          <div id="client-avatar-wrap" class="profile-avatar-ring" onclick="document.getElementById('avatar-input').click()">
+            <img id="client-avatar-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
+            <i id="client-avatar-icon" class="ti ti-user" style="font-size:26px;color:rgba(255,255,255,0.3)"></i>
           </div>
-          <div>
-            <div style="font-size:17px;font-weight:700;line-height:1.2" id="profile-name">—</div>
-            <div style="font-size:12px;color:var(--text2);margin-top:3px;display:flex;align-items:center;gap:5px">
-              <span>Preparado por</span>
-              <span style="color:var(--blue);font-weight:600" id="profile-trainer">—</span>
-            </div>
-            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap" id="profile-goal-tags"></div>
+          <div class="avatar-cam-btn" onclick="document.getElementById('avatar-input').click()">
+            <i class="ti ti-camera" style="font-size:10px;color:#fff"></i>
           </div>
+          <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar(event)">
         </div>
-        <!-- Logo del preparador -->
-        <div id="trainer-logo-wrap" style="width:44px;height:44px;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <img id="trainer-logo-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
-          <i id="trainer-logo-icon" class="ti ti-barbell" style="font-size:20px;color:var(--blue)"></i>
+        <div>
+          <div style="font-size:17px;font-weight:700;line-height:1.2;letter-spacing:-.01em" id="profile-name">—</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:3px;display:flex;align-items:center;gap:5px">
+            <span>Con</span>
+            <span style="color:rgba(255,255,255,0.75);font-weight:600" id="profile-trainer">—</span>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap" id="profile-goal-tags"></div>
         </div>
+      </div>
+      <div id="trainer-logo-wrap" class="trainer-logo-box">
+        <img id="trainer-logo-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
+        <i id="trainer-logo-icon" class="ti ti-barbell" style="font-size:20px;color:rgba(255,255,255,0.25)"></i>
       </div>
     </div>
   </div>
@@ -84,6 +157,7 @@
     </div>
   </div>
 
+  <!-- MÉTRICAS -->
   <div class="metric-grid">
     <div class="metric"><div class="metric-label">Peso</div><div class="metric-val" id="d-peso">— kg</div><div class="metric-sub" id="d-peso-sub">Cargando...</div><i class="ti ti-scale metric-icon"></i></div>
     <div class="metric"><div class="metric-label">Racha</div><div class="metric-val" id="d-streak">0 🔥</div><div class="metric-sub">días consecutivos</div><i class="ti ti-flame metric-icon" style="color:var(--amber);opacity:.1"></i></div>
@@ -91,11 +165,13 @@
     <div class="metric"><div class="metric-label">Pasos</div><div class="metric-val" id="d-steps">0</div><div class="metric-sub" id="d-steps-sub">Obj: —</div><i class="ti ti-shoe metric-icon"></i></div>
   </div>
 
+  <!-- CHECKLIST -->
   <div class="card">
     <div class="card-title"><i class="ti ti-check"></i> Checklist de hoy</div>
     <div id="daily-checklist"></div>
   </div>
 
+  <!-- REGISTRAR PESO -->
   <div class="card">
     <div class="card-title"><i class="ti ti-scale"></i> Registrar peso</div>
     <div style="display:flex;gap:8px">
@@ -105,6 +181,7 @@
     <div id="peso-hist" style="margin-top:8px;font-size:12px;color:var(--text2)"></div>
   </div>
 
+  <!-- PROYECCIÓN -->
   <div class="card">
     <div class="card-title"><i class="ti ti-trending-up"></i> Proyección</div>
     <div class="proj-grid" id="proj-grid">
@@ -114,16 +191,17 @@
     </div>
   </div>
 
-  <div class="card" style="background:linear-gradient(135deg,#03045E,#021a0a)">
+  <!-- REGLAS DE ORO -->
+  <div class="card">
     <div class="card-title"><i class="ti ti-flame" style="color:var(--amber)"></i> Reglas de oro</div>
     <div id="golden-rules" style="font-size:13px;color:var(--text2);line-height:2"></div>
   </div>
 
 </div>
 
-<!-- ENTRENAMIENTO -->
+<!-- ════════════════ ENTRENAMIENTO ════════════════ -->
 <div class="sec" id="train">
-  <div class="page-header" style="padding-top:8px">
+  <div class="page-header" style="padding-top:16px">
     <h1>Entrenamiento</h1>
   </div>
   <div class="day-sel" id="day-sel"></div>
@@ -152,15 +230,14 @@
   </div>
 </div>
 
-<!-- NUTRICIÓN -->
+<!-- ════════════════ NUTRICIÓN ════════════════ -->
 <div class="sec" id="nutri">
-  <div class="page-header" style="padding-top:8px"><h1>Nutrición</h1></div>
+  <div class="page-header" style="padding-top:16px"><h1>Nutrición</h1></div>
   <div id="diet-instructions-box"></div>
   <div class="metric-grid">
     <div class="metric"><div class="metric-label">Kcal objetivo</div><div class="metric-val" id="nut-kcal">—</div><div class="metric-sub">objetivo diario</div></div>
     <div class="metric"><div class="metric-label">Proteína</div><div class="metric-val" id="nut-prot">—</div><div class="metric-sub">prioridad absoluta</div></div>
   </div>
-
   <div class="card" id="meal-summary-card">
     <div class="card-title"><i class="ti ti-calculator"></i> Total del día</div>
     <div class="lbl"><span>Proteína</span><span id="ms-prot">0 / — g</span></div>
@@ -168,9 +245,7 @@
     <div class="lbl" style="margin-top:6px"><span>Calorías</span><span id="ms-kcal">0 / — kcal</span></div>
     <div class="prog-wrap"><div class="prog-fill" id="ms-kcal-bar" style="width:0%;background:var(--blue)"></div></div>
   </div>
-
   <div id="diet-meals-container"></div>
-
   <div class="card">
     <div class="card-title"><i class="ti ti-plus"></i> Añadir alimento extra</div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
@@ -183,7 +258,6 @@
     </div>
     <div id="food-list" style="margin-top:8px"></div>
   </div>
-
   <div class="card" id="supls-card">
     <div class="card-title"><i class="ti ti-pill"></i> Suplementación diaria</div>
     <div id="supls-instructions-box"></div>
@@ -194,9 +268,9 @@
   </button>
 </div>
 
-<!-- CARDIO -->
+<!-- ════════════════ CARDIO ════════════════ -->
 <div class="sec" id="cardio">
-  <div class="page-header" style="padding-top:8px"><h1>Cardio y pasos</h1></div>
+  <div class="page-header" style="padding-top:16px"><h1>Cardio y pasos</h1></div>
   <div id="cardio-instructions-box"></div>
   <div class="card">
     <div class="card-title"><i class="ti ti-shoe"></i> Pasos hoy</div>
@@ -249,9 +323,9 @@
   </button>
 </div>
 
-<!-- PROGRESO -->
+<!-- ════════════════ PROGRESO ════════════════ -->
 <div class="sec" id="prog">
-  <div class="page-header" style="padding-top:8px"><h1>Progreso</h1></div>
+  <div class="page-header" style="padding-top:16px"><h1>Progreso</h1></div>
   <div class="card">
     <div class="card-title"><i class="ti ti-chart-line"></i> Evolución del peso</div>
     <div style="position:relative;width:100%;height:180px">
@@ -283,9 +357,9 @@
   </div>
 </div>
 
-<!-- CALENDARIO -->
+<!-- ════════════════ CALENDARIO ════════════════ -->
 <div class="sec" id="cal">
-  <div class="page-header" style="padding-top:8px"><h1>Calendario</h1></div>
+  <div class="page-header" style="padding-top:16px"><h1>Calendario</h1></div>
   <div class="card" style="text-align:center;padding:20px">
     <div class="streak-big" id="cal-streak-big">0</div>
     <div style="font-size:14px;color:var(--text2)">días de racha 🔥</div>
@@ -309,9 +383,9 @@
   </div>
 </div>
 
-<!-- IA PREPARADOR -->
+<!-- ════════════════ IA PREPARADOR ════════════════ -->
 <div class="sec" id="ai">
-  <div class="page-header" style="padding-top:8px">
+  <div class="page-header" style="padding-top:16px">
     <h1>Preparador IA</h1>
     <p>Pregúntame lo que necesites sobre tu plan</p>
   </div>
@@ -329,30 +403,25 @@
 
 </div><!-- end .app -->
 
-<!-- Loading screen — skeleton (skill: use skeleton screens for >300ms operations) -->
+<!-- ── SKELETON / LOADING ── -->
 <div id="loading-screen" style="min-height:100vh;display:flex;flex-direction:column;justify-content:flex-start;padding-top:24px">
   <div class="skel-wrap">
-    <!-- Phase pill + header -->
     <div class="skel" style="width:130px;height:26px;border-radius:20px;margin-bottom:14px"></div>
     <div class="skel" style="width:220px;height:30px;margin-bottom:6px"></div>
     <div class="skel" style="width:140px;height:14px;margin-bottom:20px"></div>
-    <!-- Profile card -->
     <div class="skel" style="height:110px;border-radius:12px;margin-bottom:12px"></div>
-    <!-- 4 metrics -->
     <div class="skel-grid">
       <div class="skel" style="height:76px"></div>
       <div class="skel" style="height:76px"></div>
       <div class="skel" style="height:76px"></div>
       <div class="skel" style="height:76px"></div>
     </div>
-    <!-- Checklist card -->
     <div class="skel" style="height:140px;border-radius:12px;margin-bottom:12px"></div>
-    <!-- Weight card -->
     <div class="skel" style="height:80px;border-radius:12px"></div>
   </div>
 </div>
 
-<!-- BOTTOM NAV -->
+<!-- ── BOTTOM NAV ── -->
 <nav class="nav" id="bottom-nav" style="display:none">
   <button class="active" onclick="show('dash',this)"><i class="ti ti-layout-dashboard"></i><span>Inicio</span></button>
   <button onclick="show('train',this)"><i class="ti ti-barbell"></i><span>Entreno</span></button>

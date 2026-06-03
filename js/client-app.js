@@ -85,6 +85,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('loading-screen').style.display = 'none'
   document.getElementById('app').style.display = 'block'
   document.getElementById('bottom-nav').style.display = 'flex'
+  const hdr = document.getElementById('client-header')
+  if (hdr) hdr.style.display = 'flex'
 
   // Trigger dashboard card entrance animation on first load
   requestAnimationFrame(() => {
@@ -425,7 +427,15 @@ function applyClientConfig() {
   const planStart = CLIENT.plan_start_date ? new Date(CLIENT.plan_start_date) : new Date()
   const diffMs = new Date() - planStart
   const weekNum = Math.max(1, Math.min(CLIENT.plan_weeks || 12, Math.ceil(diffMs / 604800000)))
-  document.getElementById('phase-label').textContent = `${CLIENT.phase_name || 'Fase 1'} — Semana ${weekNum} de ${CLIENT.plan_weeks || 12}`
+  const phaseText = `${CLIENT.phase_name || 'Fase 1'} — Sem. ${weekNum}/${CLIENT.plan_weeks || 12}`
+  ;['phase-label', 'phase-label-dash'].forEach(id => {
+    const el = document.getElementById(id)
+    if (el) el.textContent = phaseText
+  })
+  ;['phase-pill', 'header-phase'].forEach(id => {
+    const el = document.getElementById(id)
+    if (el) el.style.display = 'inline-flex'
+  })
 
   // Día actual - buscar workout del día
   const todayIdx = getTodayIdx()
