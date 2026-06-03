@@ -2,18 +2,24 @@
 
 ## Portales de app (dark theme)
 
-### Tokens CSS
+### Tokens CSS (shared.css — estado actual)
 ```css
---bg:     #0f0f0f   /* Fondo principal */
---bg2:    #1a1a1a   /* Fondo tarjetas */
---bg3:    #242424   /* Fondo inputs, hover */
---blue:   #378ADD   /* Primario / cyan eléctrico */
---green:  #1D9E75   /* Éxito / completado */
---amber:  #BA7517   /* Advertencia / progreso medio */
---red:    #E24B4A   /* Error / peligro */
---text:   #E8E8E8   /* Texto principal */
---text2:  #888      /* Texto secundario */
---border: rgba(255,255,255,0.08)
+--bg:    #0c0c0c              /* Fondo principal */
+--bg2:   rgba(255,255,255,0.04)  /* Fondo tarjetas glass */
+--bg3:   rgba(255,255,255,0.07)  /* Fondo inputs/hover */
+--text:  #fff
+--text2: rgba(255,255,255,0.5)
+--text3: rgba(255,255,255,0.25)
+--border:  rgba(255,255,255,0.08)
+--border2: rgba(255,255,255,0.15)
+--blue:   #00d2ff   /* Cyan eléctrico */
+--green:  #1D9E75
+--amber:  #BA7517
+--red:    #E24B4A
+--purple: #7F77DD
+--radius:    12px
+--radius-sm: 8px
+--glow:  rgba(0,210,255,0.2)
 ```
 
 ### Componentes CSS disponibles
@@ -63,34 +69,50 @@ CDN: `https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icon
 ## Páginas públicas (landing + auth)
 
 ### Fondo
-- Color base: `#0A0F1E`
+- Color base: `#0c0c0c` (unificado con portales de app)
 - Speed lines: `body::before` fixed, `background: repeating-linear-gradient(-52deg, ...)`, `z-index: 0`
+  - Líneas primarias: `rgba(255,255,255,0.012)` cada 60px
+  - Líneas secundarias: `rgba(255,255,255,0.007)` cada 140px
 - Todo el contenido: `z-index: 1`
 
 ### Tipografía
-- **Barlow Condensed** — headings, UPPERCASE, pesos 400-700
-- **Barlow** — body text, pesos 400-600
-- Google Fonts CDN
+- **Inter** — toda la app y páginas auth (desde `shared.css` @import Google Fonts)
+- ~~Barlow Condensed~~ — reemplazado por Inter en rediseño junio 2026
 
 ### Logo
-- `<img src="Logopreparador.png">` — PNG con transparencia RGBA
-- Auth heroes: `width: 300px`
-- Nav landing: `width: 56px`
+- `<img src="logo.png">` — PNG con transparencia RGBA
+- Auth heroes (`login`, `register`, `invite`, `reset-password`): `width: 260-300px`
+- Nav landing (`index.html`): `height: 48px`
+- Header sticky portales app: `height: 26px`
+- Siempre con `filter: drop-shadow(0 0 8px rgba(0,210,255,0.18))`
 
-### Componentes auth
-
+### Cards auth (glass morphism neutro)
 ```css
-/* Card formulario */
-background: rgba(3, 4, 94, 0.7);
+background: rgba(255,255,255,0.04);
+border: 1px solid rgba(255,255,255,0.1);
+border-top: 1px solid rgba(255,255,255,0.18);
+border-radius: 16px;
 backdrop-filter: blur(20px);
-border-top: 2px solid var(--cyan);
+box-shadow: 0 24px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+```
 
-/* Botón primario */
+### Botón primario auth
+```css
 .btn-login {
-  background: var(--blue);
-  color: #0A0F1E;
+  background: white;
+  color: #0c0c0c;
+  border-radius: 9999px; /* pill */
+  font-weight: 600;
 }
-.btn-login:hover { box-shadow: 0 0 20px rgba(0,212,255,0.4); }
+.btn-login:hover { box-shadow: 0 0 24px rgba(255,255,255,0.15); }
+```
+
+### Header sticky (portales cliente y trainer mobile)
+```css
+position: sticky; top: 0; z-index: 50;
+background: rgba(12,12,12,0.92);
+backdrop-filter: blur(16px);
+border-bottom: 1px solid rgba(255,255,255,0.07);
 ```
 
 ### Animaciones de entrada (auth)

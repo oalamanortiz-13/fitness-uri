@@ -126,23 +126,81 @@ Registro cronológico de todas las sesiones de trabajo en el proyecto fitness-ur
 
 ---
 
-## Estado actual (03/06/2026)
+## Sesión 03/06/2026
+
+### Rediseño completo portal preparador — layout 3 columnas
+- **Request:** replicar mockup de interfaz con 3 columnas: nav-sidebar + client-panel + main
+- Layout desktop: `nav-sidebar` 196px fijo + `client-panel` 288px + `main` flex:1
+- Nav sidebar con Tabler icons: Panel, Clientes, Activos, Sin registro, Archivados
+- Filas de cliente (`.cr`) con avatar hash-color, status text, barra de score
+- Panel derecho: "Resumen del día" con `cia-card`, `ai-card`, `msg-body`, `attach-pill`
+- `buildDayResumen(client, log)` — genera texto automático del resumen diario
+- `TODAY_LOGS` — carga bulk de daily_logs de todos los clientes al startup
+- `avatarColor()` / `labelColor()` — color hash desde string
+
+### Mobile trainer portal
+- Header sticky: logo (72px) + botones Nuevo/Mi perfil/Salir
+- Nav horizontal scrollable con tabs: Panel/Clientes/Activos/Sin registro/Archivados
+- CSS: `body.mobile-detail` toggle para mostrar solo un panel a la vez
+- `mobileBackToList()` — botón back en detail view
+- `openMyProfile()` activa `mobile-detail` + oculta search en mobile
+
+### Fix: buscador mobile desaparece al entrar en cliente
+- `body.mobile-detail #mobile-search{ display:none !important }` en CSS
+- También oculto desde JS en `selectClient()` y `openMyProfile()`
+
+### Rediseño portal cliente — mismo design language que trainer
+- **Request:** portal cliente con mismo estilo visual que portal trainer
+- `theme-color` cambiado `#03045E` → `#0c0c0c`
+- **Header sticky nuevo** (`#client-header`): logo 26px + phase pill + botón Salir
+  - `display:none` hasta que el JS lo muestra tras login exitoso
+- **Speed lines** background: `body::before` igual que trainer y auth pages
+- **Tarjeta de perfil** (`#client-profile-card`): glass morphism neutro
+  - Eliminado gradiente `linear-gradient(135deg,#020236,#03045E)`
+  - Reemplazado: `rgba(255,255,255,0.04)` + `border-top: rgba(255,255,255,0.16)` + `backdrop-filter:blur(20px)`
+- Avatar ring: borde `rgba(255,255,255,0.18)` en vez de `2px solid var(--blue)`
+- Logo trainer box: borde `rgba(255,255,255,0.1)` neutro
+- Phase pill: aparece en header sticky + dashboard intro (IDs: `phase-label`, `phase-label-dash`)
+- `client-app.js` actualizado: muestra `#client-header` y `#header-phase` al cargar, escribe fase en ambos IDs
+
+### Landing page — logo en header
+- Reemplazado SVG placeholder genérico por `<img src="logo.png">` en `<nav>`
+- Tamaño: 32px → 48px (ajustado a petición del usuario)
+- `filter: drop-shadow(0 0 8px rgba(0,210,255,0.18))` para coherencia visual
+
+---
+
+## Estado actual (03/06/2026 — fin de sesión)
 
 ### Commits recientes en main
 ```
-a553749 Save and restore body fat % in daily_logs
-d1d3baa Save progress photos to Supabase Storage and reload on app open
-6ae5894 Add horizontal swipe navigation between sections on client portal
-397ef9d Fix duplicate const today declaration breaking client page load
-97dcdce Add visual enhancements: score ring, card animations, muscle badges
-b133ef6 Merge vibrant-franklin branch, keep main design system
+bc0f145 Logo nav landing: 32px → 48px
+f543518 Reemplazar SVG placeholder por logo.png en nav de la landing
+726c134 Rediseño portal cliente: glass morphism, header sticky, speed lines
+308ecf4 Hide mobile search bar when client detail is open
+f277ea5 fix: Panel button on mobile now shows Mi Perfil dashboard
+928c89a feat: mobile layout with sticky header + nav tabs
+20adfe1 fix: mobile layout — one panel at a time with back navigation
+4855750 feat: exact mockup replication — Resumen del día + refined 3-col nav
+c595c4b feat: 3-column trainer portal layout matching mockup design
+f8a2a80 merge: apply Inter/dark-glass redesign to all app pages
 ```
 
 ### Branch activa de desarrollo
-`claude/vibrant-franklin-tBzIG`
+`claude/vibrant-franklin-tBzIG` (alineada con main)
+
+### Design language unificado — estado final
+Todos los portales y páginas comparten ahora el mismo sistema:
+- Fondo: `#0c0c0c` + speed lines `body::before` (-52deg)
+- Tipografía: Inter via `shared.css`
+- Cards: glass morphism `rgba(255,255,255,0.04)` + `blur`
+- Bordes: `rgba(255,255,255,0.08)` neutro, top `rgba(255,255,255,0.16)`
+- Botón primario: `background:white; color:#0c0c0c` (pill) en auth / `var(--blue)` en app
+- Logo: `logo.png` en todos los headers
 
 ### Próximos pasos
-1. Activar Stripe (ver `negocio.md`)
+1. Activar Stripe (añadir secrets en Supabase Edge Functions)
 2. Mover API key de Anthropic a Edge Function proxy
 3. Verificar editor IA de plan con Gemini (debug campo `debug`)
 4. Desactivar confirmación de email en Supabase Auth
+5. Revisar UX portal cliente en dispositivos reales con el nuevo header
