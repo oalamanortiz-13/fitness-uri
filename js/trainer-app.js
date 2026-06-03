@@ -62,7 +62,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!auth) return
   TRAINER_ID = auth.session.user.id
   TRAINER_NAME = (auth.profile.full_name || auth.session.user.email).split(' ')[0]
-  document.getElementById('trainer-name-logo').textContent = auth.profile.full_name || auth.session.user.email
+  const fullName = auth.profile.full_name || auth.session.user.email
+  document.getElementById('trainer-name-logo').textContent = fullName
+  const mName = document.getElementById('mobile-trainer-name')
+  if (mName) mName.textContent = fullName
 
   await loadSubscriptionStatus()
   await loadTrainerLogo()
@@ -171,9 +174,13 @@ async function loadTrainerLogo() {
 
 function applyTrainerLogo(url) {
   const img = document.getElementById('trainer-logo-img')
-  img.src = url
-  img.style.display = 'block'
+  img.src = url; img.style.display = 'block'
   document.getElementById('trainer-logo-icon').style.display = 'none'
+  // Mobile header logo
+  const mImg = document.getElementById('mobile-logo-img')
+  const mIcon = document.getElementById('mobile-logo-icon')
+  if (mImg) { mImg.src = url; mImg.style.display = 'block' }
+  if (mIcon) mIcon.style.display = 'none'
 }
 
 window.uploadTrainerLogo = async function(e) {
@@ -309,9 +316,32 @@ function renderNavBadges() {
     el.textContent = val || ''
     if (hide0) el.style.display = val ? '' : 'none'
   }
+  // Desktop
   set('nav-count-all', total)
   set('nav-count-active', active)
   set('nav-count-noreg', noreg, true)
+  // Mobile
+  set('mnav-count-all', total)
+  set('mnav-count-active', active)
+  set('mnav-count-noreg', noreg, true)
+  // Show mobile search
+  const ms = document.getElementById('mobile-search')
+  if (ms) ms.style.display = window.innerWidth <= 640 ? 'block' : 'none'
+}
+
+window.setFilterMobile = function(filter) {
+  CURRENT_FILTER = filter
+  CURRENT_LABEL_FILTER = null
+  // Desktop nav
+  const idMap = { all: 'nav-all', active: 'nav-active', noreg: 'nav-noreg', archived: 'nav-archived' }
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'))
+  const dEl = document.getElementById(idMap[filter])
+  if (dEl) dEl.classList.add('active')
+  // Mobile nav
+  document.querySelectorAll('.mnav-tab').forEach(el => el.classList.remove('active'))
+  const mEl = document.getElementById('mnav-' + filter)
+  if (mEl) mEl.classList.add('active')
+  applyCurrentFilter()
 }
 
 function renderNavLabels() {
@@ -363,6 +393,8 @@ window.mobileBackToList = function() {
   document.querySelector('.main').style.display = ''
   SELECTED_CLIENT = null
   applyCurrentFilter()
+  const ms = document.getElementById('mobile-search')
+  if (ms) ms.style.display = 'block'
 }
 
 async function loadClientDetail(clientId) {

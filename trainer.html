@@ -186,20 +186,87 @@
 
   /* ── RESPONSIVE MOBILE ── */
   @media(max-width:760px){ .nav-sidebar{ display:none !important } }
+
+  /* ── MOBILE HEADER & NAV (≤640px) ── */
+  #mobile-header{ display:none }
+  #mobile-nav{ display:none }
+
   @media(max-width:640px){
-    /* Mobile: una sola columna, un panel a la vez */
     body{ overflow:auto }
     .layout{ display:block; height:auto; overflow:visible }
     .client-panel{
       width:100% !important; height:auto; flex:none;
-      border-right:none; border-bottom:1px solid rgba(255,255,255,0.06);
-      max-height:none; position:relative
+      border-right:none; border-bottom:none; max-height:none
     }
-    #client-list{ max-height:60vh; overflow-y:auto }
+    .client-panel-top{ display:none } /* search/buttons in mobile-header instead */
+    #client-list{ max-height:none }
     .main{ width:100%; display:none }
-    /* Cuando hay cliente seleccionado: ocultar lista, mostrar detalle */
     body.mobile-detail .client-panel{ display:none }
     body.mobile-detail .main{ display:block }
+    body.mobile-detail #mobile-header{ display:none }
+    body.mobile-detail #mobile-nav{ display:none }
+
+    /* Mobile header */
+    #mobile-header{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 14px; background:#0c0c0c;
+      border-bottom:1px solid rgba(255,255,255,0.07);
+      position:sticky; top:0; z-index:50
+    }
+    #mobile-header .mh-logo{
+      width:36px; height:36px; border-radius:9px; overflow:hidden;
+      border:1.5px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.06);
+      display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer
+    }
+    #mobile-header .mh-logo img{ width:100%; height:100%; object-fit:cover; display:none }
+    #mobile-header .mh-logo i{ font-size:18px; color:var(--blue) }
+    #mobile-header .mh-name{
+      font-size:13px; font-weight:700; color:#fff;
+      flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap
+    }
+    #mobile-header .mh-btn{
+      width:34px; height:34px; border-radius:8px;
+      border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05);
+      color:rgba(255,255,255,0.6); display:flex; align-items:center;
+      justify-content:center; cursor:pointer; font-size:16px; flex-shrink:0; transition:all .15s
+    }
+    #mobile-header .mh-btn:hover{ background:rgba(255,255,255,0.1); color:#fff }
+    #mobile-header .mh-new{
+      padding:0 14px; height:34px; border-radius:8px;
+      background:#fff; color:#0c0c0c; font-size:12.5px; font-weight:700;
+      border:none; cursor:pointer; font-family:inherit; display:flex;
+      align-items:center; gap:5px; flex-shrink:0
+    }
+
+    /* Mobile nav tabs */
+    #mobile-nav{
+      display:flex; overflow-x:auto; gap:6px;
+      padding:8px 14px; background:#0c0c0c;
+      border-bottom:1px solid rgba(255,255,255,0.07);
+      position:sticky; top:57px; z-index:49;
+      scrollbar-width:none; -ms-overflow-style:none
+    }
+    #mobile-nav::-webkit-scrollbar{ display:none }
+    .mnav-tab{
+      display:flex; align-items:center; gap:5px;
+      padding:6px 12px; border-radius:20px; white-space:nowrap;
+      font-size:12.5px; font-weight:600; cursor:pointer;
+      border:1px solid rgba(255,255,255,0.1);
+      background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.5);
+      transition:all .15s; flex-shrink:0
+    }
+    .mnav-tab:hover{ color:#fff; background:rgba(255,255,255,0.08) }
+    .mnav-tab.active{ background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.2) }
+    .mnav-tab .mnav-badge{
+      background:rgba(255,255,255,0.15); border-radius:10px;
+      padding:1px 6px; font-size:10px; font-weight:700
+    }
+    .mnav-tab .mnav-badge.red{ background:rgba(226,75,74,0.3); color:#F09595 }
+
+    /* Mobile search bar below nav */
+    #mobile-search{
+      padding:8px 14px; background:#0c0c0c; position:sticky; top:107px; z-index:48
+    }
   }
 </style>
 </head>
@@ -231,6 +298,46 @@
     <div class="skel" style="height:120px;border-radius:12px;margin-bottom:12px"></div>
     <div class="skel" style="height:200px;border-radius:12px"></div>
   </div>
+</div>
+
+<!-- ══ MOBILE HEADER (solo visible en móvil ≤640px) ══ -->
+<div id="mobile-header">
+  <div class="mh-logo" onclick="document.getElementById('logo-input-m').click()">
+    <img id="mobile-logo-img" src="" alt="">
+    <i id="mobile-logo-icon" class="ti ti-barbell"></i>
+  </div>
+  <input type="file" id="logo-input-m" accept="image/*" style="display:none" onchange="uploadTrainerLogo(event)">
+  <div class="mh-name" id="mobile-trainer-name">—</div>
+  <button class="mh-new" onclick="openNewClientModal()"><i class="ti ti-user-plus"></i> Nuevo</button>
+  <div class="mh-btn" onclick="openMyProfile()" title="Mi perfil"><i class="ti ti-user-circle"></i></div>
+  <div class="mh-btn" onclick="doLogout()" title="Salir"><i class="ti ti-logout"></i></div>
+</div>
+
+<!-- ══ MOBILE NAV TABS ══ -->
+<div id="mobile-nav">
+  <div class="mnav-tab" id="mnav-panel" onclick="openMyProfile()">
+    <i class="ti ti-layout-grid"></i> Panel
+  </div>
+  <div class="mnav-tab active" id="mnav-all" onclick="setFilterMobile('all')">
+    <i class="ti ti-users"></i> Clientes
+    <span class="mnav-badge" id="mnav-count-all"></span>
+  </div>
+  <div class="mnav-tab" id="mnav-active" onclick="setFilterMobile('active')">
+    <i class="ti ti-bolt"></i> Activos
+    <span class="mnav-badge" id="mnav-count-active"></span>
+  </div>
+  <div class="mnav-tab" id="mnav-noreg" onclick="setFilterMobile('noreg')">
+    <i class="ti ti-clock-off"></i> Sin registro
+    <span class="mnav-badge red" id="mnav-count-noreg" style="display:none"></span>
+  </div>
+  <div class="mnav-tab" id="mnav-archived" onclick="setFilterMobile('archived')">
+    <i class="ti ti-archive"></i> Archivados
+  </div>
+</div>
+
+<!-- ══ MOBILE SEARCH ══ -->
+<div id="mobile-search" style="display:none">
+  <input type="text" class="search-input" style="width:100%;box-sizing:border-box" placeholder="Buscar cliente..." oninput="filterClients(this.value)">
 </div>
 
 <div class="layout" id="app" style="display:none">
