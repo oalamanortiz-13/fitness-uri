@@ -1409,16 +1409,24 @@ window.applyAIDietInstruction = async function(btn) {
 
     await applyAIDietActions(actions)
 
-    // renderTab() destruye el DOM — primero re-renderizar, luego mostrar el mensaje en el nuevo DOM
+    // renderTab() destruye el DOM — re-renderizar primero, luego escribir el mensaje en el DOM fresco
     renderTab()
     const freshResult = document.getElementById('ai-diet-result')
     if (freshResult) {
+      const summary = actions.map(a => {
+        if (a.type === 'add_meal') return `+ Comida: ${a.name}`
+        if (a.type === 'add_food') return `+ Alimento: ${a.name}`
+        if (a.type === 'edit_food') return `✎ Editado: ${JSON.stringify(a.changes)}`
+        if (a.type === 'remove_food') return `− Alimento eliminado`
+        if (a.type === 'rename_meal') return `✎ Comida renombrada: ${a.name}`
+        if (a.type === 'remove_meal') return `− Comida eliminada`
+        return a.type
+      }).join('<br>')
       freshResult.style.display = 'block'
       freshResult.style.color = 'var(--green)'
-      freshResult.innerHTML = `<i class="ti ti-circle-check"></i> ${actions.length} cambio(s) aplicado(s) correctamente.`
+      freshResult.innerHTML = `<i class="ti ti-circle-check"></i> ${actions.length} cambio(s) aplicado(s):<br><small style="color:var(--text2)">${summary}</small>`
     }
   } catch (err) {
-    // Si renderTab() ya fue llamado, buscar el elemento en el DOM actual
     const el = document.getElementById('ai-diet-result') || resultEl
     el.style.display = 'block'
     el.style.color = 'var(--red)'
@@ -1433,43 +1441,51 @@ async function applyAIDietActions(actions) {
   const diet = SELECTED_CLIENT_DATA.diet
   for (const action of actions) {
     if (action.type === 'add_meal') {
-      const order = diet.diet_meals?.length || 0
-      const { data: meal } = await supabase
+      const dayMeals = (diet.diet_meals || []).filter(m => (m.day_index ?? 0) === ACTIVE_DIET_DAY)
+      const { data: meal, error } = await supabase
         .from('diet_meals')
-        .insert({ diet_plan_id: diet.id, name: action.name, icon: action.icon || '🍽️', order_index: order, day_index: ACTIVE_DIET_DAY })
+        .insert({ diet_plan_id: diet.id, name: action.name, icon: action.icon || '🍽️', order_index: dayMeals.length, day_index: ACTIVE_DIET_DAY })
         .select('*, diet_foods(*)')
         .single()
+      if (error) throw new Error(`add_meal "${action.name}": ${error.message}`)
       if (meal) {
         diet.diet_meals = diet.diet_meals || []
         diet.diet_meals.push({ ...meal, diet_foods: [] })
       }
     } else if (action.type === 'add_food') {
-      const meal = diet.diet_meals?.find(m => m.id === action.meal_id || m.name.toLowerCase() === (action.meal_name || '').toLowerCase())
-      if (!meal) continue
-      const order = meal.diet_foods?.length || 0
-      const { data: food } = await supabase
+      const meal = diet.diet_meals?.find(m =>
+        m.id === action.meal_id ||
+        m.name.toLowerCase() === (action.meal_name || '').toLowerCase()
+      )
+      if (!meal) throw new Error(`add_food: comida no encontrada (id: ${action.meal_id}, nombre: ${action.meal_name})`)
+      const { data: food, error } = await supabase
         .from('diet_foods')
-        .insert({ diet_meal_id: meal.id, name: action.name, kcal: action.kcal || 0, protein_g: action.protein_g || 0, order_index: order })
+        .insert({ diet_meal_id: meal.id, name: action.name, kcal: action.kcal || 0, protein_g: action.protein_g || 0, order_index: meal.diet_foods?.length || 0 })
         .select().single()
+      if (error) throw new Error(`add_food "${action.name}": ${error.message}`)
       if (food) meal.diet_foods = [...(meal.diet_foods || []), food]
     } else if (action.type === 'edit_food') {
       const changes = action.changes || {}
-      await supabase.from('diet_foods').update(changes).eq('id', action.food_id)
+      const { error } = await supabase.from('diet_foods').update(changes).eq('id', action.food_id)
+      if (error) throw new Error(`edit_food: ${error.message}`)
       for (const meal of (diet.diet_meals || [])) {
         const food = meal.diet_foods?.find(f => f.id === action.food_id)
         if (food) { Object.assign(food, changes); break }
       }
     } else if (action.type === 'remove_food') {
-      await supabase.from('diet_foods').delete().eq('id', action.food_id)
+      const { error } = await supabase.from('diet_foods').delete().eq('id', action.food_id)
+      if (error) throw new Error(`remove_food: ${error.message}`)
       for (const meal of (diet.diet_meals || [])) {
         meal.diet_foods = (meal.diet_foods || []).filter(f => f.id !== action.food_id)
       }
     } else if (action.type === 'rename_meal') {
-      await supabase.from('diet_meals').update({ name: action.name }).eq('id', action.meal_id)
+      const { error } = await supabase.from('diet_meals').update({ name: action.name }).eq('id', action.meal_id)
+      if (error) throw new Error(`rename_meal: ${error.message}`)
       const meal = diet.diet_meals?.find(m => m.id === action.meal_id)
       if (meal) meal.name = action.name
     } else if (action.type === 'remove_meal') {
-      await supabase.from('diet_meals').delete().eq('id', action.meal_id)
+      const { error } = await supabase.from('diet_meals').delete().eq('id', action.meal_id)
+      if (error) throw new Error(`remove_meal: ${error.message}`)
       diet.diet_meals = (diet.diet_meals || []).filter(m => m.id !== action.meal_id)
     }
   }
