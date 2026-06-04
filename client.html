@@ -201,8 +201,11 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 
 <!-- ════════════════ ENTRENAMIENTO ════════════════ -->
 <div class="sec" id="train">
-  <div class="page-header" style="padding-top:16px">
+  <div class="page-header" style="padding-top:16px;display:flex;align-items:center;justify-content:space-between">
     <h1>Entrenamiento</h1>
+    <button onclick="downloadWorkoutPDF(this)" style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+      <i class="ti ti-download" style="font-size:13px"></i> PDF
+    </button>
   </div>
   <div class="day-sel" id="day-sel"></div>
   <div class="card">
@@ -232,7 +235,12 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 
 <!-- ════════════════ NUTRICIÓN ════════════════ -->
 <div class="sec" id="nutri">
-  <div class="page-header" style="padding-top:16px"><h1>Nutrición</h1></div>
+  <div class="page-header" style="padding-top:16px;display:flex;align-items:center;justify-content:space-between">
+    <h1>Nutrición</h1>
+    <button onclick="downloadDietPDF(this)" style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+      <i class="ti ti-download" style="font-size:13px"></i> PDF
+    </button>
+  </div>
   <div id="diet-instructions-box"></div>
   <div class="metric-grid">
     <div class="metric"><div class="metric-label">Kcal objetivo</div><div class="metric-val" id="nut-kcal">—</div><div class="metric-sub">objetivo diario</div></div>

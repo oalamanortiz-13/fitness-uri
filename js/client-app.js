@@ -20,6 +20,7 @@ let DIET_PLAN = null
 let DIET_MEALS = []
 let SUPPLEMENTS = []
 let USER_ID = null
+let CLIENT_NAME = '—'
 
 let S = {
   curDay: 0,
@@ -347,6 +348,7 @@ async function loadPesoHistory() {
 function applyClientProfile(myProfile) {
   // Nombre del cliente
   const name = myProfile?.full_name || '—'
+  CLIENT_NAME = name
   document.getElementById('profile-name').textContent = name
 
   // Avatar del cliente — no hay cache-bust en la carga inicial (es la URL guardada)
@@ -1655,3 +1657,284 @@ const SECTIONS = ['dash', 'train', 'nutri', 'cardio', 'prog', 'cal', 'ai']
     show(nextId, targetBtn)
   }, { passive: true })
 })()
+
+// ─── PDF EXPORT ───────────────────────────────────────────────────────────────
+
+async function loadJsPDF() {
+  if (window.jspdf?.jsPDF) return window.jspdf.jsPDF
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script')
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+    s.onload = resolve; s.onerror = reject
+    document.head.appendChild(s)
+  })
+  return window.jspdf.jsPDF
+}
+
+function pdfHeader(doc, title) {
+  doc.setFillColor(12, 12, 12)
+  doc.rect(0, 0, 210, 28, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(15)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Tu Preparador', 14, 12)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(160, 160, 160)
+  doc.text(title, 14, 20)
+  if (CLIENT_NAME && CLIENT_NAME !== '—') {
+    doc.text(CLIENT_NAME, 196, 20, { align: 'right' })
+  }
+}
+
+function pdfFooter(doc) {
+  const pages = doc.internal.getNumberOfPages()
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i)
+    doc.setDrawColor(40, 40, 40)
+    doc.line(14, 284, 196, 284)
+    doc.setFontSize(7.5)
+    doc.setTextColor(120, 120, 120)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Tu Preparador · tupreparador.es', 14, 289)
+    doc.text(`Página ${i} / ${pages}`, 196, 289, { align: 'right' })
+  }
+}
+
+window.downloadWorkoutPDF = async function(btn) {
+  const orig = btn.innerHTML
+  btn.innerHTML = '<i class="ti ti-loader-2" style="font-size:13px"></i> Generando...'
+  btn.disabled = true
+
+  try {
+    const JsPDF = await loadJsPDF()
+    const doc = new JsPDF({ unit: 'mm', format: 'a4' })
+    const date = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+
+    pdfHeader(doc, `Plan de entrenamiento · ${date}`)
+
+    let y = 36
+
+    if (!WORKOUT_DAYS.length) {
+      doc.setTextColor(100, 100, 100)
+      doc.setFontSize(11)
+      doc.text('No hay días de entrenamiento asignados.', 14, y)
+    }
+
+    WORKOUT_DAYS.forEach((day) => {
+      const exs = day.workout_exercises || []
+      const blockH = 14 + (day.notes ? 12 : 0) + exs.length * 8 + 10
+      if (y + blockH > 278) { doc.addPage(); y = 20 }
+
+      // Cabecera del día
+      doc.setFillColor(55, 138, 221)
+      doc.roundedRect(14, y, 182, 9, 1.5, 1.5, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'bold')
+      const dayLabel = day.title + (day.duration ? `   ·   ${day.duration}` : '')
+      doc.text(dayLabel, 18, y + 6.2)
+      y += 13
+
+      // Nota del día
+      if (day.notes) {
+        doc.setFillColor(230, 240, 255)
+        const noteLines = doc.splitTextToSize(day.notes, 170)
+        const noteH = noteLines.length * 5 + 6
+        doc.roundedRect(14, y, 182, noteH, 1, 1, 'F')
+        doc.setTextColor(40, 80, 140)
+        doc.setFontSize(8.5)
+        doc.setFont('helvetica', 'italic')
+        doc.text(noteLines, 18, y + 5)
+        y += noteH + 4
+      }
+
+      // Cabecera tabla ejercicios
+      doc.setFillColor(238, 238, 238)
+      doc.rect(14, y, 182, 6.5, 'F')
+      doc.setTextColor(80, 80, 80)
+      doc.setFontSize(7.5)
+      doc.setFont('helvetica', 'bold')
+      doc.text('EJERCICIO', 17, y + 4.5)
+      doc.text('SERIES / REPS', 193, y + 4.5, { align: 'right' })
+      y += 7.5
+
+      exs.forEach((ex, j) => {
+        if (y > 272) { doc.addPage(); y = 20 }
+        doc.setFillColor(j % 2 === 0 ? 255 : 249, j % 2 === 0 ? 255 : 249, j % 2 === 0 ? 255 : 249)
+        const exH = ex.note ? 13 : 8
+        doc.rect(14, y, 182, exH, 'F')
+        doc.setTextColor(25, 25, 25)
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'normal')
+        doc.text(ex.name, 17, y + 5.5)
+        doc.setFont('helvetica', 'bold')
+        doc.text(ex.sets_reps || '', 193, y + 5.5, { align: 'right' })
+        if (ex.note) {
+          doc.setFont('helvetica', 'italic')
+          doc.setFontSize(8)
+          doc.setTextColor(110, 110, 110)
+          doc.text(ex.note, 17, y + 10.5)
+        }
+        y += exH
+      })
+      y += 10
+    })
+
+    pdfFooter(doc)
+    doc.save(`entreno-${(CLIENT_NAME || 'plan').replace(/\s+/g, '-').toLowerCase()}.pdf`)
+  } catch (e) {
+    console.error('Error generando PDF:', e)
+    alert('Error al generar el PDF. Inténtalo de nuevo.')
+  } finally {
+    btn.innerHTML = orig
+    btn.disabled = false
+  }
+}
+
+window.downloadDietPDF = async function(btn) {
+  const orig = btn.innerHTML
+  btn.innerHTML = '<i class="ti ti-loader-2" style="font-size:13px"></i> Generando...'
+  btn.disabled = true
+
+  try {
+    const JsPDF = await loadJsPDF()
+    const doc = new JsPDF({ unit: 'mm', format: 'a4' })
+    const date = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+
+    pdfHeader(doc, `Plan de nutrición · ${date}`)
+
+    let y = 36
+
+    // Objetivos diarios
+    const kcal = CLIENT?.kcal_goal
+    const prot = CLIENT?.protein_goal
+    if (kcal || prot) {
+      doc.setFillColor(29, 158, 117, 0.12)
+      doc.setFillColor(235, 248, 243)
+      doc.roundedRect(14, y, 182, 11, 1.5, 1.5, 'F')
+      doc.setTextColor(20, 100, 70)
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'bold')
+      const goals = [kcal ? `${kcal} kcal / día` : null, prot ? `${prot}g proteína / día` : null].filter(Boolean).join('   ·   ')
+      doc.text(`Objetivo diario: ${goals}`, 18, y + 7.5)
+      y += 16
+    }
+
+    if (!DIET_MEALS.length) {
+      doc.setTextColor(100, 100, 100)
+      doc.setFontSize(11)
+      doc.text('No hay plan de nutrición asignado.', 14, y)
+    }
+
+    const mealIcons = { 'Desayuno': '☀', 'Comida': '🥗', 'Merienda': '🍎', 'Cena': '🌙' }
+
+    DIET_MEALS.forEach((meal) => {
+      const foods = meal.diet_foods || []
+      const blockH = 12 + foods.length * 8 + 8
+      if (y + blockH > 278) { doc.addPage(); y = 20 }
+
+      // Cabecera comida
+      doc.setFillColor(29, 158, 117)
+      doc.roundedRect(14, y, 182, 9, 1.5, 1.5, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'bold')
+      doc.text(meal.name, 18, y + 6.2)
+
+      // Total kcal de la comida
+      const mealKcal = foods.reduce((s, f) => s + (f.kcal || 0), 0)
+      const mealProt = foods.reduce((s, f) => s + (f.protein_g || 0), 0)
+      if (mealKcal || mealProt) {
+        doc.setFontSize(8)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(200, 240, 220)
+        const totals = [mealKcal ? `~${mealKcal} kcal` : null, mealProt ? `${mealProt}g prot` : null].filter(Boolean).join('  ·  ')
+        doc.text(totals, 193, y + 6.2, { align: 'right' })
+      }
+      y += 13
+
+      // Cabecera tabla alimentos
+      doc.setFillColor(238, 238, 238)
+      doc.rect(14, y, 182, 6.5, 'F')
+      doc.setTextColor(80, 80, 80)
+      doc.setFontSize(7.5)
+      doc.setFont('helvetica', 'bold')
+      doc.text('ALIMENTO', 17, y + 4.5)
+      doc.text('PROTEÍNA', 148, y + 4.5, { align: 'right' })
+      doc.text('KCAL', 193, y + 4.5, { align: 'right' })
+      y += 7.5
+
+      foods.forEach((food, j) => {
+        if (y > 276) { doc.addPage(); y = 20 }
+        doc.setFillColor(j % 2 === 0 ? 255 : 249, j % 2 === 0 ? 255 : 249, j % 2 === 0 ? 255 : 249)
+        doc.rect(14, y, 182, 8, 'F')
+        doc.setTextColor(25, 25, 25)
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'normal')
+        doc.text(food.name, 17, y + 5.5)
+        doc.setTextColor(90, 90, 90)
+        doc.setFontSize(8.5)
+        if (food.protein_g) doc.text(`${food.protein_g}g`, 148, y + 5.5, { align: 'right' })
+        if (food.kcal) doc.text(`${food.kcal}`, 193, y + 5.5, { align: 'right' })
+        y += 8
+      })
+
+      if (!foods.length) {
+        doc.setTextColor(150, 150, 150)
+        doc.setFontSize(8.5)
+        doc.setFont('helvetica', 'italic')
+        doc.text('Sin alimentos asignados', 17, y + 5)
+        y += 9
+      }
+      y += 8
+    })
+
+    // Suplementos
+    if (SUPPLEMENTS.length) {
+      if (y + 20 > 278) { doc.addPage(); y = 20 }
+      doc.setFillColor(55, 138, 221)
+      doc.roundedRect(14, y, 182, 9, 1.5, 1.5, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Suplementación', 18, y + 6.2)
+      y += 13
+
+      doc.setFillColor(238, 238, 238)
+      doc.rect(14, y, 182, 6.5, 'F')
+      doc.setTextColor(80, 80, 80)
+      doc.setFontSize(7.5)
+      doc.setFont('helvetica', 'bold')
+      doc.text('SUPLEMENTO', 17, y + 4.5)
+      doc.text('DOSIS', 148, y + 4.5, { align: 'right' })
+      doc.text('MOMENTO', 193, y + 4.5, { align: 'right' })
+      y += 7.5
+
+      const TIMING_LABEL = { manana: 'Mañana', tarde: 'Tarde', noche: 'Noche', 'pre-workout': 'Pre-workout', 'post-workout': 'Post-workout' }
+      SUPPLEMENTS.forEach((s, j) => {
+        if (y > 276) { doc.addPage(); y = 20 }
+        doc.setFillColor(j % 2 === 0 ? 255 : 249, j % 2 === 0 ? 255 : 249, j % 2 === 0 ? 255 : 249)
+        doc.rect(14, y, 182, 8, 'F')
+        doc.setTextColor(25, 25, 25)
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'normal')
+        doc.text(s.name, 17, y + 5.5)
+        doc.setTextColor(90, 90, 90)
+        doc.setFontSize(8.5)
+        if (s.dose) doc.text(s.dose, 148, y + 5.5, { align: 'right' })
+        if (s.timing) doc.text(TIMING_LABEL[s.timing] || s.timing, 193, y + 5.5, { align: 'right' })
+        y += 8
+      })
+    }
+
+    pdfFooter(doc)
+    doc.save(`dieta-${(CLIENT_NAME || 'plan').replace(/\s+/g, '-').toLowerCase()}.pdf`)
+  } catch (e) {
+    console.error('Error generando PDF:', e)
+    alert('Error al generar el PDF. Inténtalo de nuevo.')
+  } finally {
+    btn.innerHTML = orig
+    btn.disabled = false
+  }
+}
