@@ -1367,18 +1367,22 @@ window.applyAIDietInstruction = async function(btn) {
     return
   }
 
+  // Solo enviar a la IA las comidas del día activo
   const plan = {
-    meals: (diet.diet_meals || []).map(m => ({
-      id: m.id,
-      name: m.name,
-      icon: m.icon || '',
-      foods: (m.diet_foods || []).map(f => ({
-        id: f.id,
-        name: f.name,
-        kcal: f.kcal || 0,
-        protein_g: f.protein_g || 0
+    day: DAYS[ACTIVE_DIET_DAY],
+    meals: (diet.diet_meals || [])
+      .filter(m => (m.day_index ?? 0) === ACTIVE_DIET_DAY)
+      .map(m => ({
+        id: m.id,
+        name: m.name,
+        icon: m.icon || '',
+        foods: (m.diet_foods || []).map(f => ({
+          id: f.id,
+          name: f.name,
+          kcal: f.kcal || 0,
+          protein_g: f.protein_g || 0
+        }))
       }))
-    }))
   }
 
   try {
@@ -1405,15 +1409,20 @@ window.applyAIDietInstruction = async function(btn) {
 
     await applyAIDietActions(actions)
 
-    resultEl.style.display = 'block'
-    resultEl.style.color = 'var(--green)'
-    resultEl.innerHTML = `<i class="ti ti-circle-check"></i> ${actions.length} cambio(s) aplicado(s) correctamente.`
-    document.getElementById('ai-diet-instruction').value = ''
+    // renderTab() destruye el DOM — primero re-renderizar, luego mostrar el mensaje en el nuevo DOM
     renderTab()
+    const freshResult = document.getElementById('ai-diet-result')
+    if (freshResult) {
+      freshResult.style.display = 'block'
+      freshResult.style.color = 'var(--green)'
+      freshResult.innerHTML = `<i class="ti ti-circle-check"></i> ${actions.length} cambio(s) aplicado(s) correctamente.`
+    }
   } catch (err) {
-    resultEl.style.display = 'block'
-    resultEl.style.color = 'var(--red)'
-    resultEl.innerHTML = `<i class="ti ti-alert-circle"></i> ${err.message}`
+    // Si renderTab() ya fue llamado, buscar el elemento en el DOM actual
+    const el = document.getElementById('ai-diet-result') || resultEl
+    el.style.display = 'block'
+    el.style.color = 'var(--red)'
+    el.innerHTML = `<i class="ti ti-alert-circle"></i> ${err.message}`
   }
 
   btn.disabled = false
