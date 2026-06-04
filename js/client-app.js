@@ -24,6 +24,7 @@ let CLIENT_NAME = '—'
 
 let S = {
   curDay: 0,
+  curDietDay: 0,
   foods: [],
   steps: 0,
   cardioDay: 0,
@@ -162,6 +163,7 @@ async function loadClientData() {
     m.diet_foods.sort((a, b) => a.order_index - b.order_index)
   }
   DIET_MEALS.sort((a, b) => a.order_index - b.order_index)
+  S.curDietDay = getTodayIdx()
 
   const { data: supls } = await supabase
     .from('supplements')
@@ -294,11 +296,12 @@ function calcDayScore() {
   const doneEx = S.exDone[key]?.length || 0
   const trainingScore = totalEx > 0 ? Math.round(doneEx / totalEx * 100) : 100
 
-  // Nutrition score (40%): foods + protein supplements checked vs total
-  const totalFoods = DIET_MEALS.reduce((a, m) => a + m.diet_foods.length, 0)
+  // Nutrition score (40%): foods + protein supplements checked vs total (today's day only)
+  const _nutMeals = DIET_MEALS.filter(m => (m.day_index ?? 0) === getTodayIdx())
+  const totalFoods = _nutMeals.reduce((a, m) => a + m.diet_foods.length, 0)
   const totalProtSupls = SUPPLEMENTS.filter(s => s.protein_g > 0).length
   const checkedFoods = S.foodsChecked.filter(id =>
-    DIET_MEALS.some(m => m.diet_foods.some(f => f.id === id))
+    _nutMeals.some(m => m.diet_foods.some(f => f.id === id))
   ).length
   const checkedProtSupls = S.foodsChecked.filter(id =>
     SUPPLEMENTS.some(s => s.protein_g > 0 && s.id === id)
@@ -613,15 +616,34 @@ window.toggleCheck = function(k) {
 
 // ─── NUTRITION ────────────────────────────────────────────────────────────────
 
+function renderDietDaySel() {
+  const sel = document.getElementById('diet-day-sel-client')
+  if (!sel) return
+  sel.innerHTML = DAYS.map((d, i) =>
+    `<button class="${i === S.curDietDay ? 'active' : ''}" onclick="selectDietDay(${i})">${d}</button>`
+  ).join('')
+}
+
+window.selectDietDay = function(i) {
+  S.curDietDay = i
+  renderNutrition()
+  updateNutriFinishBtn()
+}
+
 function renderNutrition() {
   const container = document.getElementById('diet-meals-container')
   const icons = { 'Desayuno': 'ti-coffee', 'Comida': 'ti-soup', 'Merienda': 'ti-apple', 'Cena': 'ti-moon' }
+  const isToday = S.curDietDay === getTodayIdx()
+  const todayMeals = DIET_MEALS.filter(m => (m.day_index ?? 0) === S.curDietDay)
 
-  container.innerHTML = DIET_MEALS.map(meal => {
+  renderDietDaySel()
+
+  container.innerHTML = todayMeals.map(meal => {
     const icon = meal.icon || icons[meal.name] || 'ti-salad'
     const foods = meal.diet_foods.map(food => {
       const checked = S.foodsChecked.includes(food.id)
-      return `<div class="meal-row row" data-food-id="${food.id}" data-prot="${food.protein_g}" data-kcal="${food.kcal}" onclick="toggleMeal(this)">
+      const interactStyle = isToday ? '' : 'pointer-events:none;opacity:0.7;'
+      return `<div class="meal-row row" data-food-id="${food.id}" data-prot="${food.protein_g}" data-kcal="${food.kcal}" onclick="toggleMeal(this)" style="${interactStyle}">
         <button class="check-btn${checked ? ' on' : ''}" aria-label="Marcar">${checked ? '✓' : ''}</button>
         <div style="flex:1;margin-left:10px"><div class="row-name">${food.name}</div></div>
         <div style="text-align:right">
@@ -940,8 +962,24 @@ function finishModal({ emoji, title, subtitle, scorePct, scoreColor, extraRows, 
 function updateNutriFinishBtn() {
   const btn = document.getElementById('nutri-finish-btn')
   if (!btn) return
-  const totalFoods = DIET_MEALS.reduce((a, m) => a + m.diet_foods.length, 0)
-  const checked = S.foodsChecked.filter(id => DIET_MEALS.some(m => m.diet_foods.some(f => f.id === id))).length
+
+  // Vista previa de otro día — botón desactivado
+  if (S.curDietDay !== getTodayIdx()) {
+    btn.classList.remove('done')
+    btn.style.background = ''
+    btn.style.color = 'var(--text3)'
+    btn.style.borderColor = ''
+    btn.style.opacity = '0.5'
+    btn.innerHTML = `<i class="ti ti-eye"></i> Vista previa (${DAYS[S.curDietDay]})`
+    btn.disabled = true
+    return
+  }
+  btn.disabled = false
+  btn.style.opacity = ''
+
+  const _todayNutMeals = DIET_MEALS.filter(m => (m.day_index ?? 0) === getTodayIdx())
+  const totalFoods = _todayNutMeals.reduce((a, m) => a + m.diet_foods.length, 0)
+  const checked = S.foodsChecked.filter(id => _todayNutMeals.some(m => m.diet_foods.some(f => f.id === id))).length
   const pct = totalFoods > 0 ? Math.round(checked / totalFoods * 100) : 100
   const sc = S.calScores[getToday()]
 
@@ -1008,8 +1046,9 @@ window.finishNutrition = async function() {
   clearTimeout(saveTimeout)
   await saveLog()
 
-  const totalFoods = DIET_MEALS.reduce((a, m) => a + m.diet_foods.length, 0)
-  const checked = S.foodsChecked.filter(id => DIET_MEALS.some(m => m.diet_foods.some(f => f.id === id))).length
+  const _finishNutMeals = DIET_MEALS.filter(m => (m.day_index ?? 0) === getTodayIdx())
+  const totalFoods = _finishNutMeals.reduce((a, m) => a + m.diet_foods.length, 0)
+  const checked = S.foodsChecked.filter(id => _finishNutMeals.some(m => m.diet_foods.some(f => f.id === id))).length
   const nutritionScore = totalFoods > 0 ? Math.round(checked / totalFoods * 100) : 100
 
   const score = await saveScoreComponent('nutrition', nutritionScore)
@@ -1875,63 +1914,79 @@ window.downloadDietPDF = async function(btn) {
       doc.text('No hay plan de nutrición asignado.', 14, y)
     }
 
-    DIET_MEALS.forEach((meal) => {
-      const foods = meal.diet_foods || []
-      const blockH = 12 + foods.length * 8 + 8
-      if (y + blockH > 278) { doc.addPage(); y = 20 }
+    DAYS.forEach((dayName, dayIdx) => {
+      const dayMeals = DIET_MEALS.filter(m => (m.day_index ?? 0) === dayIdx)
+        .slice().sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+      if (!dayMeals.length) return
 
-      // Cabecera comida
-      doc.setFillColor(29, 158, 117)
+      // Cabecera de día
+      if (y + 14 > 278) { doc.addPage(); y = 20 }
+      doc.setFillColor(55, 138, 221)
       doc.roundedRect(14, y, 182, 9, 1.5, 1.5, 'F')
       doc.setTextColor(255, 255, 255)
-      doc.setFontSize(10)
+      doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
-      doc.text(meal.name, 18, y + 6.2)
-      const mealKcal = foods.reduce((s, f) => s + (f.kcal || 0), 0)
-      const mealProt = foods.reduce((s, f) => s + (f.protein_g || 0), 0)
-      if (mealKcal || mealProt) {
-        doc.setFontSize(8)
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(200, 240, 220)
-        const totals = [mealKcal ? `~${mealKcal} kcal` : null, mealProt ? `${mealProt}g prot` : null].filter(Boolean).join('  ·  ')
-        doc.text(totals, 193, y + 6.2, { align: 'right' })
-      }
+      doc.text(dayName.toUpperCase(), 18, y + 6.2)
       y += 13
 
-      // Cabecera tabla alimentos
-      doc.setFillColor(238, 238, 238)
-      doc.rect(14, y, 182, 6.5, 'F')
-      doc.setTextColor(80, 80, 80)
-      doc.setFontSize(7.5)
-      doc.setFont('helvetica', 'bold')
-      doc.text('ALIMENTO', 17, y + 4.5)
-      doc.text('PROTEÍNA', 148, y + 4.5, { align: 'right' })
-      doc.text('KCAL', 193, y + 4.5, { align: 'right' })
-      y += 7.5
+      dayMeals.forEach((meal) => {
+        const foods = meal.diet_foods || []
+        const blockH = 12 + foods.length * 8 + 8
+        if (y + blockH > 278) { doc.addPage(); y = 20 }
 
-      foods.forEach((food, j) => {
-        if (y > 276) { doc.addPage(); y = 20 }
-        doc.setFillColor(j % 2 === 0 ? 255 : 249, j % 2 === 0 ? 255 : 249, j % 2 === 0 ? 255 : 249)
-        doc.rect(14, y, 182, 8, 'F')
-        doc.setTextColor(25, 25, 25)
-        doc.setFontSize(9)
-        doc.setFont('helvetica', 'normal')
-        doc.text(food.name, 17, y + 5.5)
-        doc.setTextColor(90, 90, 90)
-        doc.setFontSize(8.5)
-        if (food.protein_g) doc.text(`${food.protein_g}g`, 148, y + 5.5, { align: 'right' })
-        if (food.kcal) doc.text(`${food.kcal}`, 193, y + 5.5, { align: 'right' })
+        // Cabecera comida
+        doc.setFillColor(29, 158, 117)
+        doc.roundedRect(14, y, 182, 9, 1.5, 1.5, 'F')
+        doc.setTextColor(255, 255, 255)
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'bold')
+        doc.text(meal.name, 18, y + 6.2)
+        const mealKcal = foods.reduce((s, f) => s + (f.kcal || 0), 0)
+        const mealProt = foods.reduce((s, f) => s + (f.protein_g || 0), 0)
+        if (mealKcal || mealProt) {
+          doc.setFontSize(8)
+          doc.setFont('helvetica', 'normal')
+          doc.setTextColor(200, 240, 220)
+          const totals = [mealKcal ? `~${mealKcal} kcal` : null, mealProt ? `${mealProt}g prot` : null].filter(Boolean).join('  ·  ')
+          doc.text(totals, 193, y + 6.2, { align: 'right' })
+        }
+        y += 13
+
+        // Cabecera tabla alimentos
+        doc.setFillColor(238, 238, 238)
+        doc.rect(14, y, 182, 6.5, 'F')
+        doc.setTextColor(80, 80, 80)
+        doc.setFontSize(7.5)
+        doc.setFont('helvetica', 'bold')
+        doc.text('ALIMENTO', 17, y + 4.5)
+        doc.text('PROTEÍNA', 148, y + 4.5, { align: 'right' })
+        doc.text('KCAL', 193, y + 4.5, { align: 'right' })
+        y += 7.5
+
+        foods.forEach((food, j) => {
+          if (y > 276) { doc.addPage(); y = 20 }
+          doc.setFillColor(j % 2 === 0 ? 255 : 249, j % 2 === 0 ? 255 : 249, j % 2 === 0 ? 255 : 249)
+          doc.rect(14, y, 182, 8, 'F')
+          doc.setTextColor(25, 25, 25)
+          doc.setFontSize(9)
+          doc.setFont('helvetica', 'normal')
+          doc.text(food.name, 17, y + 5.5)
+          doc.setTextColor(90, 90, 90)
+          doc.setFontSize(8.5)
+          if (food.protein_g) doc.text(`${food.protein_g}g`, 148, y + 5.5, { align: 'right' })
+          if (food.kcal) doc.text(`${food.kcal}`, 193, y + 5.5, { align: 'right' })
+          y += 8
+        })
+
+        if (!foods.length) {
+          doc.setTextColor(150, 150, 150)
+          doc.setFontSize(8.5)
+          doc.setFont('helvetica', 'italic')
+          doc.text('Sin alimentos asignados', 17, y + 5)
+          y += 9
+        }
         y += 8
       })
-
-      if (!foods.length) {
-        doc.setTextColor(150, 150, 150)
-        doc.setFontSize(8.5)
-        doc.setFont('helvetica', 'italic')
-        doc.text('Sin alimentos asignados', 17, y + 5)
-        y += 9
-      }
-      y += 8
     })
 
     // Suplementos

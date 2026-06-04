@@ -31,6 +31,7 @@ let SELECTED_CLIENT = null
 let SELECTED_CLIENT_DATA = null
 let ACTIVE_TAB = 'profile'
 let ACTIVE_DAY = 0
+let ACTIVE_DIET_DAY = 0
 let ACTIVE_MEAL_ID = null
 let EDITING_EX_ID = null
 let SUBSCRIPTION_STATUS = 'trial'
@@ -1066,9 +1067,12 @@ window.deleteExercise = async function(exId) {
 function renderDietTab(el) {
   const { diet } = SELECTED_CLIENT_DATA
   const c = SELECTED_CLIENT_DATA.client
-  const meals = (diet?.diet_meals || []).slice().sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+  const meals = (diet?.diet_meals || [])
+    .filter(m => (m.day_index ?? 0) === ACTIVE_DIET_DAY)
+    .slice().sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
 
   el.innerHTML = `
+    <div class="day-sel" id="diet-day-sel"></div>
     <div class="card" style="margin-bottom:12px;border-color:var(--blue)44">
       <div class="card-title" style="color:var(--blue)"><i class="ti ti-robot"></i> Editar dieta con IA</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
@@ -1098,9 +1102,24 @@ function renderDietTab(el) {
     </div>` : ''}
   `
 
+  renderDietDaySel()
   initMealDrag()
 }
 
+function renderDietDaySel() {
+  const sel = document.getElementById('diet-day-sel')
+  if (!sel) return
+  sel.innerHTML = DAYS.map((d, i) =>
+    `<button class="${i === ACTIVE_DIET_DAY ? 'active' : ''}" onclick="selectDietDay(${i})">${d}</button>`
+  ).join('')
+}
+
+window.selectDietDay = function(i) {
+  ACTIVE_DIET_DAY = i
+  renderDietDaySel()
+  const el = document.getElementById('tab-content')
+  if (el) renderDietTab(el)
+}
 
 function renderMealCard(meal) {
   return `
@@ -1220,7 +1239,7 @@ window.addMeal = async function() {
 
   const { data: meal } = await supabase
     .from('diet_meals')
-    .insert({ diet_plan_id: SELECTED_CLIENT_DATA.diet.id, name, icon, order_index: existing })
+    .insert({ diet_plan_id: SELECTED_CLIENT_DATA.diet.id, name, icon, order_index: existing, day_index: ACTIVE_DIET_DAY })
     .select('*, diet_foods(*)')
     .single()
 
@@ -1408,7 +1427,7 @@ async function applyAIDietActions(actions) {
       const order = diet.diet_meals?.length || 0
       const { data: meal } = await supabase
         .from('diet_meals')
-        .insert({ diet_plan_id: diet.id, name: action.name, icon: action.icon || '🍽️', order_index: order })
+        .insert({ diet_plan_id: diet.id, name: action.name, icon: action.icon || '🍽️', order_index: order, day_index: ACTIVE_DIET_DAY })
         .select('*, diet_foods(*)')
         .single()
       if (meal) {
