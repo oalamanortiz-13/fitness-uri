@@ -58,26 +58,32 @@ function relativeTime(isoStr) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const auth = await requireRole('trainer')
-  if (!auth) return
-  TRAINER_ID = auth.session.user.id
-  TRAINER_NAME = (auth.profile.full_name || auth.session.user.email).split(' ')[0]
-  const fullName = auth.profile.full_name || auth.session.user.email
-  document.getElementById('trainer-name-logo').textContent = fullName
-  const mName = document.getElementById('mobile-trainer-name')
-  if (mName) mName.textContent = fullName
+  try {
+    const auth = await requireRole('trainer')
+    if (!auth) return
+    TRAINER_ID = auth.session.user.id
+    TRAINER_NAME = (auth.profile.full_name || auth.session.user.email).split(' ')[0]
+    const fullName = auth.profile.full_name || auth.session.user.email
+    document.getElementById('trainer-name-logo').textContent = fullName
+    const mName = document.getElementById('mobile-trainer-name')
+    if (mName) mName.textContent = fullName
 
-  await loadSubscriptionStatus()
-  await loadTrainerLogo()
-  await loadClients()
-  document.getElementById('loading-screen').style.display = 'none'
-  document.getElementById('app').style.display = 'flex'
+    await loadSubscriptionStatus()
+    await loadTrainerLogo()
+    await loadClients()
+    document.getElementById('loading-screen').style.display = 'none'
+    document.getElementById('app').style.display = 'flex'
 
-  // Mostrar banner si viene de pago exitoso
-  const params = new URLSearchParams(window.location.search)
-  if (params.get('payment') === 'success') {
-    showNotif('¡Suscripción activada correctamente! ✓')
-    history.replaceState({}, '', 'trainer.html')
+    // Mostrar banner si viene de pago exitoso
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('payment') === 'success') {
+      showNotif('¡Suscripción activada correctamente! ✓')
+      history.replaceState({}, '', 'trainer.html')
+    }
+  } catch (err) {
+    console.error('Error al inicializar portal:', err)
+    document.getElementById('loading-screen').style.display = 'none'
+    document.getElementById('app').style.display = 'flex'
   }
 })
 
@@ -111,31 +117,35 @@ async function loadSubscriptionStatus() {
 }
 
 function showSubscriptionBanner(type, daysLeft = 0) {
-  const sidebar = document.querySelector('.sidebar')
+  const sidebar = document.querySelector('.nav-sidebar')
   const existing = document.getElementById('sub-banner')
   if (existing) existing.remove()
+  if (!sidebar) return
 
   const banner = document.createElement('div')
   banner.id = 'sub-banner'
+  banner.style.margin = '0 8px 8px'
 
   if (type === 'trial') {
-    banner.style.cssText = 'background:#1D9E7522;border:1px solid #1D9E7544;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px'
+    banner.style.cssText += 'background:#1D9E7522;border:1px solid #1D9E7544;border-radius:8px;padding:10px 12px;margin:0 8px 8px;font-size:12px'
     banner.innerHTML = `<div style="color:#6fcfa8;font-weight:600;margin-bottom:4px">Prueba gratuita · ${daysLeft} día${daysLeft !== 1 ? 's' : ''} restante${daysLeft !== 1 ? 's' : ''}</div>
       <div style="color:var(--text2);margin-bottom:8px">€9,90/cliente/mes al finalizar</div>
       <button onclick="startCheckout()" class="btn btn-primary" style="width:100%;font-size:12px;padding:7px">Activar suscripción</button>`
   } else if (type === 'past_due') {
-    banner.style.cssText = 'background:#BA751722;border:1px solid #BA751744;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px'
+    banner.style.cssText += 'background:#BA751722;border:1px solid #BA751744;border-radius:8px;padding:10px 12px;margin:0 8px 8px;font-size:12px'
     banner.innerHTML = `<div style="color:#e8a83e;font-weight:600;margin-bottom:4px">Pago fallido</div>
       <div style="color:var(--text2);margin-bottom:8px">Actualiza tu método de pago para continuar</div>
       <button onclick="startCheckout()" class="btn" style="width:100%;font-size:12px;padding:7px;border-color:#BA7517;color:#e8a83e">Actualizar pago</button>`
   } else {
-    banner.style.cssText = 'background:#E24B4A22;border:1px solid #E24B4A44;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px'
+    banner.style.cssText += 'background:#E24B4A22;border:1px solid #E24B4A44;border-radius:8px;padding:10px 12px;margin:0 8px 8px;font-size:12px'
     banner.innerHTML = `<div style="color:#F09595;font-weight:600;margin-bottom:4px">Suscripción inactiva</div>
       <div style="color:var(--text2);margin-bottom:8px">Activa tu plan para gestionar clientes</div>
       <button onclick="startCheckout()" class="btn btn-primary" style="width:100%;font-size:12px;padding:7px">Activar plan · €9,90/cliente</button>`
   }
 
-  sidebar.insertBefore(banner, sidebar.querySelector('.search-input'))
+  const navBottom = sidebar.querySelector('.nav-bottom')
+  if (navBottom) sidebar.insertBefore(banner, navBottom)
+  else sidebar.appendChild(banner)
 }
 
 window.startCheckout = async function() {
