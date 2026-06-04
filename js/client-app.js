@@ -1658,6 +1658,7 @@ const SECTIONS = ['dash', 'train', 'nutri', 'cardio', 'prog', 'cal', 'ai']
   }, { passive: true })
 })()
 
+
 // ─── PDF EXPORT ───────────────────────────────────────────────────────────────
 
 async function loadJsPDF() {
@@ -1671,19 +1672,69 @@ async function loadJsPDF() {
   return window.jspdf.jsPDF
 }
 
-function pdfHeader(doc, title) {
+async function imgToBase64(url) {
+  try {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    return await new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(blob)
+    })
+  } catch { return null }
+}
+
+// Cache logos between calls
+let _pdfLogos = null
+async function getPdfLogos() {
+  if (_pdfLogos) return _pdfLogos
+  const [tpLogo, trainerLogo] = await Promise.all([
+    imgToBase64(window.location.origin + '/logo.png'),
+    TRAINER_PROFILE?.logo_url ? imgToBase64(TRAINER_PROFILE.logo_url) : Promise.resolve(null)
+  ])
+  _pdfLogos = { tpLogo, trainerLogo }
+  return _pdfLogos
+}
+
+function pdfHeader(doc, title, logos) {
+  const H = 38
   doc.setFillColor(12, 12, 12)
-  doc.rect(0, 0, 210, 28, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(15)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Tu Preparador', 14, 12)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'normal')
+  doc.rect(0, 0, 210, H, 'F')
+
+  // Logo Tu Preparador (izquierda) — PNG transparente sobre negro
+  if (logos?.tpLogo) {
+    try { doc.addImage(logos.tpLogo, 'PNG', 10, 5, 48, 18) } catch (_) {}
+  } else {
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Tu Preparador', 14, 16)
+  }
+
+  // Logo del preparador (derecha) — cuadrado 22x22mm
+  if (logos?.trainerLogo) {
+    try {
+      // Detectar formato desde el data URL
+      const fmt = logos.trainerLogo.startsWith('data:image/png') ? 'PNG' : 'JPEG'
+      doc.addImage(logos.trainerLogo, fmt, 176, 4, 22, 22)
+    } catch (_) {}
+  }
+
+  // Línea separadora
+  doc.setDrawColor(55, 55, 55)
+  doc.line(0, H, 210, H)
+
+  // Texto: título y nombre del cliente
   doc.setTextColor(160, 160, 160)
-  doc.text(title, 14, 20)
+  doc.setFontSize(8.5)
+  doc.setFont('helvetica', 'normal')
+  const trainerName = TRAINER_PROFILE?.full_name || ''
+  doc.text(title, 14, H - 5)
   if (CLIENT_NAME && CLIENT_NAME !== '—') {
-    doc.text(CLIENT_NAME, 196, 20, { align: 'right' })
+    const clientLabel = trainerName ? `${CLIENT_NAME}  ·  ${trainerName}` : CLIENT_NAME
+    const maxX = logos?.trainerLogo ? 172 : 196
+    doc.text(clientLabel, maxX, H - 5, { align: 'right' })
   }
 }
 
@@ -1707,13 +1758,12 @@ window.downloadWorkoutPDF = async function(btn) {
   btn.disabled = true
 
   try {
-    const JsPDF = await loadJsPDF()
+    const [JsPDF, logos] = await Promise.all([loadJsPDF(), getPdfLogos()])
     const doc = new JsPDF({ unit: 'mm', format: 'a4' })
     const date = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
 
-    pdfHeader(doc, `Plan de entrenamiento · ${date}`)
-
-    let y = 36
+    pdfHeader(doc, `Plan de entrenamiento · ${date}`, logos)
+    let y = 46
 
     if (!WORKOUT_DAYS.length) {
       doc.setTextColor(100, 100, 100)
@@ -1798,19 +1848,17 @@ window.downloadDietPDF = async function(btn) {
   btn.disabled = true
 
   try {
-    const JsPDF = await loadJsPDF()
+    const [JsPDF, logos] = await Promise.all([loadJsPDF(), getPdfLogos()])
     const doc = new JsPDF({ unit: 'mm', format: 'a4' })
     const date = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
 
-    pdfHeader(doc, `Plan de nutrición · ${date}`)
-
-    let y = 36
+    pdfHeader(doc, `Plan de nutrición · ${date}`, logos)
+    let y = 46
 
     // Objetivos diarios
     const kcal = CLIENT?.kcal_goal
     const prot = CLIENT?.protein_goal
     if (kcal || prot) {
-      doc.setFillColor(29, 158, 117, 0.12)
       doc.setFillColor(235, 248, 243)
       doc.roundedRect(14, y, 182, 11, 1.5, 1.5, 'F')
       doc.setTextColor(20, 100, 70)
@@ -1827,8 +1875,6 @@ window.downloadDietPDF = async function(btn) {
       doc.text('No hay plan de nutrición asignado.', 14, y)
     }
 
-    const mealIcons = { 'Desayuno': '☀', 'Comida': '🥗', 'Merienda': '🍎', 'Cena': '🌙' }
-
     DIET_MEALS.forEach((meal) => {
       const foods = meal.diet_foods || []
       const blockH = 12 + foods.length * 8 + 8
@@ -1841,8 +1887,6 @@ window.downloadDietPDF = async function(btn) {
       doc.setFontSize(10)
       doc.setFont('helvetica', 'bold')
       doc.text(meal.name, 18, y + 6.2)
-
-      // Total kcal de la comida
       const mealKcal = foods.reduce((s, f) => s + (f.kcal || 0), 0)
       const mealProt = foods.reduce((s, f) => s + (f.protein_g || 0), 0)
       if (mealKcal || mealProt) {
