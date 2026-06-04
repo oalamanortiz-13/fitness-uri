@@ -129,7 +129,7 @@ function showSubscriptionBanner(type, daysLeft = 0) {
   if (type === 'trial') {
     banner.style.cssText += 'background:#1D9E7522;border:1px solid #1D9E7544;border-radius:8px;padding:10px 12px;margin:0 8px 8px;font-size:12px'
     banner.innerHTML = `<div style="color:#6fcfa8;font-weight:600;margin-bottom:4px">Prueba gratuita · ${daysLeft} día${daysLeft !== 1 ? 's' : ''} restante${daysLeft !== 1 ? 's' : ''}</div>
-      <div style="color:var(--text2);margin-bottom:8px">€9,90/cliente/mes al finalizar</div>
+      <div style="color:var(--text2);margin-bottom:8px">€4,90/cliente/mes al finalizar</div>
       <button onclick="startCheckout()" class="btn btn-primary" style="width:100%;font-size:12px;padding:7px">Activar suscripción</button>`
   } else if (type === 'past_due') {
     banner.style.cssText += 'background:#BA751722;border:1px solid #BA751744;border-radius:8px;padding:10px 12px;margin:0 8px 8px;font-size:12px'
@@ -140,7 +140,7 @@ function showSubscriptionBanner(type, daysLeft = 0) {
     banner.style.cssText += 'background:#E24B4A22;border:1px solid #E24B4A44;border-radius:8px;padding:10px 12px;margin:0 8px 8px;font-size:12px'
     banner.innerHTML = `<div style="color:#F09595;font-weight:600;margin-bottom:4px">Suscripción inactiva</div>
       <div style="color:var(--text2);margin-bottom:8px">Activa tu plan para gestionar clientes</div>
-      <button onclick="startCheckout()" class="btn btn-primary" style="width:100%;font-size:12px;padding:7px">Activar plan · €9,90/cliente</button>`
+      <button onclick="startCheckout()" class="btn btn-primary" style="width:100%;font-size:12px;padding:7px">Activar plan · €4,90/cliente</button>`
   }
 
   const navBottom = sidebar.querySelector('.nav-bottom')
