@@ -205,29 +205,37 @@ Reglas críticas:
   const apiKey = Deno.env.get('GEMINI_API_KEY')
   if (!apiKey) throw new Error('GEMINI_API_KEY no configurada')
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.7,
-          maxOutputTokens: 8192,
-        },
-      }),
-    }
-  )
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      temperature: 0.7,
+      maxOutputTokens: 8192,
+    },
+  })
 
-  if (!res.ok) {
-    const errText = await res.text()
-    console.error('Gemini HTTP error:', res.status, errText)
-    throw new Error(`Gemini API error ${res.status}: ${errText.slice(0, 200)}`)
+  let res: Response | null = null
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }
+    )
+    if (res.status !== 429) break
+    const waitMs = attempt * 8000
+    console.log(`Gemini 429 rate limit, retrying in ${waitMs}ms (attempt ${attempt}/4)`)
+    await new Promise(r => setTimeout(r, waitMs))
   }
 
-  const data = await res.json()
+  if (!res!.ok) {
+    const errText = await res!.text()
+    console.error('Gemini HTTP error:', res!.status, errText)
+    if (res!.status === 429) {
+      throw new Error('Servicio temporalmente ocupado. Espera unos segundos e inténtalo de nuevo.')
+    }
+    throw new Error(`Gemini API error ${res!.status}: ${errText.slice(0, 200)}`)
+  }
+
+  const data = await res!.json()
   console.log('Gemini finish reason:', data.candidates?.[0]?.finishReason)
 
   if (data.error) {
