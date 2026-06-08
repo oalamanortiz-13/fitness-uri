@@ -539,9 +539,10 @@ function applyClientConfig() {
 
   // Chat quick buttons
   document.getElementById('quick-btns').innerHTML = `
-    <button class="btn" onclick="quickQ('¿Qué como hoy para llegar a ${CLIENT.protein_goal}g de proteína?')" style="font-size:11px;padding:6px 10px">🍽️ Menú hoy</button>
-    <button class="btn" onclick="quickQ('¿Cómo progreso bien esta semana?')" style="font-size:11px;padding:6px 10px">📈 Consejos</button>
-    <button class="btn" onclick="quickQ('¿Qué alternativa tiene el ejercicio de hoy?')" style="font-size:11px;padding:6px 10px">🔄 Alternativa</button>
+    <button class="btn" onclick="quickQ('¿Qué alimentos me faltan marcar hoy para llegar a mis objetivos de calorías y proteína?')" style="font-size:11px;padding:6px 10px">🍽️ ¿Qué me falta comer?</button>
+    <button class="btn" onclick="quickQ('Explícame cómo hacer bien los ejercicios de mi entreno de hoy con buena técnica')" style="font-size:11px;padding:6px 10px">💪 Técnica de hoy</button>
+    <button class="btn" onclick="quickQ('¿Cómo estoy progresando? Dame consejos para mejorar esta semana')" style="font-size:11px;padding:6px 10px">📈 Mi progreso</button>
+    <button class="btn" onclick="quickQ('¿Puedo sustituir algún alimento del plan de hoy? Dame alternativas equivalentes')" style="font-size:11px;padding:6px 10px">🔄 Alternativas</button>
   `
 }
 
@@ -1581,15 +1582,117 @@ async function loadProgressPhotos() {
 // ─── CHAT IA ──────────────────────────────────────────────────────────────────
 
 function buildSystemPrompt() {
-  if (!CLIENT) return 'Eres un preparador físico y nutricionista experto. Responde en español, de forma concisa.'
-  const todayWO = WORKOUT_DAYS.find(d => d.day_index === getTodayIdx())
-  return `Eres un preparador físico y nutricionista experto. Estás ayudando a ${CLIENT.notes ? 'un cliente con estas características: ' + CLIENT.notes : 'tu cliente'}.
+  if (!CLIENT) return 'Eres un preparador físico y nutricionista experto. Responde en español, de forma concisa y práctica.'
 
-Objetivos: ${CLIENT.weight_goal ? `Peso objetivo: ${CLIENT.weight_goal}.` : ''} Proteína diaria: ${CLIENT.protein_goal}g. Calorías: ${CLIENT.kcal_goal} kcal/día. Pasos: ${CLIENT.steps_goal}/día.
-${todayWO ? `Entrenamiento de hoy: ${todayWO.title} (${todayWO.duration || ''}).` : 'Hoy es día de descanso.'}
-Plan de ${CLIENT.plan_weeks || 12} semanas. ${CLIENT.phase_name || 'Fase 1'}.
+  const todayIdx = getTodayIdx()
+  const todayWO = WORKOUT_DAYS.find(d => d.day_index === todayIdx)
+  const today = getToday()
 
-SIEMPRE: habla en español, respuestas concisas y directas.`
+  // ── Datos del cliente ──
+  const clientInfo = [
+    CLIENT.age ? `Edad: ${CLIENT.age} años` : '',
+    CLIENT.height_cm ? `Talla: ${CLIENT.height_cm} cm` : '',
+    CLIENT.weight_start ? `Peso inicial: ${CLIENT.weight_start} kg` : '',
+    CLIENT.weight_goal ? `Peso objetivo: ${CLIENT.weight_goal} kg` : '',
+    CLIENT.kcal_goal ? `Calorías diarias: ${CLIENT.kcal_goal} kcal` : '',
+    CLIENT.protein_goal ? `Proteína diaria: ${CLIENT.protein_goal} g` : '',
+    CLIENT.steps_goal ? `Pasos diarios: ${CLIENT.steps_goal}` : '',
+    CLIENT.cardio_goal_min ? `Cardio diario: ${CLIENT.cardio_goal_min} min` : '',
+    CLIENT.phase_name ? `Fase: ${CLIENT.phase_name}` : '',
+    `Plan de ${CLIENT.plan_weeks || 12} semanas`,
+    CLIENT.goal_label ? `Objetivo: ${CLIENT.goal_label}` : '',
+    CLIENT.notes ? `Notas: ${CLIENT.notes}` : '',
+  ].filter(Boolean).join('\n')
+
+  // ── Reglas de oro ──
+  const goldenRules = (CLIENT.golden_rules || []).length > 0
+    ? `\nREGLAS DE ORO DEL CLIENTE:\n${CLIENT.golden_rules.map(r => `• ${r}`).join('\n')}` : ''
+
+  // ── Plan de entrenamiento completo ──
+  let workoutSection = '\nPLAN DE ENTRENAMIENTO:\n'
+  if (WORKOUT_DAYS.length === 0) {
+    workoutSection += 'Sin plan de entrenamiento asignado.'
+  } else {
+    WORKOUT_DAYS.forEach(d => {
+      const isToday = d.day_index === todayIdx ? ' ← HOY' : ''
+      workoutSection += `\nDía ${d.day_index + 1} — ${d.title || 'Entreno'}${isToday}`
+      if (d.notes) workoutSection += ` (${d.notes})`
+      workoutSection += ':\n'
+      if (d.workout_exercises && d.workout_exercises.length > 0) {
+        d.workout_exercises.forEach(ex => {
+          const done = (S.exercisesDone || []).includes(ex.id) && d.day_index === todayIdx ? ' ✓' : ''
+          workoutSection += `  • ${ex.name}: ${ex.sets}×${ex.reps}${ex.weight ? ` @ ${ex.weight}` : ''}${ex.notes ? ` (${ex.notes})` : ''}${done}\n`
+        })
+      } else {
+        workoutSection += '  Sin ejercicios.\n'
+      }
+    })
+  }
+
+  // ── Plan de nutrición completo ──
+  let nutritionSection = '\nPLAN DE NUTRICIÓN:\n'
+  if (DIET_MEALS.length === 0) {
+    nutritionSection += 'Sin plan de nutrición asignado.'
+  } else {
+    let totalKcal = 0, totalProt = 0, totalCarbs = 0, totalFat = 0
+    const todayMeals = DIET_MEALS.filter(m => (m.day_index ?? 0) === todayIdx)
+    const mealsToShow = todayMeals.length > 0 ? todayMeals : DIET_MEALS.filter(m => (m.day_index ?? 0) === 0)
+    const checkedFoods = S.foodsChecked || []
+    mealsToShow.forEach(meal => {
+      nutritionSection += `\n${meal.name}:\n`
+      if (meal.diet_foods && meal.diet_foods.length > 0) {
+        meal.diet_foods.forEach(f => {
+          const done = checkedFoods.includes(f.id) ? ' ✓' : ''
+          nutritionSection += `  • ${f.name}${f.quantity ? `: ${f.quantity}` : ''}${f.calories ? ` (${f.calories} kcal` : ''}${f.protein_g ? `, ${f.protein_g}g prot` : ''}${f.calories ? ')' : ''}${done}\n`
+          totalKcal += f.calories || 0
+          totalProt += f.protein_g || 0
+          totalCarbs += f.carbs_g || 0
+          totalFat += f.fat_g || 0
+        })
+      }
+    })
+    nutritionSection += `\nTotal plan: ~${Math.round(totalKcal)} kcal | ${Math.round(totalProt)}g prot | ${Math.round(totalCarbs)}g HC | ${Math.round(totalFat)}g grasa\n`
+    if (DIET_PLAN?.notes_diet) nutritionSection += `Instrucciones del preparador: ${DIET_PLAN.notes_diet}\n`
+  }
+
+  // ── Suplementos ──
+  let supplSection = ''
+  if (SUPPLEMENTS.length > 0) {
+    supplSection = '\nSUPLEMENTOS:\n'
+    SUPPLEMENTS.forEach(s => {
+      supplSection += `• ${s.name}${s.dose ? ` — ${s.dose}` : ''}${s.timing ? ` (${s.timing})` : ''}${s.protein_g ? ` [+${s.protein_g}g prot]` : ''}\n`
+    })
+  }
+
+  // ── Estado de hoy ──
+  const todaySteps = S.steps || 0
+  const todayCardio = S.cardioMin || 0
+  const todayWeight = S.weightKg || null
+  const exercisesDoneToday = (S.exercisesDone || []).length
+  const totalExercisesToday = todayWO ? (todayWO.workout_exercises || []).length : 0
+  const foodsCheckedToday = (S.foodsChecked || []).length
+  const totalFoodsToday = DIET_MEALS.filter(m => (m.day_index ?? 0) === todayIdx).reduce((acc, m) => acc + (m.diet_foods || []).length, 0)
+
+  const statusSection = `\nESTADO DE HOY (${today}):\n` +
+    `• Pasos: ${todaySteps}${CLIENT.steps_goal ? ` / ${CLIENT.steps_goal}` : ''}\n` +
+    `• Cardio: ${todayCardio} min${CLIENT.cardio_goal_min ? ` / ${CLIENT.cardio_goal_min} min` : ''}\n` +
+    (todayWeight ? `• Peso registrado: ${todayWeight} kg\n` : '') +
+    (totalExercisesToday > 0 ? `• Ejercicios completados: ${exercisesDoneToday} / ${totalExercisesToday}\n` : '') +
+    (totalFoodsToday > 0 ? `• Alimentos marcados: ${foodsCheckedToday} / ${totalFoodsToday}\n` : '')
+
+  return `Eres el asistente IA personal de fitness de ${CLIENT_NAME || 'este cliente'}. Conoces su plan completo y su estado actual de hoy. Eres como un preparador personal experto que responde de forma directa, motivadora y personalizada.
+
+DATOS DEL CLIENTE:
+${clientInfo}${goldenRules}
+${workoutSection}${nutritionSection}${supplSection}${statusSection}
+INSTRUCCIONES:
+- Responde SIEMPRE en español
+- Sé concreto y directo — el cliente quiere respuestas útiles, no genéricas
+- Usa los datos reales del plan al responder (nombres de ejercicios, alimentos, cantidades)
+- Si el cliente pregunta qué le falta comer hoy, calcula con los alimentos marcados (✓) vs el plan
+- Si pregunta por ejercicios, menciona los específicos de su plan
+- Puedes sugerir sustituciones, motivar, explicar técnica, dar consejos de recuperación
+- Respuestas cortas cuando la pregunta es simple; detalladas cuando lo requiere`
 }
 
 function setAIGreeting() {
