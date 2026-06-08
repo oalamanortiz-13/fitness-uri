@@ -510,6 +510,7 @@ function renderClientDetail() {
         <button class="tab-btn${ACTIVE_TAB==='supplements'?' active':''}" data-tab="supplements" onclick="switchTab('supplements')"><i class="ti ti-pill"></i> Supls</button>
         <button class="tab-btn${ACTIVE_TAB==='measures'?' active':''}" data-tab="measures" onclick="switchTab('measures')"><i class="ti ti-ruler"></i> Medidas</button>
         <button class="tab-btn${ACTIVE_TAB==='progress'?' active':''}" data-tab="progress" onclick="switchTab('progress')"><i class="ti ti-chart-line"></i> Progreso</button>
+        <button class="tab-btn${ACTIVE_TAB==='chat'?' active':''}" data-tab="chat" onclick="switchTab('chat')" id="tab-btn-chat" style="position:relative"><i class="ti ti-message-circle"></i> Chat<span id="chat-tab-badge" style="display:none;position:absolute;top:2px;right:2px;width:7px;height:7px;border-radius:50%;background:#E24B4A"></span></button>
       </div>
       <div id="tab-content" style="padding:16px 0 40px"></div>
     </div>
@@ -577,6 +578,7 @@ function renderTab() {
   else if (ACTIVE_TAB === 'supplements') renderSupplementsTab(el)
   else if (ACTIVE_TAB === 'measures') renderMeasuresTab(el)
   else if (ACTIVE_TAB === 'progress') renderProgressTab(el)
+  else if (ACTIVE_TAB === 'chat') renderChatTab(el)
 }
 
 // ─── TAB: PERFIL ──────────────────────────────────────────────────────────────
@@ -3145,3 +3147,100 @@ function showNotif(msg) {
 }
 
 window.showNotif = showNotif
+
+// ─── TAB: CHAT ────────────────────────────────────────────────────────────────
+
+let chatChannel = null
+let chatMessages = []
+let chatClientId = null
+
+async function renderChatTab(el) {
+  const clientId = SELECTED_CLIENT_DATA?.client?.id
+  if (!clientId) { el.innerHTML = '<p style="color:var(--text2);padding:16px">Selecciona un cliente.</p>'; return }
+
+  // Si cambia el cliente, limpiar canal anterior
+  if (chatClientId !== clientId) {
+    chatMessages = []
+    chatClientId = clientId
+    if (chatChannel) { supabase.removeChannel(chatChannel); chatChannel = null }
+  }
+
+  el.innerHTML = `
+    <div class="card" style="padding:12px">
+      <div class="chat-wrap tall" id="trainer-msg-wrap" style="max-height:480px"></div>
+      <div class="chat-input-row" style="margin-top:8px">
+        <input type="text" id="trainer-msg-in" placeholder="Escribe un mensaje a ${SELECTED_CLIENT_DATA.client.name || 'tu cliente'}..."
+          onkeydown="if(event.key==='Enter')trainerSendMessage()">
+        <button class="btn btn-primary" onclick="trainerSendMessage()" style="width:auto;padding:10px 14px"><i class="ti ti-send"></i></button>
+      </div>
+    </div>
+  `
+
+  // Cargar mensajes si no están cargados
+  if (chatMessages.length === 0) {
+    const { data: msgs } = await supabase
+      .from('messages').select('*').eq('client_id', clientId).order('created_at', { ascending: true })
+    chatMessages = msgs || []
+  }
+  trainerRenderMessages()
+
+  // Marcar como leídos
+  const unreadIds = chatMessages.filter(m => m.sender_id === clientId && !m.read_at).map(m => m.id)
+  if (unreadIds.length) {
+    await supabase.from('messages').update({ read_at: new Date().toISOString() }).in('id', unreadIds)
+    chatMessages.forEach(m => { if (unreadIds.includes(m.id)) m.read_at = new Date().toISOString() })
+    const badge = document.getElementById('chat-tab-badge'); if (badge) badge.style.display = 'none'
+  }
+
+  // Realtime
+  if (!chatChannel) {
+    chatChannel = supabase.channel('trainer-msgs-' + clientId)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `client_id=eq.${clientId}` }, payload => {
+        chatMessages.push(payload.new)
+        trainerRenderMessages()
+        if (payload.new.sender_id === clientId) {
+          supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('id', payload.new.id)
+        }
+      }).subscribe()
+  }
+}
+
+function trainerRenderMessages() {
+  const wrap = document.getElementById('trainer-msg-wrap')
+  if (!wrap) return
+  if (chatMessages.length === 0) {
+    wrap.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--text2);font-size:13px"><i class="ti ti-message-circle" style="font-size:32px;display:block;margin-bottom:8px;opacity:.3"></i>Sin mensajes con este cliente.</div>`
+    return
+  }
+  wrap.innerHTML = chatMessages.map(m => {
+    const isTrainer = m.sender_id !== chatClientId
+    const time = new Date(m.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    const date = new Date(m.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+    return `<div><div class="msg ${isTrainer ? 'user' : 'trainer'}">${trainerEscapeHtml(m.content)}</div><div class="msg-meta ${isTrainer ? '' : 'left'}">${date} · ${time}</div></div>`
+  }).join('')
+  wrap.scrollTop = wrap.scrollHeight
+}
+
+window.trainerSendMessage = async function() {
+  const input = document.getElementById('trainer-msg-in')
+  const content = input?.value.trim()
+  if (!content || !chatClientId || !TRAINER_ID) return
+  input.value = ''
+  await supabase.from('messages').insert({ client_id: chatClientId, sender_id: TRAINER_ID, content })
+}
+
+function trainerEscapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+}
+
+// Notificar badge en tab chat cuando llega mensaje nuevo de cualquier cliente
+async function checkUnreadMessages() {
+  if (!TRAINER_ID) return
+  const { count } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .is('read_at', null)
+    .in('client_id', ALL_CLIENTS.map(c => c.id).filter(Boolean))
+  const badge = document.getElementById('chat-tab-badge')
+  if (badge) badge.style.display = (count || 0) > 0 ? 'block' : 'none'
+}

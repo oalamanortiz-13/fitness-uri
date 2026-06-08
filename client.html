@@ -392,21 +392,52 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   </div>
 </div>
 
-<!-- ════════════════ IA PREPARADOR ════════════════ -->
+<!-- ════════════════ CHAT ════════════════ -->
 <div class="sec" id="ai">
   <div class="page-header" style="padding-top:16px">
-    <h1>Preparador IA</h1>
-    <p>Pregúntame lo que necesites sobre tu plan</p>
+    <h1 id="chat-section-title">Mensajes</h1>
   </div>
-  <div class="card" style="padding:12px">
-    <div class="chat-wrap" id="chat-wrap">
-      <div class="msg ai" id="ai-greeting">Hola, soy tu preparador IA. Cargando tu plan...</div>
+
+  <!-- Tab toggle -->
+  <div class="chat-tabs">
+    <button class="chat-tab-btn active" id="ctab-trainer" onclick="switchChatTab('trainer')">
+      <i class="ti ti-message-circle"></i> Tu preparador
+      <span class="chat-unread" id="trainer-chat-badge"></span>
+    </button>
+    <button class="chat-tab-btn" id="ctab-ai" onclick="switchChatTab('ia')">
+      <i class="ti ti-robot"></i> IA Coach
+    </button>
+  </div>
+
+  <!-- Panel: chat con preparador -->
+  <div id="trainer-chat-panel">
+    <div class="card" style="padding:12px">
+      <div class="chat-wrap tall" id="trainer-chat-wrap">
+        <div style="text-align:center;padding:24px 0;color:var(--text2);font-size:13px">
+          <i class="ti ti-message-circle" style="font-size:32px;display:block;margin-bottom:8px;opacity:.3"></i>
+          Sin mensajes aún. ¡Saluda a tu preparador!
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="trainer-chat-in" placeholder="Escribe un mensaje..." onkeydown="if(event.key==='Enter')sendTrainerMessage()">
+        <button class="btn btn-primary" onclick="sendTrainerMessage()" style="width:auto;padding:10px 14px"><i class="ti ti-send"></i></button>
+      </div>
     </div>
-    <div class="chat-input-row">
-      <input type="text" id="chat-in" placeholder="Escribe tu pregunta..." onkeydown="if(event.key==='Enter')sendChat()">
-      <button class="btn btn-primary" onclick="sendChat()" style="width:auto;padding:10px 14px"><i class="ti ti-send"></i></button>
+  </div>
+
+  <!-- Panel: IA Coach -->
+  <div id="ia-chat-panel" style="display:none">
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Pregúntame lo que necesites sobre tu plan</div>
+    <div class="card" style="padding:12px">
+      <div class="chat-wrap tall" id="chat-wrap">
+        <div class="msg ai" id="ai-greeting">Hola, soy tu preparador IA. Cargando tu plan...</div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-in" placeholder="Escribe tu pregunta..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="btn btn-primary" onclick="sendChat()" style="width:auto;padding:10px 14px"><i class="ti ti-send"></i></button>
+      </div>
+      <div class="quick-btns" id="quick-btns"></div>
     </div>
-    <div class="quick-btns" id="quick-btns"></div>
   </div>
 </div>
 
@@ -438,7 +469,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   <button onclick="show('cardio',this)"><i class="ti ti-run"></i><span>Cardio</span></button>
   <button onclick="show('prog',this)"><i class="ti ti-chart-line"></i><span>Progreso</span></button>
   <button onclick="show('cal',this)"><i class="ti ti-calendar"></i><span>Cal</span></button>
-  <button onclick="show('ai',this)"><i class="ti ti-robot"></i><span>IA</span></button>
+  <button onclick="show('ai',this)" id="nav-chat-btn"><i class="ti ti-message-circle"></i><span>Chat</span></button>
 </nav>
 
 <script type="module" src="js/client-app.js"></script>

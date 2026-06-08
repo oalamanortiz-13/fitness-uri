@@ -56,6 +56,9 @@ let S = {
 
 let saveTimeout = null
 let pesoChart = null
+let trainerChatChannel = null
+let trainerMessages = []
+let activeChatTab = 'trainer'
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 
@@ -81,6 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateNutriFinishBtn()
   updateCardioFinishBtn()
   loadProgressPhotos()
+  loadTrainerChat()
 
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'})
 
@@ -2042,4 +2046,90 @@ window.downloadDietPDF = async function(btn) {
     btn.innerHTML = orig
     btn.disabled = false
   }
+}
+
+// ─── CHAT CON PREPARADOR ──────────────────────────────────────────────────────
+
+window.switchChatTab = function(tab) {
+  activeChatTab = tab
+  document.getElementById('ctab-trainer').classList.toggle('active', tab === 'trainer')
+  document.getElementById('ctab-ai').classList.toggle('active', tab === 'ia')
+  document.getElementById('trainer-chat-panel').style.display = tab === 'trainer' ? 'block' : 'none'
+  document.getElementById('ia-chat-panel').style.display = tab === 'ia' ? 'block' : 'none'
+  if (tab === 'trainer') {
+    document.getElementById('trainer-chat-badge').style.display = 'none'
+    markTrainerMessagesRead()
+  }
+}
+
+export async function loadTrainerChat() {
+  if (!CLIENT) return
+  const { data: msgs } = await supabase
+    .from('messages').select('*').eq('client_id', USER_ID).order('created_at', { ascending: true })
+  trainerMessages = msgs || []
+  renderTrainerMessages()
+
+  const unread = trainerMessages.filter(m => m.sender_id !== USER_ID && !m.read_at)
+  if (unread.length > 0) {
+    const badge = document.getElementById('trainer-chat-badge')
+    if (badge) badge.style.display = 'block'
+    const btn = document.getElementById('nav-chat-btn')
+    if (btn && !btn.querySelector('.nav-badge')) {
+      const b = document.createElement('span'); b.className = 'nav-badge'; b.id = 'nav-chat-badge'; btn.appendChild(b)
+    }
+  }
+
+  if (trainerChatChannel) supabase.removeChannel(trainerChatChannel)
+  trainerChatChannel = supabase.channel('client-msgs-' + USER_ID)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `client_id=eq.${USER_ID}` }, payload => {
+      trainerMessages.push(payload.new)
+      renderTrainerMessages()
+      if (payload.new.sender_id !== USER_ID) {
+        if (activeChatTab === 'trainer') { markTrainerMessagesRead() }
+        else {
+          const badge = document.getElementById('trainer-chat-badge')
+          if (badge) badge.style.display = 'block'
+          const btn2 = document.getElementById('nav-chat-btn')
+          if (btn2 && !btn2.querySelector('.nav-badge')) {
+            const b = document.createElement('span'); b.className = 'nav-badge'; b.id = 'nav-chat-badge'; btn2.appendChild(b)
+          }
+        }
+      }
+    }).subscribe()
+}
+
+function renderTrainerMessages() {
+  const wrap = document.getElementById('trainer-chat-wrap')
+  if (!wrap) return
+  if (trainerMessages.length === 0) {
+    wrap.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--text2);font-size:13px"><i class="ti ti-message-circle" style="font-size:32px;display:block;margin-bottom:8px;opacity:.3"></i>Sin mensajes aún. ¡Saluda a tu preparador!</div>`
+    return
+  }
+  wrap.innerHTML = trainerMessages.map(m => {
+    const isMe = m.sender_id === USER_ID
+    const time = new Date(m.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    const date = new Date(m.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+    return `<div><div class="msg ${isMe ? 'user' : 'trainer'}">${escapeHtml(m.content)}</div><div class="msg-meta ${isMe ? '' : 'left'}">${date} · ${time}</div></div>`
+  }).join('')
+  wrap.scrollTop = wrap.scrollHeight
+}
+
+window.sendTrainerMessage = async function() {
+  const input = document.getElementById('trainer-chat-in')
+  const content = input.value.trim()
+  if (!content || !CLIENT) return
+  input.value = ''
+  await supabase.from('messages').insert({ client_id: USER_ID, sender_id: USER_ID, content })
+}
+
+async function markTrainerMessagesRead() {
+  const unreadIds = trainerMessages.filter(m => m.sender_id !== USER_ID && !m.read_at).map(m => m.id)
+  if (!unreadIds.length) return
+  await supabase.from('messages').update({ read_at: new Date().toISOString() }).in('id', unreadIds)
+  trainerMessages.forEach(m => { if (unreadIds.includes(m.id)) m.read_at = new Date().toISOString() })
+  const nb = document.getElementById('nav-chat-badge'); if (nb) nb.remove()
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 }
