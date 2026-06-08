@@ -215,25 +215,60 @@ Reglas críticas:
         generationConfig: {
           responseMimeType: 'application/json',
           temperature: 0.7,
-          maxOutputTokens: 4096,
+          maxOutputTokens: 8192,
         },
       }),
     }
   )
 
-  const data = await res.json()
-
-  if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-    console.error('Gemini response:', JSON.stringify(data))
-    throw new Error('Gemini no devolvió respuesta válida')
+  if (!res.ok) {
+    const errText = await res.text()
+    console.error('Gemini HTTP error:', res.status, errText)
+    throw new Error(`Gemini API error ${res.status}: ${errText.slice(0, 200)}`)
   }
 
-  const text = data.candidates[0].content.parts[0].text
+  const data = await res.json()
+  console.log('Gemini finish reason:', data.candidates?.[0]?.finishReason)
+
+  if (data.error) {
+    console.error('Gemini API error:', JSON.stringify(data.error))
+    throw new Error(`Gemini error: ${data.error.message}`)
+  }
+
+  if (data.promptFeedback?.blockReason) {
+    throw new Error(`Prompt bloqueado: ${data.promptFeedback.blockReason}`)
+  }
+
+  const candidate = data.candidates?.[0]
+  if (!candidate) {
+    console.error('No candidates in Gemini response:', JSON.stringify(data))
+    throw new Error('Gemini no devolvió candidatos')
+  }
+
+  if (candidate.finishReason === 'MAX_TOKENS') {
+    console.error('Gemini hit MAX_TOKENS, partial response received')
+    throw new Error('El plan generado es demasiado largo. Inténtalo de nuevo.')
+  }
+
+  if (candidate.finishReason === 'SAFETY') {
+    throw new Error('Respuesta bloqueada por filtros de seguridad')
+  }
+
+  const text = candidate.content?.parts?.[0]?.text
+  if (!text) {
+    console.error('No text in Gemini response:', JSON.stringify(candidate))
+    throw new Error('Gemini devolvió respuesta vacía')
+  }
+
   try {
     return JSON.parse(text)
   } catch {
-    // Si lleva markdown, limpiar
     const clean = text.replace(/^```json?\n?/, '').replace(/\n?```$/, '').trim()
-    return JSON.parse(clean)
+    try {
+      return JSON.parse(clean)
+    } catch (e) {
+      console.error('JSON parse error. Text start:', text.slice(0, 300))
+      throw new Error('Error parseando respuesta de Gemini. Inténtalo de nuevo.')
+    }
   }
 }

@@ -1621,7 +1621,7 @@ function buildSystemPrompt() {
       if (d.workout_exercises && d.workout_exercises.length > 0) {
         d.workout_exercises.forEach(ex => {
           const done = (S.exercisesDone || []).includes(ex.id) && d.day_index === todayIdx ? ' ✓' : ''
-          workoutSection += `  • ${ex.name}: ${ex.sets}×${ex.reps}${ex.weight ? ` @ ${ex.weight}` : ''}${ex.notes ? ` (${ex.notes})` : ''}${done}\n`
+          workoutSection += `  • ${ex.name}: ${ex.sets_reps || ''}${ex.weight ? ` @ ${ex.weight}` : ''}${ex.note ? ` (${ex.note})` : ''}${done}\n`
         })
       } else {
         workoutSection += '  Sin ejercicios.\n'
