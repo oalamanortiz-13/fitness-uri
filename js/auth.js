@@ -24,7 +24,8 @@ export async function requireRole(expectedRole) {
   if (!session) { window.location.href = '/login.html'; return null }
   const profile = await getRole(session.user.id)
   if (!profile) { window.location.href = '/login.html'; return null }
-  if (profile.role !== expectedRole) { redirectByRole(profile.role); return null }
+  // Admin puede acceder a cualquier portal para testing
+  if (profile.role !== expectedRole && profile.role !== 'admin') { redirectByRole(profile.role); return null }
   return { session, profile }
 }
 
