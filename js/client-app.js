@@ -114,6 +114,12 @@ async function loadClientData() {
     .select('*')
     .eq('id', USER_ID)
     .single()
+
+  if (!clientData) {
+    window.location.href = '/onboarding.html'
+    return
+  }
+
   CLIENT = clientData
 
   // Cargar perfil del cliente (nombre)

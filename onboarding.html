@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0c0c0c">
+<title>Tu Preparador — Personaliza tu plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;background:#0c0c0c;color:#fff;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:repeating-linear-gradient(-52deg,transparent 0px,transparent 60px,rgba(255,255,255,0.012) 60px,rgba(255,255,255,0.012) 62px),repeating-linear-gradient(-52deg,transparent 0px,transparent 140px,rgba(255,255,255,0.007) 140px,rgba(255,255,255,0.007) 142px)}
+
+.ob-wrap{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px 20px 48px}
+
+/* Header */
+.ob-logo{width:140px;height:auto;margin-bottom:28px;filter:drop-shadow(0 0 16px rgba(0,210,255,0.2))}
+.ob-progress{width:100%;max-width:440px;margin-bottom:32px}
+.ob-progress-bar{height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden}
+.ob-progress-fill{height:100%;background:linear-gradient(90deg,#378ADD,#00d2ff);border-radius:2px;transition:width .4s cubic-bezier(.22,1,.36,1)}
+.ob-step-label{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px;letter-spacing:.05em}
+
+/* Card */
+.ob-card{width:100%;max-width:440px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-top:1px solid rgba(255,255,255,0.18);border-radius:20px;padding:28px 24px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 24px 64px rgba(0,0,0,0.5)}
+
+.ob-title{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+.ob-subtitle{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:24px;line-height:1.4}
+
+/* Option pills */
+.ob-options{display:flex;flex-direction:column;gap:10px}
+.ob-option{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);cursor:pointer;transition:all .18s;user-select:none}
+.ob-option:hover{border-color:rgba(55,138,221,0.4);background:rgba(55,138,221,0.06)}
+.ob-option.selected{border-color:rgba(55,138,221,0.7);background:rgba(55,138,221,0.12)}
+.ob-option-icon{width:38px;height:38px;border-radius:10px;background:rgba(55,138,221,0.08);border:1px solid rgba(55,138,221,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;color:#7ab8f5}
+.ob-option.selected .ob-option-icon{background:rgba(55,138,221,0.18);border-color:rgba(55,138,221,0.35);color:#00d2ff}
+.ob-option-text{}
+.ob-option-label{font-size:14px;font-weight:600}
+.ob-option-desc{font-size:12px;color:rgba(255,255,255,.4);margin-top:1px}
+.ob-option-check{margin-left:auto;width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s}
+.ob-option.selected .ob-option-check{background:#378ADD;border-color:#378ADD}
+.ob-option.selected .ob-option-check::after{content:'';width:8px;height:8px;border-radius:50%;background:#fff}
+
+/* 2-col grid para opciones más cortas */
+.ob-options-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ob-option-grid{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);cursor:pointer;transition:all .18s;text-align:center;user-select:none}
+.ob-option-grid:hover{border-color:rgba(55,138,221,0.4);background:rgba(55,138,221,0.06)}
+.ob-option-grid.selected{border-color:rgba(55,138,221,0.7);background:rgba(55,138,221,0.12)}
+.ob-option-grid i{font-size:24px;color:rgba(255,255,255,.5)}
+.ob-option-grid.selected i{color:#00d2ff}
+.ob-option-grid-label{font-size:13px;font-weight:600}
+
+/* Numeric inputs (step 5) */
+.ob-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ob-field label{display:block;font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase}
+.ob-field input{width:100%;height:44px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;font-weight:600;padding:0 12px;outline:none;transition:border-color .15s;-moz-appearance:textfield}
+.ob-field input::-webkit-outer-spin-button,.ob-field input::-webkit-inner-spin-button{-webkit-appearance:none}
+.ob-field input:focus{border-color:rgba(55,138,221,0.5)}
+.ob-field input::placeholder{font-weight:400;color:rgba(255,255,255,.2)}
+
+/* Nav buttons */
+.ob-nav{display:flex;gap:10px;margin-top:24px}
+.ob-btn-back{flex:0 0 48px;height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);transition:all .18s}
+.ob-btn-back:hover{background:rgba(255,255,255,.08);color:#fff}
+.ob-btn-back:disabled{opacity:.3;cursor:not-allowed}
+.ob-btn-next{flex:1;height:48px;border-radius:12px;border:none;background:white;color:#0c0c0c;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;font-family:inherit}
+.ob-btn-next:hover{background:rgba(255,255,255,.9);box-shadow:0 0 24px rgba(255,255,255,.12)}
+.ob-btn-next:active{transform:scale(.98)}
+.ob-btn-next:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* Loading state */
+.ob-loading{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 0}
+.ob-loading.active{display:flex}
+.ob-spinner{width:48px;height:48px;border:3px solid rgba(55,138,221,0.2);border-top-color:#378ADD;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ob-loading-title{font-size:17px;font-weight:700;margin-bottom:8px}
+.ob-loading-msg{font-size:13px;color:rgba(255,255,255,.45);line-height:1.5;max-width:280px}
+.ob-loading-steps{margin-top:20px;display:flex;flex-direction:column;gap:8px;text-align:left;width:100%}
+.ob-ls{font-size:12px;color:rgba(255,255,255,.3);display:flex;align-items:center;gap:8px;transition:color .3s}
+.ob-ls.done{color:rgba(55,138,221,.8)}
+.ob-ls.active-step{color:#fff}
+.ob-ls i{font-size:14px;width:16px;text-align:center}
+
+/* Error state */
+.ob-error{display:none;flex-direction:column;align-items:center;text-align:center;padding:32px 0}
+.ob-error.active{display:flex}
+.ob-error i{font-size:40px;color:var(--red);margin-bottom:16px}
+.ob-error p{font-size:14px;color:rgba(255,255,255,.6);margin-bottom:20px;line-height:1.5}
+.ob-btn-retry{padding:12px 24px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:14px;transition:background .2s}
+.ob-btn-retry:hover{background:rgba(255,255,255,.12)}
+
+/* Step transitions */
+.ob-step{display:none}
+.ob-step.active{display:block;animation:stepIn .3s cubic-bezier(.22,1,.36,1)}
+@keyframes stepIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+
+<div class="ob-wrap">
+  <img class="ob-logo" src="logo.png" alt="Tu Preparador">
+
+  <div class="ob-progress">
+    <div class="ob-step-label" id="step-label">Paso 1 de 5</div>
+    <div class="ob-progress-bar"><div class="ob-progress-fill" id="progress-fill" style="width:20%"></div></div>
+  </div>
+
+  <div class="ob-card">
+
+    <!-- ═══ STEPS ═══ -->
+    <div id="steps-view">
+
+      <!-- Step 1: Objetivo -->
+      <div class="ob-step active" data-step="1">
+        <div class="ob-title">¿Cuál es tu objetivo?</div>
+        <div class="ob-subtitle">Esto determina la estructura de tu plan de entrenamiento y nutrición.</div>
+        <div class="ob-options" id="opt-goal">
+          <div class="ob-option" data-value="Perder grasa" onclick="selectOption(this,'goal')">
+            <div class="ob-option-icon"><i class="ti ti-flame"></i></div>
+            <div class="ob-option-text">
+              <div class="ob-option-label">Perder grasa</div>
+              <div class="ob-option-desc">Reducir % de grasa corporal con definición</div>
+            </div>
+            <div class="ob-option-check"></div>
+          </div>
+          <div class="ob-option" data-value="Ganar músculo" onclick="selectOption(this,'goal')">
+            <div class="ob-option-icon"><i class="ti ti-barbell"></i></div>
+            <div class="ob-option-text">
+              <div class="ob-option-label">Ganar músculo</div>
+              <div class="ob-option-desc">Aumentar masa muscular e hipertrofia</div>
+            </div>
+            <div class="ob-option-check"></div>
+          </div>
+          <div class="ob-option" data-value="Tonificar" onclick="selectOption(this,'goal')">
+            <div class="ob-option-icon"><i class="ti ti-ripple"></i></div>
+            <div class="ob-option-text">
+              <div class="ob-option-label">Tonificar</div>
+              <div class="ob-option-desc">Definir y dar forma sin exceso de volumen</div>
+            </div>
+            <div class="ob-option-check"></div>
+          </div>
+          <div class="ob-option" data-value="Salud general" onclick="selectOption(this,'goal')">
+            <div class="ob-option-icon"><i class="ti ti-heart"></i></div>
+            <div class="ob-option-text">
+              <div class="ob-option-label">Salud general</div>
+              <div class="ob-option-desc">Mejorar condición física y bienestar</div>
+            </div>
+            <div class="ob-option-check"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Nivel -->
+      <div class="ob-step" data-step="2">
+        <div class="ob-title">¿Cuál es tu nivel?</div>
+        <div class="ob-subtitle">Adaptamos la intensidad y la complejidad de los ejercicios a tu experiencia.</div>
+        <div class="ob-options" id="opt-level">
+          <div class="ob-option" data-value="Principiante" onclick="selectOption(this,'level')">
+            <div class="ob-option-icon"><i class="ti ti-seedling"></i></div>
+            <div class="ob-option-text">
+              <div class="ob-option-label">Principiante</div>
+              <div class="ob-option-desc">Menos de 6 meses entrenando</div>
+            </div>
+            <div class="ob-option-check"></div>
+          </div>
+          <div class="ob-option" data-value="Intermedio" onclick="selectOption(this,'level')">
+            <div class="ob-option-icon"><i class="ti ti-bolt"></i></div>
+            <div class="ob-option-text">
+              <div class="ob-option-label">Intermedio</div>
+              <div class="ob-option-desc">6 meses a 2 años de experiencia</div>
+            </div>
+            <div class="ob-option-check"></div>
+          </div>
+          <div class="ob-option" data-value="Avanzado" onclick="selectOption(this,'level')">
+            <div class="ob-option-icon"><i class="ti ti-trophy"></i></div>
+            <div class="ob-option-text">
+              <div class="ob-option-label">Avanzado</div>
+              <div class="ob-option-desc">Más de 2 años con método y progresión</div>
+            </div>
+            <div class="ob-option-check"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Equipamiento -->
+      <div class="ob-step" data-step="3">
+        <div class="ob-title">¿Qué equipamiento tienes?</div>
+        <div class="ob-subtitle">Solo incluiremos ejercicios que puedas hacer con lo que tienes disponible.</div>
+        <div class="ob-options" id="opt-equipment">
+          <div class="ob-option" data-value="Sin equipo (calistenia)" onclick="selectOption(this,'equipment')">
+            <div class="ob-option-icon"><i class="ti ti-run"></i></div>
+            <div class="ob-option-text">
+              <div class="ob-option-label">Sin equipo</div>
+              <div class="ob-option-desc">Solo mi cuerpo — calistenia y cardio</div>
+            </div>
+            <div class="ob-option-check"></div>
+          </div>
+          <div class="ob-option" data-value="Mancuernas en casa" onclick="selectOption(this,'equipment')">
+            <div class="ob-option-icon"><i class="ti ti-home"></i></div>
+            <div class="ob-option-text">
+              <div class="ob-option-label">Mancuernas en casa</div>
+              <div class="ob-option-desc">Mancuernas, bandas y/o TRX</div>
+            </div>
+            <div class="ob-option-check"></div>
+          </div>
+          <div class="ob-option" data-value="Gimnasio completo" onclick="selectOption(this,'equipment')">
+            <div class="ob-option-icon"><i class="ti ti-building"></i></div>
+            <div class="ob-option-text">
+              <div class="ob-option-label">Gimnasio completo</div>
+              <div class="ob-option-desc">Acceso a máquinas, barras y peso libre</div>
+            </div>
+            <div class="ob-option-check"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Días por semana -->
+      <div class="ob-step" data-step="4">
+        <div class="ob-title">¿Cuántos días entrenas?</div>
+        <div class="ob-subtitle">Distribuiremos tu volumen de entrenamiento de forma óptima.</div>
+        <div class="ob-options-grid" id="opt-days">
+          <div class="ob-option-grid" data-value="3" onclick="selectGrid(this,'days')">
+            <i class="ti ti-calendar"></i>
+            <div class="ob-option-grid-label">3 días</div>
+          </div>
+          <div class="ob-option-grid" data-value="4" onclick="selectGrid(this,'days')">
+            <i class="ti ti-calendar"></i>
+            <div class="ob-option-grid-label">4 días</div>
+          </div>
+          <div class="ob-option-grid" data-value="5" onclick="selectGrid(this,'days')">
+            <i class="ti ti-calendar"></i>
+            <div class="ob-option-grid-label">5 días</div>
+          </div>
+          <div class="ob-option-grid" data-value="6" onclick="selectGrid(this,'days')">
+            <i class="ti ti-calendar"></i>
+            <div class="ob-option-grid-label">6 días</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Datos físicos -->
+      <div class="ob-step" data-step="5">
+        <div class="ob-title">Tus datos físicos</div>
+        <div class="ob-subtitle">Usamos estos datos para calcular tus objetivos de calorías, proteína y progresión.</div>
+        <div class="ob-fields">
+          <div class="ob-field">
+            <label>Edad</label>
+            <input type="number" id="f-age" placeholder="25" min="16" max="80">
+          </div>
+          <div class="ob-field">
+            <label>Altura (cm)</label>
+            <input type="number" id="f-height" placeholder="175" min="140" max="220">
+          </div>
+          <div class="ob-field">
+            <label>Peso actual (kg)</label>
+            <input type="number" id="f-weight" placeholder="75" min="40" max="200" step="0.1">
+          </div>
+          <div class="ob-field">
+            <label>Peso objetivo (kg)</label>
+            <input type="number" id="f-target" placeholder="70" min="40" max="200" step="0.1">
+          </div>
+        </div>
+        <p style="font-size:11px;color:rgba(255,255,255,.25);margin-top:14px;line-height:1.5">Todos los campos son opcionales pero mejoran la precisión de tu plan.</p>
+      </div>
+
+    </div><!-- /steps-view -->
+
+    <!-- Loading -->
+    <div class="ob-loading" id="loading-view">
+      <div class="ob-spinner"></div>
+      <div class="ob-loading-title">Generando tu plan...</div>
+      <div class="ob-loading-msg">La IA está diseñando tu plan de entrenamiento y nutrición personalizado.</div>
+      <div class="ob-loading-steps">
+        <div class="ob-ls active-step" id="ls-1"><i class="ti ti-brain"></i> Analizando tu perfil</div>
+        <div class="ob-ls" id="ls-2"><i class="ti ti-barbell"></i> Diseñando tu plan de entrenamiento</div>
+        <div class="ob-ls" id="ls-3"><i class="ti ti-salad"></i> Calculando tu plan de nutrición</div>
+        <div class="ob-ls" id="ls-4"><i class="ti ti-database"></i> Guardando tu plan</div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="ob-error" id="error-view">
+      <i class="ti ti-alert-circle"></i>
+      <p id="error-msg">Ocurrió un error generando tu plan. Por favor inténtalo de nuevo.</p>
+      <button class="ob-btn-retry" onclick="retryOnboarding()">Volver a intentar</button>
+    </div>
+
+    <!-- Nav buttons -->
+    <div class="ob-nav" id="nav-btns">
+      <button class="ob-btn-back" id="btn-back" onclick="goBack()" disabled>
+        <i class="ti ti-arrow-left"></i>
+      </button>
+      <button class="ob-btn-next" id="btn-next" onclick="goNext()" disabled>
+        <span id="btn-next-text">Siguiente</span>
+        <i class="ti ti-arrow-right"></i>
+      </button>
+    </div>
+
+  </div><!-- /ob-card -->
+</div><!-- /ob-wrap -->
+
+<script type="module">
+import { supabase } from './js/supabase-client.js'
+import { requireRole } from './js/auth.js'
+
+const SUPABASE_URL = 'https://cwwvwrzqlavuyqhyeepu.supabase.co'
+const TOTAL_STEPS = 5
+
+let currentStep = 1
+let answers = { goal: '', level: '', equipment: '', days: '', age: '', height: '', weight: '', target: '' }
+
+const auth = await requireRole('client')
+if (!auth) { /* requireRole ya redirige */ }
+
+// ─── Progreso ────────────────────────────────────────────────────────────────
+
+function updateProgress() {
+  const pct = (currentStep / TOTAL_STEPS) * 100
+  document.getElementById('progress-fill').style.width = pct + '%'
+  document.getElementById('step-label').textContent = `Paso ${currentStep} de ${TOTAL_STEPS}`
+
+  document.getElementById('btn-back').disabled = currentStep === 1
+  document.getElementById('btn-next-text').textContent = currentStep === TOTAL_STEPS ? 'Generar mi plan' : 'Siguiente'
+
+  // Mostrar step correcto
+  document.querySelectorAll('.ob-step').forEach(s => s.classList.remove('active'))
+  const active = document.querySelector(`[data-step="${currentStep}"]`)
+  if (active) active.classList.add('active')
+
+  updateNextBtn()
+}
+
+function updateNextBtn() {
+  let enabled = false
+  if (currentStep === 1) enabled = !!answers.goal
+  if (currentStep === 2) enabled = !!answers.level
+  if (currentStep === 3) enabled = !!answers.equipment
+  if (currentStep === 4) enabled = !!answers.days
+  if (currentStep === 5) enabled = true // datos físicos son opcionales
+  document.getElementById('btn-next').disabled = !enabled
+}
+
+// ─── Selección de opciones ───────────────────────────────────────────────────
+
+window.selectOption = function(el, key) {
+  el.closest('.ob-options').querySelectorAll('.ob-option').forEach(o => o.classList.remove('selected'))
+  el.classList.add('selected')
+  answers[key] = el.dataset.value
+  updateNextBtn()
+}
+
+window.selectGrid = function(el, key) {
+  el.closest('.ob-options-grid').querySelectorAll('.ob-option-grid').forEach(o => o.classList.remove('selected'))
+  el.classList.add('selected')
+  answers[key] = el.dataset.value
+  updateNextBtn()
+}
+
+// ─── Navegación ──────────────────────────────────────────────────────────────
+
+window.goBack = function() {
+  if (currentStep > 1) { currentStep--; updateProgress() }
+}
+
+window.goNext = function() {
+  if (currentStep < TOTAL_STEPS) {
+    currentStep++
+    updateProgress()
+  } else {
+    submitOnboarding()
+  }
+}
+
+// ─── Submit ──────────────────────────────────────────────────────────────────
+
+async function submitOnboarding() {
+  // Recoger datos físicos
+  answers.age    = document.getElementById('f-age').value
+  answers.height = document.getElementById('f-height').value
+  answers.weight = document.getElementById('f-weight').value
+  answers.target = document.getElementById('f-target').value
+
+  // Mostrar loading
+  document.getElementById('steps-view').style.display = 'none'
+  document.getElementById('nav-btns').style.display = 'none'
+  document.getElementById('loading-view').classList.add('active')
+
+  // Animar pasos de carga
+  const lsIds = ['ls-1','ls-2','ls-3','ls-4']
+  animateLoadingSteps(lsIds)
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { window.location.href = '/login.html'; return }
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/ai-onboarding`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        goal:         answers.goal,
+        level:        answers.level,
+        equipment:    answers.equipment,
+        days_per_week: parseInt(answers.days) || 3,
+        age:          answers.age || null,
+        weight:       answers.weight || null,
+        target_weight: answers.target || null,
+        height:       answers.height || null,
+      }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error en el servidor')
+
+    // Éxito → esperar un momento para que se vea el último paso
+    await markLoadingStep('ls-4')
+    await sleep(800)
+    window.location.href = 'client.html'
+
+  } catch (err) {
+    document.getElementById('loading-view').classList.remove('active')
+    document.getElementById('error-view').classList.add('active')
+    document.getElementById('error-msg').textContent = err.message || 'Error al generar el plan. Inténtalo de nuevo.'
+  }
+}
+
+window.retryOnboarding = function() {
+  document.getElementById('error-view').classList.remove('active')
+  document.getElementById('steps-view').style.display = 'block'
+  document.getElementById('nav-btns').style.display = 'flex'
+  currentStep = 5
+  updateProgress()
+}
+
+// ─── Animaciones de carga ────────────────────────────────────────────────────
+
+let loadingInterval = null
+
+function animateLoadingSteps(ids) {
+  let i = 0
+  clearInterval(loadingInterval)
+  loadingInterval = setInterval(() => {
+    if (i > 0) {
+      document.getElementById(ids[i-1]).classList.remove('active-step')
+      document.getElementById(ids[i-1]).classList.add('done')
+      document.getElementById(ids[i-1]).querySelector('i').className = 'ti ti-check'
+    }
+    if (i < ids.length) {
+      document.getElementById(ids[i]).classList.add('active-step')
+      i++
+    } else {
+      clearInterval(loadingInterval)
+    }
+  }, 2200)
+}
+
+async function markLoadingStep(id) {
+  clearInterval(loadingInterval)
+  document.querySelectorAll('.ob-ls').forEach(el => {
+    el.classList.remove('active-step')
+    el.classList.add('done')
+    el.querySelector('i').className = 'ti ti-check'
+  })
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
+
+// Inicializar
+updateProgress()
+</script>
+</body>
+</html>

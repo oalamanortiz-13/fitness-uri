@@ -282,18 +282,24 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:32px 24px;text-align:c
 <!-- HERO -->
 <section class="hero">
   <h1 class="hero-h1" id="hero-h1" style="opacity:0;transform:translateY(12px);transition:opacity .8s cubic-bezier(.22,1,.36,1),transform .8s cubic-bezier(.22,1,.36,1)">
-    <span class="hero-line1">Tu negocio.</span>
-    <span class="shiny">Potenciado.</span>
+    <span class="hero-line1">Entrena con método.</span>
+    <span class="shiny">Evoluciona.</span>
   </h1>
   <p class="hero-p" id="hero-p" style="opacity:0;transform:translateY(12px);transition:opacity .8s .2s cubic-bezier(.22,1,.36,1),transform .8s .2s cubic-bezier(.22,1,.36,1)">
-    Tu Preparador es la plataforma de referencia para preparadores físicos. Gestiona entrenamientos, nutrición y progreso de tus clientes desde un solo lugar, con el poder de la IA.
+    Para preparadores físicos que quieren gestionar sus clientes con IA. Y para atletas que quieren un plan profesional sin necesitar preparador.
   </p>
   <div class="hero-cta-wrap" id="hero-cta" style="opacity:0;transform:translateY(12px);transition:opacity .8s .4s cubic-bezier(.22,1,.36,1),transform .8s .4s cubic-bezier(.22,1,.36,1)">
-    <a href="/register.html" class="btn-pill">
-      Empieza gratis 14 días
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chev"><path d="M9 18l6-6-6-6"/></svg>
-    </a>
-    <span class="hero-note">Sin tarjeta · Cancela cuando quieras · €4,90/cliente activo/mes</span>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+      <a href="/register.html" class="btn-pill">
+        Para preparadores
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chev"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+      <a href="/solo-register.html" class="btn-pill" style="background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2)">
+        Entrena solo con IA
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chev"><path d="M9 18l6-6-6-6"/></svg>
+      </a>
+    </div>
+    <span class="hero-note">14 días gratis · Sin tarjeta · Cancela cuando quieras</span>
   </div>
 </section>
 
@@ -586,12 +592,26 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:32px 24px;text-align:c
       <span class="c3-toggle-knob"></span>
     </button>
   </div>
-  <div class="c3-grid">
-    <!-- Trial -->
+  <div class="c3-grid" style="grid-template-columns:repeat(4,1fr)">
+    <!-- Solo -->
+    <div class="c3-card" style="border-color:rgba(0,210,255,0.4)">
+      <div class="c3-tier-small">Atleta</div>
+      <div class="c3-tier-large" id="price-solo">€9,90<span style="font-size:1.2rem;opacity:.7">/mes</span></div>
+      <div class="c3-desc">Para quienes quieren un plan profesional sin necesitar preparador. La IA diseña y adapta tu plan.</div>
+      <ul class="c3-list">
+        <li><span class="c3-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg></span>Plan IA personalizado en 2 min</li>
+        <li><span class="c3-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg></span>Entreno + nutrición + suplementos</li>
+        <li><span class="c3-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg></span>Registro diario y puntuación</li>
+        <li><span class="c3-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg></span>Seguimiento de progreso</li>
+        <li><span class="c3-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg></span>14 días gratis</li>
+      </ul>
+      <button class="c3-btn" onclick="location.href='/solo-register.html'">Empezar gratis</button>
+    </div>
+    <!-- Trial preparadores -->
     <div class="c3-card">
       <div class="c3-tier-small">Prueba</div>
       <div class="c3-tier-large">Gratis</div>
-      <div class="c3-desc">Para empezar sin riesgos. Acceso completo durante 14 días, sin necesidad de tarjeta.</div>
+      <div class="c3-desc">Para preparadores. Acceso completo durante 14 días, sin necesidad de tarjeta.</div>
       <ul class="c3-list">
         <li><span class="c3-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg></span>14 días de acceso total</li>
         <li><span class="c3-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg></span>Clientes ilimitados durante el trial</li>
@@ -637,15 +657,15 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:32px 24px;text-align:c
 <div class="cta-section">
   <div class="glass cta-card anim">
     <div class="cta-glow"></div>
-    <h2 class="cta-h2">Deja las hojas<br>de cálculo.<br>Abre tu negocio.</h2>
-    <p class="cta-p">Únete a los preparadores que ya gestionan sus clientes, planes y progreso desde Tu Preparador — sin perder tiempo en lo que no genera resultados.</p>
+    <h2 class="cta-h2">Entrena con método.<br>Evoluciona.</h2>
+    <p class="cta-p">Para preparadores que gestionan clientes con IA, y para atletas que quieren un plan profesional sin preparador.</p>
     <div class="cta-btns">
       <a href="/register.html" class="btn-pill">
-        Empieza gratis 14 días
+        Para preparadores
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chev"><path d="M9 18l6-6-6-6"/></svg>
       </a>
-      <a href="mailto:info@tupreparador.es" class="btn-outline">
-        Hablar con ventas
+      <a href="/solo-register.html" class="btn-outline">
+        Entrena solo con IA
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chev"><path d="M9 18l6-6-6-6"/></svg>
       </a>
     </div>
@@ -658,7 +678,8 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:32px 24px;text-align:c
     <div class="footer-brand">Tu Preparador</div>
     <div class="footer-links">
       <a href="/login.html">Acceder</a>
-      <a href="/register.html">Registro</a>
+      <a href="/register.html">Preparadores</a>
+      <a href="/solo-register.html">Atletas</a>
       <a href="mailto:info@tupreparador.es">Contacto</a>
       <a href="mailto:info@tupreparador.es">Soporte</a>
     </div>
