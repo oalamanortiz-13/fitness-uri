@@ -214,28 +214,30 @@ Reglas críticas:
     },
   })
 
-  let res: Response | null = null
-  for (let attempt = 1; attempt <= 4; attempt++) {
+  // 1 reintento tras 12s si es rate limit por minuto; cuota diaria falla al segundo intento igualmente
+  let res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }
+  )
+  if (res.status === 429) {
+    console.log('Gemini 429, retrying once after 12s...')
+    await new Promise(r => setTimeout(r, 12000))
     res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }
     )
-    if (res.status !== 429) break
-    const waitMs = attempt * 8000
-    console.log(`Gemini 429 rate limit, retrying in ${waitMs}ms (attempt ${attempt}/4)`)
-    await new Promise(r => setTimeout(r, waitMs))
   }
 
-  if (!res!.ok) {
-    const errText = await res!.text()
-    console.error('Gemini HTTP error:', res!.status, errText)
-    if (res!.status === 429) {
-      throw new Error('Servicio temporalmente ocupado. Espera unos segundos e inténtalo de nuevo.')
+  if (!res.ok) {
+    const errText = await res.text()
+    console.error('Gemini HTTP error:', res.status, errText)
+    if (res.status === 429) {
+      throw new Error('El servicio de IA está saturado en este momento. Espera 1 minuto e inténtalo de nuevo.')
     }
-    throw new Error(`Gemini API error ${res!.status}: ${errText.slice(0, 200)}`)
+    throw new Error(`Gemini API error ${res.status}: ${errText.slice(0, 200)}`)
   }
 
-  const data = await res!.json()
+  const data = await res.json()
   console.log('Gemini finish reason:', data.candidates?.[0]?.finishReason)
 
   if (data.error) {

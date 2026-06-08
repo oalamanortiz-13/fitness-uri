@@ -396,23 +396,32 @@ async function submitOnboarding() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { window.location.href = '/login.html'; return }
 
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/ai-onboarding`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        goal:         answers.goal,
-        level:        answers.level,
-        equipment:    answers.equipment,
-        days_per_week: parseInt(answers.days) || 3,
-        age:          answers.age || null,
-        weight:       answers.weight || null,
-        target_weight: answers.target || null,
-        height:       answers.height || null,
-      }),
-    })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 45000)
+
+    let res
+    try {
+      res = await fetch(`${SUPABASE_URL}/functions/v1/ai-onboarding`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          goal:         answers.goal,
+          level:        answers.level,
+          equipment:    answers.equipment,
+          days_per_week: parseInt(answers.days) || 3,
+          age:          answers.age || null,
+          weight:       answers.weight || null,
+          target_weight: answers.target || null,
+          height:       answers.height || null,
+        }),
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
 
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Error en el servidor')
