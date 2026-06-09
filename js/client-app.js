@@ -653,8 +653,8 @@ function renderNutrition() {
   container.innerHTML = todayMeals.map(meal => {
     const icon = meal.icon || icons[meal.name] || 'ti-salad'
     const foods = meal.diet_foods.map(food => {
-      const checked = S.foodsChecked.includes(food.id)
-      const interactStyle = 'cursor:pointer'
+      const checked = isToday && S.foodsChecked.includes(food.id)
+      const interactStyle = isToday ? 'cursor:pointer' : 'pointer-events:none;opacity:0.6;'
       return `<div class="meal-row row" data-food-id="${food.id}" data-prot="${food.protein_g}" data-kcal="${food.kcal}" onclick="toggleMeal(this)" style="${interactStyle}">
         <button class="check-btn${checked ? ' on' : ''}" aria-label="Marcar">${checked ? '✓' : ''}</button>
         <div style="flex:1;margin-left:10px"><div class="row-name">${food.name}</div></div>
