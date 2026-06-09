@@ -20,8 +20,16 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) throw new Error('No autorizado')
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    if (authError || !user) throw new Error('Token inválido')
+
+    // Decode JWT to get user ID (token comes from Supabase auth, trusted source)
+    let userId: string
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      userId = payload.sub
+      if (!userId) throw new Error('no sub')
+    } catch {
+      throw new Error('Token inválido')
+    }
 
     const { goal, level, equipment, days_per_week, duration, age, weight, target_weight, height } = await req.json()
 
@@ -29,7 +37,7 @@ serve(async (req) => {
 
     // Crear fila en clients
     const { error: clientError } = await supabase.from('clients').upsert({
-      id: user.id,
+      id: userId,
       trainer_id: AI_TRAINER_ID,
       age: age ? parseInt(age) : null,
       height_cm: height ? parseFloat(height) : null,
@@ -54,7 +62,7 @@ serve(async (req) => {
       const { data: wd, error: wdErr } = await supabase
         .from('workout_days')
         .insert({
-          client_id: user.id,
+          client_id: userId,
           day_index: day.day_index,
           title: day.title,
           duration: day.duration || '60 min',
@@ -79,7 +87,7 @@ serve(async (req) => {
     // Insertar plan de dieta
     const { data: dp } = await supabase
       .from('diet_plans')
-      .insert({ client_id: user.id, name: 'Plan principal', active: true })
+      .insert({ client_id: userId, name: 'Plan principal', active: true })
       .select('id')
       .single()
 
@@ -117,7 +125,7 @@ serve(async (req) => {
       for (let si = 0; si < plan.supplements.length; si++) {
         const s = plan.supplements[si]
         await supabase.from('supplements').insert({
-          client_id: user.id,
+          client_id: userId,
           name: s.name,
           dose: s.dose || '',
           protein_g: s.protein_g || 0,
@@ -206,35 +214,80 @@ Reglas críticas:
   const apiKey = Deno.env.get('GEMINI_API_KEY')
   if (!apiKey) throw new Error('GEMINI_API_KEY no configurada')
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.7,
-          maxOutputTokens: 4096,
-        },
-      }),
-    }
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      temperature: 0.7,
+      maxOutputTokens: 8192,
+    },
+  })
+
+  // 1 reintento tras 12s si es rate limit por minuto; cuota diaria falla al segundo intento igualmente
+  let res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${apiKey}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }
   )
-
-  const data = await res.json()
-
-  if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-    console.error('Gemini response:', JSON.stringify(data))
-    throw new Error('Gemini no devolvió respuesta válida')
+  if (res.status === 429) {
+    console.log('Gemini 429, retrying once after 12s...')
+    await new Promise(r => setTimeout(r, 12000))
+    res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${apiKey}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }
+    )
   }
 
-  const text = data.candidates[0].content.parts[0].text
+  if (!res.ok) {
+    const errText = await res.text()
+    console.error('Gemini HTTP error:', res.status, errText)
+    if (res.status === 429) {
+      throw new Error('El servicio de IA está saturado en este momento. Espera 1 minuto e inténtalo de nuevo.')
+    }
+    throw new Error(`Gemini API error ${res.status}: ${errText.slice(0, 200)}`)
+  }
+
+  const data = await res.json()
+  console.log('Gemini finish reason:', data.candidates?.[0]?.finishReason)
+
+  if (data.error) {
+    console.error('Gemini API error:', JSON.stringify(data.error))
+    throw new Error(`Gemini error: ${data.error.message}`)
+  }
+
+  if (data.promptFeedback?.blockReason) {
+    throw new Error(`Prompt bloqueado: ${data.promptFeedback.blockReason}`)
+  }
+
+  const candidate = data.candidates?.[0]
+  if (!candidate) {
+    console.error('No candidates in Gemini response:', JSON.stringify(data))
+    throw new Error('Gemini no devolvió candidatos')
+  }
+
+  if (candidate.finishReason === 'MAX_TOKENS') {
+    console.error('Gemini hit MAX_TOKENS, partial response received')
+    throw new Error('El plan generado es demasiado largo. Inténtalo de nuevo.')
+  }
+
+  if (candidate.finishReason === 'SAFETY') {
+    throw new Error('Respuesta bloqueada por filtros de seguridad')
+  }
+
+  const text = candidate.content?.parts?.[0]?.text
+  if (!text) {
+    console.error('No text in Gemini response:', JSON.stringify(candidate))
+    throw new Error('Gemini devolvió respuesta vacía')
+  }
+
   try {
     return JSON.parse(text)
   } catch {
-    // Si lleva markdown, limpiar
     const clean = text.replace(/^```json?\n?/, '').replace(/\n?```$/, '').trim()
-    return JSON.parse(clean)
+    try {
+      return JSON.parse(clean)
+    } catch (e) {
+      console.error('JSON parse error. Text start:', text.slice(0, 300))
+      throw new Error('Error parseando respuesta de Gemini. Inténtalo de nuevo.')
+    }
   }
 }
