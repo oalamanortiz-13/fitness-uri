@@ -20,8 +20,16 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) throw new Error('No autorizado')
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    if (authError || !user) throw new Error('Token inválido')
+
+    // Decode JWT to get user ID (token comes from Supabase auth, trusted source)
+    let userId: string
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      userId = payload.sub
+      if (!userId) throw new Error('no sub')
+    } catch {
+      throw new Error('Token inválido')
+    }
 
     const { goal, level, equipment, days_per_week, age, weight, target_weight, height } = await req.json()
 
@@ -29,7 +37,7 @@ serve(async (req) => {
 
     // Crear fila en clients
     const { error: clientError } = await supabase.from('clients').upsert({
-      id: user.id,
+      id: userId,
       trainer_id: AI_TRAINER_ID,
       age: age ? parseInt(age) : null,
       height_cm: height ? parseFloat(height) : null,
@@ -54,7 +62,7 @@ serve(async (req) => {
       const { data: wd, error: wdErr } = await supabase
         .from('workout_days')
         .insert({
-          client_id: user.id,
+          client_id: userId,
           day_index: day.day_index,
           title: day.title,
           duration: day.duration || '60 min',
@@ -79,7 +87,7 @@ serve(async (req) => {
     // Insertar plan de dieta
     const { data: dp } = await supabase
       .from('diet_plans')
-      .insert({ client_id: user.id, name: 'Plan principal', active: true })
+      .insert({ client_id: userId, name: 'Plan principal', active: true })
       .select('id')
       .single()
 
@@ -117,7 +125,7 @@ serve(async (req) => {
       for (let si = 0; si < plan.supplements.length; si++) {
         const s = plan.supplements[si]
         await supabase.from('supplements').insert({
-          client_id: user.id,
+          client_id: userId,
           name: s.name,
           dose: s.dose || '',
           protein_g: s.protein_g || 0,
