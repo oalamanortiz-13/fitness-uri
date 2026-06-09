@@ -1,0 +1,14 @@
+{
+  "name": "Tu Preparador",
+  "short_name": "Tu Preparador",
+  "description": "Tu portal de fitness personalizado",
+  "start_url": "/client.html",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#0f0f0f",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "Logopreparador.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "Logopreparador.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
