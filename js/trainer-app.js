@@ -638,6 +638,16 @@ function renderProfileTab(el) {
         <div class="form-group"><label class="form-label">Proteína objetivo (g)</label><input type="number" id="p-protein" value="${c.protein_goal || 175}"></div>
         <div class="form-group"><label class="form-label">Fase</label><input type="text" id="p-phase" value="${c.phase_name || 'Fase 1'}"></div>
       </div>
+      <div class="form-group">
+        <label class="form-label">Nivel de actividad</label>
+        <select id="p-activity" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.09);background:rgba(255,255,255,0.05);color:#fff;font-family:inherit;font-size:14px;outline:none">
+          <option value="">Sin especificar</option>
+          <option value="sedentaria" ${c.activity_level === 'sedentaria' ? 'selected' : ''}>Sedentaria</option>
+          <option value="moderada" ${c.activity_level === 'moderada' ? 'selected' : ''}>Moderada</option>
+          <option value="activo" ${c.activity_level === 'activo' ? 'selected' : ''}>Activo</option>
+          <option value="muy_activo" ${c.activity_level === 'muy_activo' ? 'selected' : ''}>Muy activo</option>
+        </select>
+      </div>
       <div class="form-group"><label class="form-label">Inicio del plan</label><input type="date" id="p-start" value="${c.plan_start_date || ''}"></div>
     </div>
     <div class="card">
@@ -697,6 +707,7 @@ window.saveProfile = async function() {
     plan_weeks: parseInt(document.getElementById('p-weeks').value) || 12,
     plan_start_date: document.getElementById('p-start').value || null,
     phase_name: document.getElementById('p-phase').value,
+    activity_level: document.getElementById('p-activity').value || null,
     notes: document.getElementById('p-notes').value,
     golden_rules: c.golden_rules || [],
   }
@@ -2289,6 +2300,7 @@ window.createClient = async function() {
     kcal_goal: parseInt(document.getElementById('nc-kcal').value) || 2500,
     protein_goal: parseInt(document.getElementById('nc-protein').value) || 175,
     notes: document.getElementById('nc-notes').value,
+    activity_level: document.getElementById('nc-activity').value || null,
     plan_weeks: parseInt(document.getElementById('nc-weeks').value) || 12,
     plan_start_date: new Date().toISOString().split('T')[0],
   }
