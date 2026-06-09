@@ -477,6 +477,16 @@
       <textarea id="nc-notes" placeholder="Ej: 2 hernias lumbares, evitar carga axial..."></textarea>
     </div>
     <div class="form-group">
+      <label class="form-label">Nivel de actividad</label>
+      <select id="nc-activity" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.09);background:rgba(255,255,255,0.05);color:#fff;font-family:inherit;font-size:14px;outline:none">
+        <option value="">Seleccionar...</option>
+        <option value="sedentaria">Sedentaria (trabajo de oficina, poco ejercicio)</option>
+        <option value="moderada">Moderada (ejercicio 1-3 días/semana)</option>
+        <option value="activo">Activo (ejercicio 3-5 días/semana)</option>
+        <option value="muy_activo">Muy activo (ejercicio intenso 6-7 días/semana)</option>
+      </select>
+    </div>
+    <div class="form-group">
       <label class="form-label">Duración del plan (semanas)</label>
       <input type="number" id="nc-weeks" placeholder="12" min="4" max="52" value="12">
     </div>
@@ -617,5 +627,6 @@
 </div>
 
 <script type="module" src="js/trainer-app.js?v=20260609d"></script>
+<script type="module" src="js/trainer-app.js?v=20260609b"></script>
 </body>
 </html>
