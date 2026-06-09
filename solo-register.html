@@ -120,6 +120,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
       <i class="ti ti-circle-check"></i>
       <h2>¡Cuenta creada!</h2>
       <p id="success-msg">Preparando tu cuestionario personalizado...</p>
+      <a id="continue-btn" href="onboarding.html" style="display:none;margin-top:16px" class="btn-login" style="text-decoration:none">
+        <i class="ti ti-arrow-right"></i> Continuar al cuestionario
+      </a>
     </div>
   </div>
 </div>
@@ -183,7 +186,8 @@ window.doRegister = async function() {
     // (funciona si el email ya está confirmado en BD o si la confirmación no es estricta)
     const { data: loginData } = await supabase.auth.signInWithPassword({ email, password })
     if (loginData?.session) {
-      setTimeout(() => window.location.href = 'onboarding.html', 1200)
+      document.getElementById('continue-btn').style.display = 'flex'
+      setTimeout(() => window.location.href = 'onboarding.html', 1500)
     } else {
       document.getElementById('success-msg').innerHTML =
         `¡Cuenta creada! Hemos enviado un email de confirmación a <strong>${email}</strong>.<br><br>Confírmalo y después <a href="login.html" style="color:var(--blue)">inicia sesión aquí</a>.`
