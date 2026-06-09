@@ -221,6 +221,9 @@ Reglas críticas:
       temperature: 0.7,
       maxOutputTokens: 8192,
     },
+    thinkingConfig: {
+      thinkingBudget: 0,
+    },
   })
 
   // 1 reintento tras 12s si es rate limit por minuto; cuota diaria falla al segundo intento igualmente
