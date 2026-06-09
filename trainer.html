@@ -9,14 +9,14 @@
 <link rel="stylesheet" href="css/shared.css">
 <style>
   body{padding-bottom:0;overflow:hidden;background:#0f0f0f url('bg-app.png') center center/cover no-repeat fixed}
-  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:rgba(0,0,0,0.72)}
-  .layout{display:flex;height:100vh;overflow:hidden}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:rgba(0,0,0,0.82)}
+  .layout{display:flex;height:100vh;overflow:hidden;background:#0d0d0d}
 
   /* ── NAV SIDEBAR ── */
   .nav-sidebar{
     width:196px;flex-shrink:0;display:flex;flex-direction:column;
     border-right:1px solid rgba(255,255,255,0.06);
-    background:rgba(12,12,12,0.8);overflow-y:auto
+    background:#0d0d0d;overflow-y:auto
   }
   .nav-logo-area{
     padding:14px 12px 10px;border-bottom:1px solid rgba(255,255,255,0.05);
@@ -71,7 +71,7 @@
   .client-panel{
     width:288px;flex-shrink:0;display:flex;flex-direction:column;
     border-right:1px solid rgba(255,255,255,0.06);overflow:hidden;
-    background:rgba(255,255,255,0.01)
+    background:#111
   }
   .client-panel-top{padding:10px 10px 6px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.05)}
   .search-input{
@@ -117,7 +117,7 @@
   .cr-time{font-size:10.5px;color:rgba(255,255,255,0.25);white-space:nowrap;margin-top:2px;flex-shrink:0}
 
   /* ── MAIN / RIGHT PANEL ── */
-  .main{flex:1;overflow-y:auto;min-width:0}
+  .main{flex:1;overflow-y:auto;min-width:0;background:#0f0f0f}
 
   /* ── DETAIL HEADER BAR ── */
   .detail-topbar{
