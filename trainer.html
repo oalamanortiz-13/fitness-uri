@@ -9,14 +9,14 @@
 <link rel="stylesheet" href="css/shared.css">
 <style>
   body{padding-bottom:0;overflow:hidden;background:#0f0f0f url('bg-app.png') center center/cover no-repeat fixed}
-  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:rgba(0,0,0,0.82)}
-  .layout{display:flex;height:100vh;overflow:hidden;background:#0d0d0d}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:rgba(0,0,0,0.68)}
+  .layout{display:flex;height:100vh;overflow:hidden}
 
   /* ── NAV SIDEBAR ── */
   .nav-sidebar{
     width:196px;flex-shrink:0;display:flex;flex-direction:column;
     border-right:1px solid rgba(255,255,255,0.06);
-    background:#0d0d0d;overflow-y:auto
+    background:rgba(8,10,18,0.92);overflow-y:auto
   }
   .nav-logo-area{
     padding:14px 12px 10px;border-bottom:1px solid rgba(255,255,255,0.05);
@@ -71,7 +71,7 @@
   .client-panel{
     width:288px;flex-shrink:0;display:flex;flex-direction:column;
     border-right:1px solid rgba(255,255,255,0.06);overflow:hidden;
-    background:#111
+    background:rgba(8,10,18,0.88)
   }
   .client-panel-top{padding:10px 10px 6px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.05)}
   .search-input{
@@ -117,7 +117,12 @@
   .cr-time{font-size:10.5px;color:rgba(255,255,255,0.25);white-space:nowrap;margin-top:2px;flex-shrink:0}
 
   /* ── MAIN / RIGHT PANEL ── */
-  .main{flex:1;overflow-y:auto;min-width:0;background:#0f0f0f}
+  .main{flex:1;overflow-y:auto;min-width:0}
+
+  /* ── CARDS CON CONTRASTE ── */
+  .card{background:rgba(8,12,24,0.88)!important;backdrop-filter:blur(20px)!important;-webkit-backdrop-filter:blur(20px)!important;border-color:rgba(255,255,255,0.10)!important}
+  .metric{background:rgba(8,12,24,0.82)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important}
+  input[type=text],input[type=number],input[type=email],textarea,select{background:rgba(255,255,255,0.06)!important}
 
   /* ── DETAIL HEADER BAR ── */
   .detail-topbar{

@@ -12,7 +12,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 body{padding-bottom:72px;background:#0f0f0f url('bg-app.png') center center/cover no-repeat fixed}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:rgba(0,0,0,0.82)}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:rgba(0,0,0,0.68)}
+.card{background:rgba(8,12,24,0.88)!important;backdrop-filter:blur(20px)!important;-webkit-backdrop-filter:blur(20px)!important;border-color:rgba(255,255,255,0.10)!important}
+.metric{background:rgba(8,12,24,0.82)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important}
+input[type=text],input[type=number],input[type=email],textarea,select{background:rgba(255,255,255,0.06)!important}
 
 /* ── Chat AI bubble improvements ── */
 .msg.ai{background:rgba(15,30,60,0.85);border:1px solid rgba(55,138,221,0.25);color:#e8edf5;line-height:1.65}
@@ -481,6 +484,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
   <button onclick="show('ai',this)" id="nav-chat-btn"><i class="ti ti-message-circle"></i><span>Chat</span></button>
 </nav>
 
-<script type="module" src="js/client-app.js?v=20260609k"></script>
+<script type="module" src="js/client-app.js?v=20260609l"></script>
 </body>
 </html>
