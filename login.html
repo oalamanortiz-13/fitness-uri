@@ -15,14 +15,11 @@
 body{
   display:flex;flex-direction:column;min-height:100vh;
   padding:0;padding-bottom:0;overflow-x:hidden;
-  background:#0c0c0c;
-  background-image:none;
+  background:#0c0c0c url('bg-register.png') center center/cover no-repeat fixed;
 }
 body::before{
   content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:
-    repeating-linear-gradient(-52deg,transparent 0px,transparent 60px,rgba(255,255,255,0.012) 60px,rgba(255,255,255,0.012) 62px),
-    repeating-linear-gradient(-52deg,transparent 0px,transparent 140px,rgba(255,255,255,0.007) 140px,rgba(255,255,255,0.007) 142px);
+  background:rgba(0,0,0,0.55);
 }
 .login-hero{
   position:relative;z-index:1;
