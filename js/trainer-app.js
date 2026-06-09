@@ -232,7 +232,7 @@ async function loadClients() {
   if (ids.length) {
     const { data: logs } = await supabase
       .from('daily_logs')
-      .select('client_id, score, score_training, score_nutrition, score_cardio, updated_at')
+      .select('client_id, score, score_training, score_nutrition, score_cardio, created_at')
       .in('client_id', ids)
       .eq('log_date', today)
     TODAY_LOGS = {}
@@ -274,7 +274,7 @@ function renderClientList(clients) {
       }
     }
 
-    const timeStr = log ? relativeTime(log.updated_at) : (c.active === false ? 'Archivado' : '')
+    const timeStr = log ? relativeTime(log.created_at) : (c.active === false ? 'Archivado' : '')
 
     return `<div class="cr${selected ? ' selected' : ''}" onclick="selectClient('${c.id}')">
       <div class="cr-avatar" style="background:${avatarColor(name)}">${initials}</div>
@@ -442,8 +442,8 @@ function renderClientDetail() {
 
   // Client status line
   const isActive = client.active !== false
-  const logTime = log?.updated_at
-    ? new Date(log.updated_at).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})
+  const logTime = log?.created_at
+    ? new Date(log.created_at).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})
     : null
   const statusSub = isActive
     ? (logTime ? `Activo · Hoy ${logTime}` : 'Activo · Sin registro hoy')
