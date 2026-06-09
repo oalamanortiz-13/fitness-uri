@@ -223,27 +223,32 @@ Reglas críticas:
     },
   })
 
-  // 1 reintento tras 12s si es rate limit por minuto; cuota diaria falla al segundo intento igualmente
-  let res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }
-  )
-  if (res.status === 429) {
-    console.log('Gemini 429, retrying once after 12s...')
-    await new Promise(r => setTimeout(r, 12000))
-    res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }
-    )
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`
+  const RETRYABLE = new Set([429, 500, 502, 503, 504])
+  const delays = [5000, 12000, 25000]
+  let res!: Response
+  let lastStatus = 0
+
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    res = await fetch(geminiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
+    lastStatus = res.status
+    if (res.ok || !RETRYABLE.has(res.status)) break
+    if (attempt < delays.length) {
+      console.log(`Gemini ${res.status} on attempt ${attempt + 1}, retrying after ${delays[attempt]}ms...`)
+      await new Promise(r => setTimeout(r, delays[attempt]))
+    }
   }
 
   if (!res.ok) {
     const errText = await res.text()
-    console.error('Gemini HTTP error:', res.status, errText)
-    if (res.status === 429) {
+    console.error('Gemini HTTP error:', lastStatus, errText)
+    if (lastStatus === 429) {
       throw new Error('El servicio de IA está saturado en este momento. Espera 1 minuto e inténtalo de nuevo.')
     }
-    throw new Error(`Gemini API error ${res.status}: ${errText.slice(0, 200)}`)
+    if (lastStatus === 503 || lastStatus === 500 || lastStatus === 502 || lastStatus === 504) {
+      throw new Error('El servicio de IA no está disponible ahora mismo. Por favor, inténtalo de nuevo en unos segundos.')
+    }
+    throw new Error(`Gemini API error ${lastStatus}: ${errText.slice(0, 200)}`)
   }
 
   const data = await res.json()

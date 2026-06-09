@@ -423,7 +423,7 @@ async function submitOnboarding() {
     if (!session) { window.location.href = '/login.html'; return }
 
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 45000)
+    const timeoutId = setTimeout(() => controller.abort(), 90000)
 
     let res
     try {
@@ -461,7 +461,10 @@ async function submitOnboarding() {
   } catch (err) {
     document.getElementById('loading-view').classList.remove('active')
     document.getElementById('error-view').classList.add('active')
-    document.getElementById('error-msg').textContent = err.message || 'Error al generar el plan. Inténtalo de nuevo.'
+    const isTimeout = err.name === 'AbortError'
+    document.getElementById('error-msg').textContent = isTimeout
+      ? 'La generación del plan está tardando demasiado. El servicio de IA está congestionado — espera unos segundos e inténtalo de nuevo.'
+      : (err.message || 'Error al generar el plan. Inténtalo de nuevo.')
   }
 }
 
