@@ -224,14 +224,14 @@ Reglas críticas:
 
   // 1 reintento tras 12s si es rate limit por minuto; cuota diaria falla al segundo intento igualmente
   let res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${apiKey}`,
     { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }
   )
   if (res.status === 429) {
     console.log('Gemini 429, retrying once after 12s...')
     await new Promise(r => setTimeout(r, 12000))
     res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${apiKey}`,
       { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }
     )
   }
