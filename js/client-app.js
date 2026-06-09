@@ -139,15 +139,51 @@ async function registerPushNotifications() {
       await supabase.from('push_subscriptions').upsert({ client_id: USER_ID, subscription: existing.toJSON() })
       return
     }
-    const permission = await Notification.requestPermission()
-    if (permission !== 'granted') return
+    // Si ya tiene permiso concedido, suscribir directamente
+    if (Notification.permission === 'granted') {
+      await _subscribePush(reg)
+      return
+    }
+    // Si aún no ha decidido, mostrar banner para que lo active con gesto
+    if (Notification.permission === 'default') {
+      showNotifBanner(reg)
+    }
+  } catch (e) {
+    console.warn('Push registration failed:', e)
+  }
+}
+
+async function _subscribePush(reg) {
+  try {
     const sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
     })
     await supabase.from('push_subscriptions').upsert({ client_id: USER_ID, subscription: sub.toJSON() })
   } catch (e) {
-    console.warn('Push registration failed:', e)
+    console.warn('Push subscribe failed:', e)
+  }
+}
+
+function showNotifBanner(reg) {
+  if (document.getElementById('notif-banner')) return
+  const banner = document.createElement('div')
+  banner.id = 'notif-banner'
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+      <i class="ti ti-bell" style="font-size:20px;color:var(--blue);flex-shrink:0"></i>
+      <span style="font-size:13px;line-height:1.4">Activa las notificaciones para recibir mensajes de tu preparador</span>
+    </div>
+    <button onclick="window._activarNotifs()" style="background:var(--blue);color:#0c0c0c;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">Activar</button>
+    <button onclick="this.closest('#notif-banner').remove()" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;line-height:1;flex-shrink:0;padding:0 4px">×</button>`
+  banner.style.cssText = 'display:flex;align-items:center;gap:10px;background:rgba(55,138,221,0.1);border:1px solid rgba(55,138,221,0.25);border-radius:12px;padding:12px 14px;margin-bottom:12px'
+  const dash = document.getElementById('dash')
+  dash.insertBefore(banner, dash.firstChild)
+
+  window._activarNotifs = async () => {
+    const perm = await Notification.requestPermission()
+    banner.remove()
+    if (perm === 'granted') await _subscribePush(reg)
   }
 }
 
