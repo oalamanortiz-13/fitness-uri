@@ -8,7 +8,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="stylesheet" href="css/shared.css">
 <style>
-  body{padding-bottom:0;overflow:hidden}
+  body{padding-bottom:0;overflow:hidden;background:#0f0f0f url('bg-app.png') center center/cover no-repeat fixed}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:rgba(0,0,0,0.72)}
   .layout{display:flex;height:100vh;overflow:hidden}
 
   /* ── NAV SIDEBAR ── */
