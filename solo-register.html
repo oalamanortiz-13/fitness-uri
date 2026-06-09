@@ -179,8 +179,15 @@ window.doRegister = async function() {
   if (data.session) {
     setTimeout(() => window.location.href = 'onboarding.html', 1200)
   } else {
-    document.getElementById('success-msg').innerHTML =
-      `Hemos enviado un email de confirmación a <strong>${email}</strong>.<br><br>Confírmalo y después <a href="login.html" style="color:var(--blue)">inicia sesión aquí</a>.`
+    // Supabase tiene "Confirm email" activo — intentar login directo igualmente
+    // (funciona si el email ya está confirmado en BD o si la confirmación no es estricta)
+    const { data: loginData } = await supabase.auth.signInWithPassword({ email, password })
+    if (loginData?.session) {
+      setTimeout(() => window.location.href = 'onboarding.html', 1200)
+    } else {
+      document.getElementById('success-msg').innerHTML =
+        `¡Cuenta creada! Hemos enviado un email de confirmación a <strong>${email}</strong>.<br><br>Confírmalo y después <a href="login.html" style="color:var(--blue)">inicia sesión aquí</a>.`
+    }
   }
 }
 
