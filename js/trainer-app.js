@@ -3226,7 +3226,17 @@ window.trainerSendMessage = async function() {
   const content = input?.value.trim()
   if (!content || !chatClientId || !TRAINER_ID) return
   input.value = ''
-  await supabase.from('messages').insert({ client_id: chatClientId, sender_id: TRAINER_ID, content })
+
+  // Actualización optimista: mostrar mensaje al instante
+  const tempMsg = { id: 'tmp-' + Date.now(), client_id: chatClientId, sender_id: TRAINER_ID, content, created_at: new Date().toISOString(), read_at: null }
+  chatMessages.push(tempMsg)
+  trainerRenderMessages()
+
+  const { data } = await supabase.from('messages').insert({ client_id: chatClientId, sender_id: TRAINER_ID, content }).select().single()
+  if (data) {
+    const idx = chatMessages.findIndex(m => m.id === tempMsg.id)
+    if (idx !== -1) chatMessages[idx] = data
+  }
 }
 
 function trainerEscapeHtml(str) {

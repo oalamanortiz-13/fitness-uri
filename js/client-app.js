@@ -2314,7 +2314,17 @@ window.sendTrainerMessage = async function() {
   const content = input.value.trim()
   if (!content || !CLIENT) return
   input.value = ''
-  await supabase.from('messages').insert({ client_id: USER_ID, sender_id: USER_ID, content })
+
+  // Actualización optimista: mostrar mensaje al instante
+  const tempMsg = { id: 'tmp-' + Date.now(), client_id: USER_ID, sender_id: USER_ID, content, created_at: new Date().toISOString(), read_at: null }
+  trainerMessages.push(tempMsg)
+  renderTrainerMessages()
+
+  const { data } = await supabase.from('messages').insert({ client_id: USER_ID, sender_id: USER_ID, content }).select().single()
+  if (data) {
+    const idx = trainerMessages.findIndex(m => m.id === tempMsg.id)
+    if (idx !== -1) trainerMessages[idx] = data
+  }
 }
 
 async function markTrainerMessagesRead() {
