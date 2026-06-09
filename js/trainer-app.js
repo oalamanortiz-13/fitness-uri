@@ -606,8 +606,7 @@ window.sendResumenCliente = async function() {
     .select().single()
 
   if (data) {
-    sendPushToClient(SELECTED_CLIENT, 'Resumen de tu preparador', fullMsg.split('
-')[0])
+    sendPushToClient(SELECTED_CLIENT, 'Resumen de tu preparador', fullMsg.split('\n')[0])
   }
 
   if (btn) {
