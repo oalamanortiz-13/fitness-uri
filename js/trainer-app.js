@@ -559,6 +559,47 @@ function buildDayResumen(client, log) {
   return { summaryLine, msgBody: lines.join('\n') }
 }
 
+
+window.sendResumenCliente = async function() {
+  if (!SELECTED_CLIENT || !TRAINER_ID || !CURRENT_RESUMEN_MSG) return
+  const btn = document.getElementById('rs-send-btn')
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Enviando...' }
+
+  const motivational = [
+    '¡Tú puedes hacerlo! Cada día cuenta.',
+    '¡Sigue así! El esfuerzo de hoy es el resultado de mañana.',
+    '¡Gran trabajo! Mantén el ritmo.',
+    '¡Cada sesión te acerca más a tu objetivo!',
+    '¡El progreso es constante cuando eres constante!',
+  ]
+  const extra = motivational[Math.floor(Math.random() * motivational.length)]
+  const fullMsg = CURRENT_RESUMEN_MSG + `\n\n${extra}\n\n— ${TRAINER_NAME}, Tu Preparador`
+
+  const { data } = await supabase.from('messages')
+    .insert({ client_id: SELECTED_CLIENT, sender_id: TRAINER_ID, content: fullMsg })
+    .select().single()
+
+  if (data) {
+    sendPushToClient(SELECTED_CLIENT, 'Resumen de tu preparador', fullMsg.split('\n')[0])
+  }
+
+  if (btn) {
+    if (data) {
+      btn.innerHTML = '<i class="ti ti-circle-check"></i> Mensaje enviado'
+      btn.style.background = '#1D9E75'
+      setTimeout(() => {
+        btn.disabled = false
+        btn.style.background = ''
+        btn.innerHTML = '<i class="ti ti-send"></i> Enviar resumen al cliente'
+      }, 3000)
+    } else {
+      btn.disabled = false
+      btn.innerHTML = '<i class="ti ti-send"></i> Enviar resumen al cliente'
+    }
+  }
+}
+
+
 window.switchTab = function(tab) {
   ACTIVE_TAB = tab
   document.querySelectorAll('.tab-btn').forEach(b => {
@@ -3145,3 +3186,124 @@ function showNotif(msg) {
 }
 
 window.showNotif = showNotif
+
+// ─── TAB: CHAT ────────────────────────────────────────────────────────────────
+
+let chatChannel = null
+let chatMessages = []
+let chatClientId = null
+
+async function renderChatTab(el) {
+  const clientId = SELECTED_CLIENT_DATA?.client?.id
+  if (!clientId) { el.innerHTML = '<p style="color:var(--text2);padding:16px">Selecciona un cliente.</p>'; return }
+
+  // Si cambia el cliente, limpiar canal anterior
+  if (chatClientId !== clientId) {
+    chatMessages = []
+    chatClientId = clientId
+    if (chatChannel) { supabase.removeChannel(chatChannel); chatChannel = null }
+  }
+
+  el.innerHTML = `
+    <div class="card" style="padding:12px">
+      <div class="chat-wrap tall" id="trainer-msg-wrap" style="max-height:480px"></div>
+      <div class="chat-input-row" style="margin-top:8px">
+        <input type="text" id="trainer-msg-in" placeholder="Escribe un mensaje a ${SELECTED_CLIENT_DATA.client.name || 'tu cliente'}..."
+          onkeydown="if(event.key==='Enter')trainerSendMessage()">
+        <button class="btn btn-primary" onclick="trainerSendMessage()" style="width:auto;padding:10px 14px"><i class="ti ti-send"></i></button>
+      </div>
+    </div>
+  `
+
+  // Cargar mensajes si no están cargados
+  if (chatMessages.length === 0) {
+    const { data: msgs } = await supabase
+      .from('messages').select('*').eq('client_id', clientId).order('created_at', { ascending: true })
+    chatMessages = msgs || []
+  }
+  trainerRenderMessages()
+
+  // Marcar como leídos
+  const unreadIds = chatMessages.filter(m => m.sender_id === clientId && !m.read_at).map(m => m.id)
+  if (unreadIds.length) {
+    await supabase.from('messages').update({ read_at: new Date().toISOString() }).in('id', unreadIds)
+    chatMessages.forEach(m => { if (unreadIds.includes(m.id)) m.read_at = new Date().toISOString() })
+    const badge = document.getElementById('chat-tab-badge'); if (badge) badge.style.display = 'none'
+  }
+
+  // Realtime
+  if (!chatChannel) {
+    chatChannel = supabase.channel('trainer-msgs-' + clientId)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `client_id=eq.${clientId}` }, payload => {
+        chatMessages.push(payload.new)
+        trainerRenderMessages()
+        if (payload.new.sender_id === clientId) {
+          supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('id', payload.new.id)
+        }
+      }).subscribe()
+  }
+}
+
+function trainerRenderMessages() {
+  const wrap = document.getElementById('trainer-msg-wrap')
+  if (!wrap) return
+  if (chatMessages.length === 0) {
+    wrap.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--text2);font-size:13px"><i class="ti ti-message-circle" style="font-size:32px;display:block;margin-bottom:8px;opacity:.3"></i>Sin mensajes con este cliente.</div>`
+    return
+  }
+  wrap.innerHTML = chatMessages.map(m => {
+    const isTrainer = m.sender_id !== chatClientId
+    const time = new Date(m.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    const date = new Date(m.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+    return `<div><div class="msg ${isTrainer ? 'user' : 'trainer'}">${trainerEscapeHtml(m.content)}</div><div class="msg-meta ${isTrainer ? '' : 'left'}">${date} · ${time}</div></div>`
+  }).join('')
+  wrap.scrollTop = wrap.scrollHeight
+}
+
+window.trainerSendMessage = async function() {
+  const input = document.getElementById('trainer-msg-in')
+  const content = input?.value.trim()
+  if (!content || !chatClientId || !TRAINER_ID) return
+  input.value = ''
+
+  // Actualización optimista: mostrar mensaje al instante
+  const tempMsg = { id: 'tmp-' + Date.now(), client_id: chatClientId, sender_id: TRAINER_ID, content, created_at: new Date().toISOString(), read_at: null }
+  chatMessages.push(tempMsg)
+  trainerRenderMessages()
+
+  const { data } = await supabase.from('messages').insert({ client_id: chatClientId, sender_id: TRAINER_ID, content }).select().single()
+  if (data) {
+    const idx = chatMessages.findIndex(m => m.id === tempMsg.id)
+    if (idx !== -1) chatMessages[idx] = data
+    sendPushToClient(chatClientId, `Mensaje de ${TRAINER_NAME}`, content)
+  }
+}
+
+function trainerEscapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+}
+
+async function sendPushToClient(clientId, title, body) {
+  try {
+    const SUPABASE_URL = 'https://cwwvwrzqlavuyqhyeepu.supabase.co'
+    await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: clientId, title, body: body.slice(0, 120), url: '/client.html' })
+    })
+  } catch (e) {
+    console.warn('Push notification failed:', e)
+  }
+}
+
+// Notificar badge en tab chat cuando llega mensaje nuevo de cualquier cliente
+async function checkUnreadMessages() {
+  if (!TRAINER_ID) return
+  const { count } = await supabase
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .is('read_at', null)
+    .in('client_id', ALL_CLIENTS.map(c => c.id).filter(Boolean))
+  const badge = document.getElementById('chat-tab-badge')
+  if (badge) badge.style.display = (count || 0) > 0 ? 'block' : 'none'
+}
