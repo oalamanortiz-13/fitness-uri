@@ -713,15 +713,17 @@ function renderNutrition() {
     suplsEl.innerHTML = html
   }
 
-  // Restore checked state primero, luego actualizar totales
-  document.querySelectorAll('.meal-row').forEach(row => {
-    const id = row.dataset.foodId
-    if (id && S.foodsChecked.includes(id)) {
-      row.querySelector('.check-btn').classList.add('on')
-      row.querySelector('.check-btn').textContent = '✓'
-      row.style.opacity = '1'
-    }
-  })
+  // Restore checked state only for today
+  if (isToday) {
+    document.querySelectorAll('.meal-row').forEach(row => {
+      const id = row.dataset.foodId
+      if (id && S.foodsChecked.includes(id)) {
+        row.querySelector('.check-btn').classList.add('on')
+        row.querySelector('.check-btn').textContent = '✓'
+        row.style.opacity = '1'
+      }
+    })
+  }
   updateMealTotals()
 }
 
