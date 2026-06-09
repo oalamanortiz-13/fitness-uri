@@ -14,7 +14,18 @@
 body{padding-bottom:72px;background:#0f0f0f url('bg-app.png') center center/cover no-repeat fixed}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:rgba(0,0,0,0.72)}
 
-/* ── Top header ── */
+/* ── Chat AI bubble improvements ── */
+.msg.ai{background:rgba(15,30,60,0.85);border:1px solid rgba(55,138,221,0.25);color:#e8edf5;line-height:1.65}
+.msg.ai p{margin:0 0 6px}
+.msg.ai p:last-child{margin-bottom:0}
+.msg.ai ul{margin:6px 0 6px 4px;padding-left:16px;list-style:none}
+.msg.ai li{position:relative;padding-left:12px;margin-bottom:4px;color:#dde4f0}
+.msg.ai li::before{content:'·';position:absolute;left:0;color:var(--blue);font-weight:700}
+.msg.ai strong{color:#fff;font-weight:700}
+.msg.ai .section-hdr{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(164,244,253,0.7);margin:10px 0 4px;display:block}
+.msg.ai .chk{color:#1D9E75;font-weight:700}
+
+
 #client-header{
   position:sticky;top:0;z-index:50;
   background:rgba(12,12,12,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
@@ -470,6 +481,6 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
   <button onclick="show('ai',this)" id="nav-chat-btn"><i class="ti ti-message-circle"></i><span>Chat</span></button>
 </nav>
 
-<script type="module" src="js/client-app.js?v=20260609h"></script>
+<script type="module" src="js/client-app.js?v=20260609i"></script>
 </body>
 </html>

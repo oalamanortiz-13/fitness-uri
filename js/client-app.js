@@ -1769,10 +1769,70 @@ window.quickQ = function(q) {
   sendChat()
 }
 
+function formatChatMsg(text) {
+  // Escape HTML
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+
+  // Bold **text**
+  const bold = s => s.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+
+  // Checkmarks green
+  const chk = s => s.replace(/✓/g,'<span class="chk">✓</span>')
+
+  const process = s => chk(bold(esc(s)))
+
+  const lines = text.split('\n')
+  let html = ''
+  let listItems = []
+
+  const flushList = () => {
+    if (listItems.length) {
+      html += '<ul>' + listItems.map(i => `<li>${i}</li>`).join('') + '</ul>'
+      listItems = []
+    }
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) { flushList(); continue }
+
+    // Explicit bullet: "* text" or "- text"
+    if (/^[*\-] /.test(trimmed)) {
+      listItems.push(process(trimmed.slice(2).trim()))
+      continue
+    }
+
+    flushList()
+
+    // Inline bullets: "Sección: * item ✓ * item2"
+    if (trimmed.includes(' * ')) {
+      const parts = trimmed.split(/ \* /)
+      const intro = parts.shift().trim()
+      const items = parts.map(p => p.trim()).filter(Boolean)
+      if (items.length) {
+        if (intro) html += `<span class="section-hdr">${process(intro.replace(/:$/, ''))}</span>`
+        html += '<ul>' + items.map(i => `<li>${process(i)}</li>`).join('') + '</ul>'
+        continue
+      }
+    }
+
+    // Section header: line ending with ":"
+    if (/^[A-ZÁÉÍÓÚÑ][^:]*:$/.test(trimmed)) {
+      html += `<span class="section-hdr">${process(trimmed.replace(/:$/, ''))}</span>`
+      continue
+    }
+
+    html += `<p>${process(trimmed)}</p>`
+  }
+
+  flushList()
+  return html || esc(text)
+}
+
 function renderChat() {
   const t = document.getElementById('thinking'); if (t) t.remove()
   document.getElementById('chat-wrap').innerHTML = S.chatHistory.map(m =>
-    `<div class="msg ${m.role === 'user' ? 'user' : 'ai'}">${m.content}</div>`
+    `<div class="msg ${m.role === 'user' ? 'user' : 'ai'}">${m.role === 'user' ? m.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : formatChatMsg(m.content)}</div>`
   ).join('')
   scrollChat()
 }
