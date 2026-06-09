@@ -221,8 +221,40 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - Edge Function `ai-plan-editor` — Gemini 2.0 Flash, `verify_jwt:false`, usa `GEMINI_API_KEY` secret, fuerza `responseMimeType:'application/json'`; acciones: add_exercise, edit_exercise, remove_exercise, update_day
 - Importación masiva: CSV parseado nativamente; Excel via SheetJS (cargado lazy desde CDN); columnas normalizadas (español/inglés); contraseñas auto-generadas si faltan; sesión trainer restaurada tras cada `signUp`
 
+## Notas de arquitectura (sesión 09/06)
+
+### PWA / Iconos iOS
+- `apple-touch-icon.png` (180×180) e `icon-512.png` (512×512) generados con Pillow: logo compositeado sobre fondo `#0f0f0f` (98% width, proporcional 3:2)
+- `manifest.json` en raíz apunta a ambos iconos; `client.html` y `trainer.html` tienen `<link rel="apple-touch-icon">` + `<link rel="manifest">`
+- `sw.js` registrado desde `client-app.js` para push notifications
+
+### Push Notifications (implementado, pendiente activar VAPID secrets)
+- Tabla `push_subscriptions` (migración `011`): `client_id`, `endpoint`, `p256dh`, `auth`; RLS: cliente upsert su propia fila
+- `VAPID_PUBLIC_KEY` en `client-app.js`; `registerPushNotifications()` se llama al inicio del portal cliente
+- Edge Function `send-push/index.ts`: VAPID JWT manual + AES-GCM con Web Crypto API (sin deps externas)
+- **Secrets pendientes en Supabase:** `VAPID_PRIVATE_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` (mailto:oalamanortiz@gmail.com)
+- `sendPushToClient(clientId, title, body)` en `trainer-app.js` — llamado al enviar mensaje o resumen al cliente
+
+### Campo activity_level
+- Migración `012`: `ALTER TABLE clients ADD COLUMN IF NOT EXISTS activity_level TEXT CHECK (...)`; valores: `sedentaria`, `moderada`, `activo`, `muy_activo`
+- Select añadido en modal "Nuevo cliente" de `trainer.html` y en pestaña Perfil del trainer
+- `createClient()` y `saveProfile()` en `trainer-app.js` incluyen el campo
+
+### Resiliencia Gemini API (ai-onboarding)
+- Edge Function `ai-onboarding`: backoff exponencial (5s → 12s → 25s) para errores 429/500/502/503/504; hasta 3 reintentos
+- Mensajes de error en español en lugar del JSON crudo de Gemini
+- `onboarding.html`: timeout del cliente ampliado a 90s; mensaje específico si expira ("congestionado")
+- **Pendiente evaluar para producción:** fallback a GPT-4o mini si Gemini falla, o migrar a Vertex AI para SLA real
+
+### Tab buttons (shared.css)
+- `.tab-btn`: `background:rgba(255,255,255,0.18)`, `border:1px solid rgba(255,255,255,0.30)`, `font-weight:600`
+- `.tab-btn.active`: `background:var(--blue)`, `box-shadow:0 0 18px rgba(55,138,221,0.45)`, color `#0c0c0c`
+- Cache-bust: `shared.css?v=20260609a`
+
 ## Pendiente
 - [ ] Activar Stripe (añadir secrets en Supabase Edge Functions + crear webhook)
 - [ ] Confirmar emails automáticamente (Supabase → Auth → desactivar "Confirm email")
 - [ ] Chat IA — API key de Anthropic expuesta en cliente, mover a Edge Function proxy
 - [ ] Verificar editor IA de plan con Gemini (depurar si `actions` llega vacío — ver campo `debug` en respuesta)
+- [ ] Activar push notifications: configurar secrets VAPID en Supabase (VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY, VAPID_SUBJECT)
+- [ ] Evaluar resiliencia Gemini para producción: fallback a GPT-4o mini o migrar a Vertex AI
