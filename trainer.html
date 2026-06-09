@@ -142,47 +142,47 @@
   .d-btn-spacer{flex:1}
 
   /* ── RESUMEN DEL DÍA ── */
-  .resumen-wrap{padding:20px}
-  .day-title{font-size:19px;font-weight:700;letter-spacing:-.02em;margin-bottom:16px;color:#fff}
-  .cia-card{
-    display:flex;align-items:center;gap:12px;
-    background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
-    border-radius:12px;padding:12px 14px;margin-bottom:12px
+  /* ── RESUMEN DEL DÍA ── */
+  .resumen-wrap{padding:16px 20px 8px}
+  .rs-card{
+    background:rgba(8,12,28,0.90);border:1px solid rgba(255,255,255,0.10);
+    border-radius:16px;padding:16px;margin-bottom:12px;
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)
   }
+  .rs-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
   .cia-av{
-    width:38px;height:38px;border-radius:50%;flex-shrink:0;
+    width:36px;height:36px;border-radius:50%;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
-    font-size:14px;font-weight:700;color:#fff
+    font-size:13px;font-weight:700;color:#fff
   }
-  .cia-name{font-size:14px;font-weight:700;color:#fff;margin-bottom:2px}
-  .cia-sub{font-size:11.5px;color:rgba(255,255,255,0.38)}
+  .cia-name{font-size:13px;font-weight:700;color:#fff;margin-bottom:1px}
+  .cia-sub{font-size:11px;color:rgba(255,255,255,0.38)}
   .cia-label{
-    margin-left:auto;padding:3px 10px;border-radius:20px;
-    font-size:11px;font-weight:600;
+    margin-left:auto;padding:2px 9px;border-radius:20px;
+    font-size:10.5px;font-weight:600;white-space:nowrap;
     background:rgba(0,210,255,0.1);border:1px solid rgba(0,210,255,0.2);color:var(--blue)
   }
-  .ai-card{
-    background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);
-    border-radius:12px;padding:14px;margin-bottom:18px
+  .rs-score-ring{
+    flex-shrink:0;margin-left:auto;
+    display:flex;flex-direction:column;align-items:center;line-height:1
   }
-  .ai-card-hd{
-    display:flex;align-items:center;gap:7px;
-    font-size:10px;font-weight:700;letter-spacing:.12em;
-    color:rgba(255,255,255,0.32);text-transform:uppercase;margin-bottom:9px
+  .rs-score-num{font-size:28px;font-weight:800;letter-spacing:-.03em}
+  .rs-score-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.35);margin-top:1px}
+  .rs-bars{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+  .rs-bar-row{display:grid;grid-template-columns:20px 1fr 38px;gap:8px;align-items:center}
+  .rs-bar-row i{font-size:13px;color:rgba(255,255,255,0.4);text-align:center}
+  .rs-bar-track{height:6px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}
+  .rs-bar-fill{height:100%;border-radius:4px;transition:width .4s cubic-bezier(.22,1,.36,1)}
+  .rs-bar-val{font-size:10.5px;font-weight:700;color:rgba(255,255,255,0.6);text-align:right;white-space:nowrap}
+  .rs-note{font-size:12px;color:rgba(255,255,255,0.50);line-height:1.5;margin-bottom:14px;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px}
+  .rs-send-btn{
+    width:100%;padding:11px;border-radius:10px;border:none;cursor:pointer;
+    background:var(--blue);color:#fff;font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;gap:7px;
+    font-family:inherit;transition:opacity .15s
   }
-  .ai-card-txt{font-size:13px;color:rgba(255,255,255,0.62);line-height:1.65}
-  .msg-body{
-    font-size:14px;line-height:1.75;color:rgba(255,255,255,0.78);
-    white-space:pre-line;margin-bottom:14px
-  }
-  .msg-sig{font-size:13px;color:rgba(255,255,255,0.32);margin-bottom:18px}
-  .attach-pill{
-    display:inline-flex;align-items:center;gap:6px;
-    background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);
-    border-radius:8px;padding:6px 12px;font-size:12px;
-    color:rgba(255,255,255,0.5);cursor:pointer;transition:all .15s;margin-bottom:24px
-  }
-  .attach-pill:hover{background:rgba(255,255,255,0.09);color:#fff}
+  .rs-send-btn:hover{opacity:.85}
+  .rs-send-btn:disabled{opacity:.5;cursor:not-allowed}
 
   /* ── TABS (below resumen) ── */
   .detail-tabs-wrap{

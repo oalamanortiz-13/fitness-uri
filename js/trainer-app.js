@@ -29,6 +29,7 @@ let CURRENT_FILTER = 'all'
 let CURRENT_LABEL_FILTER = null
 let SELECTED_CLIENT = null
 let SELECTED_CLIENT_DATA = null
+let CURRENT_RESUMEN_MSG = ''
 let ACTIVE_TAB = 'profile'
 let ACTIVE_DAY = 0
 let ACTIVE_DIET_DAY = 0
@@ -456,10 +457,18 @@ function renderClientDetail() {
 
   // Generate day summary text
   const { summaryLine, msgBody } = buildDayResumen(client, log)
+  CURRENT_RESUMEN_MSG = msgBody
 
-  // Plan attachment name
-  const weekNum = client.plan_weeks || 4
-  const planLabel = `plan-semana-${weekNum}.pdf`
+  const score = log ? (log.score || 0) : 0
+  const st = log ? Math.round(log.score_training || 0) : 0
+  const sn = log ? Math.round(log.score_nutrition || 0) : 0
+  const steps = log ? (log.steps || 0) : 0
+  const stepsGoal = client.steps_goal || 10000
+  const stepsPct = Math.min(Math.round(steps / stepsGoal * 100), 100)
+  const stepsStr = steps > 0 ? `${steps.toLocaleString('es-ES')}/${(stepsGoal/1000).toFixed(0)}k` : '—'
+
+  const scoreColor = score >= 80 ? '#1D9E75' : score >= 50 ? '#BA7517' : '#E24B4A'
+  const barColor = pct => pct >= 80 ? '#1D9E75' : pct >= 50 ? '#BA7517' : '#E24B4A'
 
   document.getElementById('main-content').innerHTML = `
     <div class="detail-topbar">
@@ -473,31 +482,47 @@ function renderClientDetail() {
     </div>
 
     <div class="resumen-wrap">
-      <div class="day-title">Resumen del día — ${escHtml(firstName)}</div>
-
-      <div class="cia-card">
-        <div class="cia-av" style="background:${color}">${initials}</div>
-        <div style="flex:1;min-width:0">
-          <div class="cia-name">${escHtml(name)}</div>
-          <div class="cia-sub">${statusSub}</div>
+      <div class="rs-card">
+        <!-- Cabecera: avatar + nombre + score -->
+        <div class="rs-header">
+          <div class="cia-av" style="background:${color}">${initials}</div>
+          <div style="min-width:0">
+            <div class="cia-name">${escHtml(firstName)}</div>
+            <div class="cia-sub">${statusSub}</div>
+          </div>
+          ${labelHtml}
+          <div class="rs-score-ring">
+            <span class="rs-score-num" style="color:${scoreColor}">${log ? score + '%' : '—'}</span>
+            <span class="rs-score-lbl">hoy</span>
+          </div>
         </div>
-        ${labelHtml}
-      </div>
 
-      <div class="ai-card">
-        <div class="ai-card-hd">
-          <i class="ti ti-stack-2" style="font-size:13px"></i>
-          Resumen del día
+        <!-- Barras de métricas -->
+        <div class="rs-bars">
+          <div class="rs-bar-row">
+            <i class="ti ti-barbell"></i>
+            <div class="rs-bar-track"><div class="rs-bar-fill" style="width:${st}%;background:${barColor(st)}"></div></div>
+            <div class="rs-bar-val" style="color:${barColor(st)}">${st}%</div>
+          </div>
+          <div class="rs-bar-row">
+            <i class="ti ti-apple"></i>
+            <div class="rs-bar-track"><div class="rs-bar-fill" style="width:${sn}%;background:${barColor(sn)}"></div></div>
+            <div class="rs-bar-val" style="color:${barColor(sn)}">${sn}%</div>
+          </div>
+          <div class="rs-bar-row">
+            <i class="ti ti-run"></i>
+            <div class="rs-bar-track"><div class="rs-bar-fill" style="width:${stepsPct}%;background:${barColor(stepsPct)}"></div></div>
+            <div class="rs-bar-val" style="color:${barColor(stepsPct)}">${stepsStr}</div>
+          </div>
         </div>
-        <div class="ai-card-txt">${summaryLine}</div>
-      </div>
 
-      <div class="msg-body">${msgBody}</div>
-      <div class="msg-sig">— ${escHtml(TRAINER_NAME)}, Tu Preparador</div>
+        <!-- Nota resumen (1-2 líneas) -->
+        <div class="rs-note">${escHtml(summaryLine)}</div>
 
-      <div class="attach-pill" onclick="switchTab('workout')">
-        <i class="ti ti-paperclip" style="font-size:13px"></i>
-        ${planLabel}
+        <!-- Botón enviar -->
+        <button class="rs-send-btn" id="rs-send-btn" onclick="sendResumenCliente()">
+          <i class="ti ti-send"></i> Enviar resumen al cliente
+        </button>
       </div>
     </div>
 
@@ -558,6 +583,41 @@ function buildDayResumen(client, log) {
   else if (steps > 0 && steps < stepsGoal * 0.7) lines.push(`Pasos: ${stepsStr} — empuja un poco más en los próximos días.`)
 
   return { summaryLine, msgBody: lines.join('\n') }
+}
+
+window.sendResumenCliente = async function() {
+  if (!SELECTED_CLIENT || !TRAINER_ID || !CURRENT_RESUMEN_MSG) return
+  const btn = document.getElementById('rs-send-btn')
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2"></i> Enviando...' }
+
+  const motivational = [
+    '¡Tú puedes hacerlo! Cada día cuenta.',
+    '¡Sigue así! El esfuerzo de hoy es el resultado de mañana.',
+    '¡Gran trabajo! Mantén el ritmo.',
+    '¡Cada sesión te acerca más a tu objetivo!',
+    '¡El progreso es constante cuando eres constante!',
+  ]
+  const extra = motivational[Math.floor(Math.random() * motivational.length)]
+  const fullMsg = CURRENT_RESUMEN_MSG + `\n\n${extra}\n\n— ${TRAINER_NAME}, Tu Preparador`
+
+  const { data } = await supabase.from('messages')
+    .insert({ client_id: SELECTED_CLIENT, sender_id: TRAINER_ID, content: fullMsg })
+    .select().single()
+
+  if (btn) {
+    if (data) {
+      btn.innerHTML = '<i class="ti ti-circle-check"></i> Mensaje enviado'
+      btn.style.background = '#1D9E75'
+      setTimeout(() => {
+        btn.disabled = false
+        btn.style.background = ''
+        btn.innerHTML = '<i class="ti ti-send"></i> Enviar resumen al cliente'
+      }, 3000)
+    } else {
+      btn.disabled = false
+      btn.innerHTML = '<i class="ti ti-send"></i> Enviar resumen al cliente'
+    }
+  }
 }
 
 window.switchTab = function(tab) {
