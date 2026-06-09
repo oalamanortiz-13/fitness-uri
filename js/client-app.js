@@ -701,8 +701,9 @@ function renderNutrition() {
         </div>`
       }
       html += group.map(s => {
-        const checked = S.foodsChecked.includes(s.id)
-        return `<div class="meal-row row" data-food-id="${s.id}" data-prot="${s.protein_g || 0}" data-kcal="${s.kcal || 0}" onclick="toggleMeal(this)">
+        const checked = isToday && S.foodsChecked.includes(s.id)
+        const suplStyle = isToday ? 'cursor:pointer' : 'pointer-events:none;opacity:0.6;'
+        return `<div class="meal-row row" data-food-id="${s.id}" data-prot="${s.protein_g || 0}" data-kcal="${s.kcal || 0}" onclick="toggleMeal(this)" style="${suplStyle}">
           <button class="check-btn${checked ? ' on' : ''}" aria-label="Marcar">${checked ? '✓' : ''}</button>
           <div style="flex:1;margin-left:10px"><div class="row-name">${s.name}</div></div>
           ${s.protein_g > 0 ? `<span class="tag" style="margin-right:4px">${s.protein_g}g prot</span>` : ''}
