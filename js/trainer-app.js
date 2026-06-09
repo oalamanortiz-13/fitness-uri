@@ -585,6 +585,7 @@ function buildDayResumen(client, log) {
   return { summaryLine, msgBody: lines.join('\n') }
 }
 
+
 window.sendResumenCliente = async function() {
   if (!SELECTED_CLIENT || !TRAINER_ID || !CURRENT_RESUMEN_MSG) return
   const btn = document.getElementById('rs-send-btn')
@@ -604,6 +605,11 @@ window.sendResumenCliente = async function() {
     .insert({ client_id: SELECTED_CLIENT, sender_id: TRAINER_ID, content: fullMsg })
     .select().single()
 
+  if (data) {
+    sendPushToClient(SELECTED_CLIENT, 'Resumen de tu preparador', fullMsg.split('
+')[0])
+  }
+
   if (btn) {
     if (data) {
       btn.innerHTML = '<i class="ti ti-circle-check"></i> Mensaje enviado'
@@ -619,6 +625,7 @@ window.sendResumenCliente = async function() {
     }
   }
 }
+
 
 window.switchTab = function(tab) {
   ACTIVE_TAB = tab
@@ -3296,12 +3303,27 @@ window.trainerSendMessage = async function() {
   if (data) {
     const idx = chatMessages.findIndex(m => m.id === tempMsg.id)
     if (idx !== -1) chatMessages[idx] = data
+    sendPushToClient(chatClientId, `Mensaje de ${TRAINER_NAME}`, content)
   }
 }
 
 function trainerEscapeHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
 }
+
+async function sendPushToClient(clientId, title, body) {
+  try {
+    const SUPABASE_URL = 'https://cwwvwrzqlavuyqhyeepu.supabase.co'
+    await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: clientId, title, body: body.slice(0, 120), url: '/client.html' })
+    })
+  } catch (e) {
+    console.warn('Push notification failed:', e)
+  }
+}
+
 
 // Notificar badge en tab chat cuando llega mensaje nuevo de cualquier cliente
 async function checkUnreadMessages() {

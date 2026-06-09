@@ -60,6 +60,8 @@ let trainerChatChannel = null
 let trainerMessages = []
 let activeChatTab = 'trainer'
 
+const VAPID_PUBLIC_KEY = 'BGe-gg91RY7uCLnoDRni7-cPamj9dwoQD1Bu7ERlDUfHgDXpmPrddKJPdB70Vuk0U7Lb1tu4qkA7BTPJtkSMRv4'
+
 // ─── INIT ────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -94,6 +96,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const hdr = document.getElementById('client-header')
   if (hdr) hdr.style.display = 'flex'
 
+  // Register push notifications after UI is visible (non-blocking)
+  registerPushNotifications()
+
   // Trigger dashboard card entrance animation on first load
   requestAnimationFrame(() => {
     document.querySelectorAll('#dash .card, #dash .score-ring-card, #dash .metric-grid').forEach((el, i) => {
@@ -109,6 +114,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 })
 
 window.doLogout = logout
+
+// ─── PUSH NOTIFICATIONS ───────────────────────────────────────────────────────
+
+function urlB64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const raw = atob(base64)
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)))
+}
+
+async function registerPushNotifications() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js')
+    const existing = await reg.pushManager.getSubscription()
+    if (existing) {
+      await supabase.from('push_subscriptions').upsert({ client_id: USER_ID, subscription: existing.toJSON() })
+      return
+    }
+    const permission = await Notification.requestPermission()
+    if (permission !== 'granted') return
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY)
+    })
+    await supabase.from('push_subscriptions').upsert({ client_id: USER_ID, subscription: sub.toJSON() })
+  } catch (e) {
+    console.warn('Push registration failed:', e)
+  }
+}
 
 // ─── LOAD DATA ────────────────────────────────────────────────────────────────
 
