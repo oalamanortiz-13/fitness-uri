@@ -487,7 +487,7 @@ function renderClientDetail() {
       <div class="ai-card">
         <div class="ai-card-hd">
           <i class="ti ti-stack-2" style="font-size:13px"></i>
-          Resumen por IA
+          Resumen del día
         </div>
         <div class="ai-card-txt">${summaryLine}</div>
       </div>
@@ -746,7 +746,7 @@ window.toggleClientActive = async function(active) {
 function renderWorkoutTab(el) {
   el.innerHTML = `
     <div class="card" style="margin-bottom:12px;border-color:var(--blue)44">
-      <div class="card-title" style="color:var(--blue)"><i class="ti ti-robot"></i> Editar plan con IA</div>
+      <div class="card-title" style="color:var(--blue)"><i class="ti ti-wand"></i> Editor de plan</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
         Di o escribe qué quieres cambiar en el plan. Ej: <em>"El lunes añade press de banca 4x8"</em>, <em>"Quita las sentadillas del martes"</em>, <em>"El miércoles cambia el nombre del día a Piernas Fuerza"</em>
       </div>
@@ -755,7 +755,7 @@ function renderWorkoutTab(el) {
         ${voiceMicBtn('ai-instruction')}
       </div>
       <button class="btn btn-primary" onclick="applyAIInstruction(this)" style="margin-top:10px;width:100%">
-        <i class="ti ti-wand"></i> Aplicar cambios con IA
+        <i class="ti ti-wand"></i> Aplicar cambios
       </button>
       <div id="ai-result" style="margin-top:10px;font-size:12px;display:none"></div>
     </div>
@@ -866,7 +866,7 @@ window.applyAIInstruction = async function(btn) {
 
   const resultEl = document.getElementById('ai-result')
   btn.disabled = true
-  btn.innerHTML = '<i class="ti ti-loader-2"></i> Consultando IA...'
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Procesando...'
   resultEl.style.display = 'none'
 
   // Construir snapshot del plan actual
@@ -902,9 +902,9 @@ window.applyAIInstruction = async function(btn) {
     if (!actions?.length) {
       resultEl.style.display = 'block'
       resultEl.style.color = 'var(--amber)'
-      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> La IA no generó acciones.<br><small style="color:var(--text3)">${debug || 'Sin respuesta'}</small>`
+      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> No se generaron cambios.<br><small style="color:var(--text3)">${debug || 'Sin respuesta'}</small>`
       btn.disabled = false
-      btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+      btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios'
       return
     }
 
@@ -922,7 +922,7 @@ window.applyAIInstruction = async function(btn) {
   }
 
   btn.disabled = false
-  btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+  btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios'
 }
 
 async function applyAIPlanActions(actions) {
@@ -1076,7 +1076,7 @@ function renderDietTab(el) {
   el.innerHTML = `
     <div class="day-sel" id="diet-day-sel"></div>
     <div class="card" style="margin-bottom:12px;border-color:var(--blue)44">
-      <div class="card-title" style="color:var(--blue)"><i class="ti ti-robot"></i> Editar dieta con IA</div>
+      <div class="card-title" style="color:var(--blue)"><i class="ti ti-wand"></i> Editor de dieta</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
         Di o escribe qué quieres cambiar. Ej: <em>"Añade 200g de arroz al almuerzo"</em>, <em>"Quita el batido de proteínas del desayuno"</em>, <em>"Cambia el pollo por salmón en la cena"</em>
       </div>
@@ -1085,7 +1085,7 @@ function renderDietTab(el) {
         ${voiceMicBtn('ai-diet-instruction')}
       </div>
       <button class="btn btn-primary" onclick="applyAIDietInstruction(this)" style="margin-top:10px;width:100%">
-        <i class="ti ti-wand"></i> Aplicar cambios con IA
+        <i class="ti ti-wand"></i> Aplicar cambios
       </button>
       <div id="ai-diet-result" style="margin-top:10px;font-size:12px;display:none"></div>
     </div>
@@ -1356,7 +1356,7 @@ window.applyAIDietInstruction = async function(btn) {
 
   const resultEl = document.getElementById('ai-diet-result')
   btn.disabled = true
-  btn.innerHTML = '<i class="ti ti-loader-2"></i> Consultando IA...'
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Procesando...'
   resultEl.style.display = 'none'
 
   const diet = SELECTED_CLIENT_DATA.diet
@@ -1365,7 +1365,7 @@ window.applyAIDietInstruction = async function(btn) {
     resultEl.style.color = 'var(--amber)'
     resultEl.innerHTML = '<i class="ti ti-alert-triangle"></i> No hay plan de dieta activo. Crea uno primero.'
     btn.disabled = false
-    btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+    btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios'
     return
   }
 
@@ -1403,9 +1403,9 @@ window.applyAIDietInstruction = async function(btn) {
     if (!actions?.length) {
       resultEl.style.display = 'block'
       resultEl.style.color = 'var(--amber)'
-      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> La IA no generó acciones.<br><small style="color:var(--text3)">${debug || 'Sin respuesta'}</small>`
+      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> No se generaron cambios.<br><small style="color:var(--text3)">${debug || 'Sin respuesta'}</small>`
       btn.disabled = false
-      btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+      btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios'
       return
     }
 
@@ -1436,7 +1436,7 @@ window.applyAIDietInstruction = async function(btn) {
   }
 
   btn.disabled = false
-  btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+  btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios'
 }
 
 async function applyAIDietActions(actions) {
@@ -1500,7 +1500,7 @@ window.applyAICardioInstruction = async function(btn) {
   if (!instruction) { showNotif('Escribe o dicta una instrucción'); return }
   const resultEl = document.getElementById('ai-cardio-result')
   btn.disabled = true
-  btn.innerHTML = '<i class="ti ti-loader-2"></i> Consultando IA...'
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Procesando...'
   resultEl.style.display = 'none'
 
   const c = SELECTED_CLIENT_DATA.client
@@ -1523,8 +1523,8 @@ window.applyAICardioInstruction = async function(btn) {
     if (error) throw new Error(error)
     if (!actions?.length) {
       resultEl.style.display = 'block'; resultEl.style.color = 'var(--amber)'
-      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> La IA no generó acciones.<br><small style="color:var(--text3)">${debug || ''}</small>`
-      btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'; return
+      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> No se generaron cambios.<br><small style="color:var(--text3)">${debug || ''}</small>`
+      btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios'; return
     }
     const updates = {}
     for (const action of actions) {
@@ -1545,7 +1545,7 @@ window.applyAICardioInstruction = async function(btn) {
     resultEl.style.display = 'block'; resultEl.style.color = 'var(--red)'
     resultEl.innerHTML = `<i class="ti ti-alert-circle"></i> ${err.message}`
   }
-  btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+  btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios'
 }
 
 // ─── IA EDITOR DE SUPLEMENTOS ─────────────────────────────────────────────────
@@ -1555,7 +1555,7 @@ window.applyAISuplsInstruction = async function(btn) {
   if (!instruction) { showNotif('Escribe o dicta una instrucción'); return }
   const resultEl = document.getElementById('ai-supls-result')
   btn.disabled = true
-  btn.innerHTML = '<i class="ti ti-loader-2"></i> Consultando IA...'
+  btn.innerHTML = '<i class="ti ti-loader-2"></i> Procesando...'
   resultEl.style.display = 'none'
 
   const plan = {
@@ -1576,8 +1576,8 @@ window.applyAISuplsInstruction = async function(btn) {
     if (error) throw new Error(error)
     if (!actions?.length) {
       resultEl.style.display = 'block'; resultEl.style.color = 'var(--amber)'
-      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> La IA no generó acciones.<br><small style="color:var(--text3)">${debug || ''}</small>`
-      btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'; return
+      resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> No se generaron cambios.<br><small style="color:var(--text3)">${debug || ''}</small>`
+      btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios'; return
     }
     for (const action of actions) {
       if (action.type === 'add_supplement') {
@@ -1603,7 +1603,7 @@ window.applyAISuplsInstruction = async function(btn) {
     resultEl.style.display = 'block'; resultEl.style.color = 'var(--red)'
     resultEl.innerHTML = `<i class="ti ti-alert-circle"></i> ${err.message}`
   }
-  btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios con IA'
+  btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Aplicar cambios'
 }
 
 // ─── IA EDITOR DE MEDIDAS ─────────────────────────────────────────────────────
@@ -1628,7 +1628,7 @@ window.applyAIMeasuresInstruction = async function(btn) {
     if (!measurement) {
       resultEl.style.display = 'block'; resultEl.style.color = 'var(--amber)'
       resultEl.innerHTML = `<i class="ti ti-alert-triangle"></i> No se pudieron extraer medidas.<br><small style="color:var(--text3)">${debug || ''}</small>`
-      btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Registrar con IA'; return
+      btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Registrar medidas'; return
     }
     const { error: dbErr } = await supabase.from('body_measurements')
       .insert({ client_id: SELECTED_CLIENT, measured_at: measurement.date || new Date().toISOString().split('T')[0], ...measurement })
@@ -1641,7 +1641,7 @@ window.applyAIMeasuresInstruction = async function(btn) {
     resultEl.style.display = 'block'; resultEl.style.color = 'var(--red)'
     resultEl.innerHTML = `<i class="ti ti-alert-circle"></i> ${err.message}`
   }
-  btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Registrar con IA'
+  btn.disabled = false; btn.innerHTML = '<i class="ti ti-wand"></i> Registrar medidas'
 }
 
 // ─── TAB: SUPLEMENTOS ─────────────────────────────────────────────────────────
@@ -1673,7 +1673,7 @@ function renderSupplementsTab(el) {
   const c = SELECTED_CLIENT_DATA.client
   el.innerHTML = `
     <div class="card" style="margin-bottom:12px;border-color:var(--blue)44">
-      <div class="card-title" style="color:var(--blue)"><i class="ti ti-robot"></i> Editar suplementación con IA</div>
+      <div class="card-title" style="color:var(--blue)"><i class="ti ti-wand"></i> Editor de suplementación</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
         Di o escribe qué quieres cambiar. Ej: <em>"Añade creatina 5g por la mañana"</em>, <em>"Quita la proteína de suero"</em>, <em>"Cambia la dosis de magnesio a 400mg"</em>
       </div>
@@ -1682,7 +1682,7 @@ function renderSupplementsTab(el) {
         ${voiceMicBtn('ai-supls-instruction')}
       </div>
       <button class="btn btn-primary" onclick="applyAISuplsInstruction(this)" style="margin-top:10px;width:100%">
-        <i class="ti ti-wand"></i> Aplicar cambios con IA
+        <i class="ti ti-wand"></i> Aplicar cambios
       </button>
       <div id="ai-supls-result" style="margin-top:10px;font-size:12px;display:none"></div>
     </div>
@@ -1832,7 +1832,7 @@ async function renderCardioTab(el) {
 
   el.innerHTML = `
     <div class="card" style="margin-bottom:12px;border-color:var(--blue)44">
-      <div class="card-title" style="color:var(--blue)"><i class="ti ti-robot"></i> Editar cardio con IA</div>
+      <div class="card-title" style="color:var(--blue)"><i class="ti ti-wand"></i> Editor de cardio</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
         Di o escribe qué quieres cambiar. Ej: <em>"Pon el objetivo de pasos a 10.000"</em>, <em>"Añade ciclismo y natación"</em>, <em>"Cambia el cardio semanal a 200 minutos"</em>
       </div>
@@ -1841,7 +1841,7 @@ async function renderCardioTab(el) {
         ${voiceMicBtn('ai-cardio-instruction')}
       </div>
       <button class="btn btn-primary" onclick="applyAICardioInstruction(this)" style="margin-top:10px;width:100%">
-        <i class="ti ti-wand"></i> Aplicar cambios con IA
+        <i class="ti ti-wand"></i> Aplicar cambios
       </button>
       <div id="ai-cardio-result" style="margin-top:10px;font-size:12px;display:none"></div>
     </div>
@@ -2025,16 +2025,16 @@ async function renderMeasuresTab(el) {
 
   el.innerHTML = `
     <div class="card" style="margin-bottom:12px;border-color:var(--blue)44">
-      <div class="card-title" style="color:var(--blue)"><i class="ti ti-robot"></i> Registrar medidas con IA</div>
+      <div class="card-title" style="color:var(--blue)"><i class="ti ti-wand"></i> Registrar medidas por voz</div>
       <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
-        Dicta las medidas y la IA las registra automáticamente. Ej: <em>"Peso 71 kilos, cintura 76 cm, brazo derecho 33 cm, cadera 94 cm"</em>
+        Dicta las medidas y se registran automáticamente. Ej: <em>"Peso 71 kilos, cintura 76 cm, brazo derecho 33 cm, cadera 94 cm"</em>
       </div>
       <div style="display:flex;gap:8px;align-items:flex-start">
         <textarea id="ai-measures-instruction" style="flex:1;min-height:60px;resize:vertical;font-size:13px" placeholder="Dicta las medidas del cliente..."></textarea>
         ${voiceMicBtn('ai-measures-instruction')}
       </div>
       <button class="btn btn-primary" onclick="applyAIMeasuresInstruction(this)" style="margin-top:10px;width:100%">
-        <i class="ti ti-wand"></i> Registrar con IA
+        <i class="ti ti-wand"></i> Registrar medidas
       </button>
       <div id="ai-measures-result" style="margin-top:10px;font-size:12px;display:none"></div>
     </div>

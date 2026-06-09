@@ -405,7 +405,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
       <span class="chat-unread" id="trainer-chat-badge"></span>
     </button>
     <button class="chat-tab-btn" id="ctab-ai" onclick="switchChatTab('ia')">
-      <i class="ti ti-robot"></i> IA Coach
+      <i class="ti ti-message-dots"></i> Asistente
     </button>
   </div>
 
@@ -425,12 +425,12 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
     </div>
   </div>
 
-  <!-- Panel: IA Coach -->
+  <!-- Panel: Asistente -->
   <div id="ia-chat-panel" style="display:none">
     <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Pregúntame lo que necesites sobre tu plan</div>
     <div class="card" style="padding:12px">
       <div class="chat-wrap tall" id="chat-wrap">
-        <div class="msg ai" id="ai-greeting">Hola, soy tu preparador IA. Cargando tu plan...</div>
+        <div class="msg ai" id="ai-greeting">Hola, soy tu preparador personal. Cargando tu plan...</div>
       </div>
       <div class="chat-input-row">
         <input type="text" id="chat-in" placeholder="Escribe tu pregunta..." onkeydown="if(event.key==='Enter')sendChat()">

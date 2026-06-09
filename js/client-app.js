@@ -1702,7 +1702,7 @@ INSTRUCCIONES:
 function setAIGreeting() {
   const name = CLIENT ? '' : ''
   document.getElementById('ai-greeting').textContent =
-    `Hola${name}. Soy tu preparador IA. Estoy al tanto de tu plan completo. ¿Qué necesitas?`
+    `Hola${name}. Soy tu preparador personal. Estoy al tanto de tu plan completo. ¿Qué necesitas?`
 }
 
 window.sendChat = async function() {
