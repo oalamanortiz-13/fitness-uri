@@ -31,9 +31,9 @@ serve(async (req) => {
       throw new Error('Token inválido')
     }
 
-    const { goal, level, equipment, days_per_week, age, weight, target_weight, height } = await req.json()
+    const { goal, level, equipment, days_per_week, duration, age, weight, target_weight, height } = await req.json()
 
-    const plan = await generatePlan({ goal, level, equipment, days_per_week, age, weight, target_weight, height })
+    const plan = await generatePlan({ goal, level, equipment, days_per_week, duration, age, weight, target_weight, height })
 
     // Crear fila en clients
     const { error: clientError } = await supabase.from('clients').upsert({
@@ -48,7 +48,7 @@ serve(async (req) => {
       steps_goal: plan.client_config.steps_goal,
       cardio_goal_min: plan.client_config.cardio_goal_min,
       plan_start_date: new Date().toISOString().split('T')[0],
-      plan_weeks: plan.client_config.plan_weeks,
+      plan_weeks: plan.client_config.plan_weeks || (duration === '4 semanas' ? 4 : duration === '8 semanas' ? 8 : duration === '6 meses o más' ? 24 : 12),
       phase_name: plan.client_config.phase_name,
       golden_rules: plan.client_config.golden_rules || [],
       active: true,
@@ -149,10 +149,10 @@ serve(async (req) => {
 
 async function generatePlan(params: {
   goal: string, level: string, equipment: string,
-  days_per_week: number, age?: string, weight?: string,
+  days_per_week: number, duration?: string, age?: string, weight?: string,
   target_weight?: string, height?: string
 }) {
-  const { goal, level, equipment, days_per_week, age, weight, target_weight, height } = params
+  const { goal, level, equipment, days_per_week, duration, age, weight, target_weight, height } = params
 
   const prompt = `Eres un preparador físico de élite. Genera un plan de entrenamiento y nutrición personalizado.
 
@@ -161,6 +161,7 @@ Cliente:
 - Nivel: ${level}
 - Equipamiento: ${equipment}
 - Días/semana: ${days_per_week}
+- Tiempo disponible para el objetivo: ${duration || '12 semanas'}
 - Edad: ${age || 'no especificada'} años
 - Peso actual: ${weight || 'no especificado'} kg
 - Peso objetivo: ${target_weight || 'no especificado'} kg

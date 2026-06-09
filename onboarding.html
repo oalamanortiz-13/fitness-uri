@@ -263,7 +263,32 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
             <input type="number" id="f-target" placeholder="70" min="40" max="200" step="0.1">
           </div>
         </div>
-        <p style="font-size:11px;color:rgba(255,255,255,.25);margin-top:14px;line-height:1.5">Todos los campos son opcionales pero mejoran la precisión de tu plan.</p>
+        <div style="margin-top:16px">
+          <label style="font-size:12px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:10px">¿Cuánto tiempo tienes para tu objetivo?</label>
+          <div class="ob-options-grid" id="opt-duration" style="grid-template-columns:repeat(2,1fr)">
+            <div class="ob-option-grid" data-value="4 semanas" onclick="selectGrid(this,'duration')">
+              <i class="ti ti-clock"></i>
+              <div class="ob-option-grid-label">4 semanas</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.4)">Reto exprés</div>
+            </div>
+            <div class="ob-option-grid" data-value="8 semanas" onclick="selectGrid(this,'duration')">
+              <i class="ti ti-clock"></i>
+              <div class="ob-option-grid-label">8 semanas</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.4)">Cambio real</div>
+            </div>
+            <div class="ob-option-grid" data-value="12 semanas" onclick="selectGrid(this,'duration')">
+              <i class="ti ti-clock"></i>
+              <div class="ob-option-grid-label">12 semanas</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.4)">Transformación</div>
+            </div>
+            <div class="ob-option-grid" data-value="6 meses o más" onclick="selectGrid(this,'duration')">
+              <i class="ti ti-infinity"></i>
+              <div class="ob-option-grid-label">6 meses+</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.4)">Largo plazo</div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:11px;color:rgba(255,255,255,.25);margin-top:14px;line-height:1.5">Los datos físicos son opcionales pero mejoran la precisión de tu plan.</p>
       </div>
 
     </div><!-- /steps-view -->
@@ -378,10 +403,11 @@ window.goNext = function() {
 
 async function submitOnboarding() {
   // Recoger datos físicos
-  answers.age    = document.getElementById('f-age').value
-  answers.height = document.getElementById('f-height').value
-  answers.weight = document.getElementById('f-weight').value
-  answers.target = document.getElementById('f-target').value
+  answers.age      = document.getElementById('f-age').value
+  answers.height   = document.getElementById('f-height').value
+  answers.weight   = document.getElementById('f-weight').value
+  answers.target   = document.getElementById('f-target').value
+  answers.duration = answers.duration || '12 semanas'
 
   // Mostrar loading
   document.getElementById('steps-view').style.display = 'none'
@@ -413,6 +439,7 @@ async function submitOnboarding() {
           level:        answers.level,
           equipment:    answers.equipment,
           days_per_week: parseInt(answers.days) || 3,
+          duration:     answers.duration || '12 semanas',
           age:          answers.age || null,
           weight:       answers.weight || null,
           target_weight: answers.target || null,
