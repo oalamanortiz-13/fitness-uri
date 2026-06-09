@@ -95,6 +95,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Register push notifications after UI is visible (non-blocking)
   registerPushNotifications()
 
+  // Limpiar badge del icono PWA al abrir la app
+  if ('clearAppBadge' in navigator) navigator.clearAppBadge().catch(() => {})
+
+  // Limpiar badge también cada vez que la app vuelve al primer plano
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && 'clearAppBadge' in navigator) {
+      navigator.clearAppBadge().catch(() => {})
+    }
+  })
+
   // Trigger dashboard card entrance animation on first load
   requestAnimationFrame(() => {
     document.querySelectorAll('#dash .card, #dash .score-ring-card, #dash .metric-grid').forEach((el, i) => {
