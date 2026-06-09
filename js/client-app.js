@@ -307,7 +307,7 @@ function calcDayScore() {
   const trainingScore = totalEx > 0 ? Math.round(doneEx / totalEx * 100) : 100
 
   // Nutrition score (40%): foods + protein supplements checked vs total (today's day only)
-  const _nutMeals = DIET_MEALS.filter(m => m.day_index == null || m.day_index === getTodayIdx())
+  const _nutMeals = DIET_MEALS.filter(m => m.day_index == null || m.day_index === 0 || m.day_index === getTodayIdx())
   const totalFoods = _nutMeals.reduce((a, m) => a + m.diet_foods.length, 0)
   const totalProtSupls = SUPPLEMENTS.filter(s => s.protein_g > 0).length
   const checkedFoods = S.foodsChecked.filter(id =>
@@ -645,8 +645,8 @@ function renderNutrition() {
   const container = document.getElementById('diet-meals-container')
   const icons = { 'Desayuno': 'ti-coffee', 'Comida': 'ti-soup', 'Merienda': 'ti-apple', 'Cena': 'ti-moon' }
   const isToday = S.curDietDay === getTodayIdx()
-  // Meals with no day_index (AI-generated plans) apply to every day
-  const todayMeals = DIET_MEALS.filter(m => m.day_index == null || m.day_index === S.curDietDay)
+  // day_index=0 is the default (AI plans / no specific day) → show every day
+  const todayMeals = DIET_MEALS.filter(m => m.day_index == null || m.day_index === 0 || m.day_index === S.curDietDay)
 
   renderDietDaySel()
 
@@ -989,7 +989,7 @@ function updateNutriFinishBtn() {
   btn.disabled = false
   btn.style.opacity = ''
 
-  const _todayNutMeals = DIET_MEALS.filter(m => m.day_index == null || m.day_index === getTodayIdx())
+  const _todayNutMeals = DIET_MEALS.filter(m => m.day_index == null || m.day_index === 0 || m.day_index === getTodayIdx())
   const totalFoods = _todayNutMeals.reduce((a, m) => a + m.diet_foods.length, 0)
   const checked = S.foodsChecked.filter(id => _todayNutMeals.some(m => m.diet_foods.some(f => f.id === id))).length
   const pct = totalFoods > 0 ? Math.round(checked / totalFoods * 100) : 100
@@ -1058,7 +1058,7 @@ window.finishNutrition = async function() {
   clearTimeout(saveTimeout)
   await saveLog()
 
-  const _finishNutMeals = DIET_MEALS.filter(m => m.day_index == null || m.day_index === getTodayIdx())
+  const _finishNutMeals = DIET_MEALS.filter(m => m.day_index == null || m.day_index === 0 || m.day_index === getTodayIdx())
   const totalFoods = _finishNutMeals.reduce((a, m) => a + m.diet_foods.length, 0)
   const checked = S.foodsChecked.filter(id => _finishNutMeals.some(m => m.diet_foods.some(f => f.id === id))).length
   const nutritionScore = totalFoods > 0 ? Math.round(checked / totalFoods * 100) : 100
@@ -1636,7 +1636,7 @@ function buildSystemPrompt() {
     nutritionSection += 'Sin plan de nutrición asignado.'
   } else {
     let totalKcal = 0, totalProt = 0, totalCarbs = 0, totalFat = 0
-    const todayMeals = DIET_MEALS.filter(m => m.day_index == null || m.day_index === todayIdx)
+    const todayMeals = DIET_MEALS.filter(m => m.day_index == null || m.day_index === 0 || m.day_index === todayIdx)
     const mealsToShow = todayMeals.length > 0 ? todayMeals : DIET_MEALS
     const checkedFoods = S.foodsChecked || []
     mealsToShow.forEach(meal => {
@@ -1672,7 +1672,7 @@ function buildSystemPrompt() {
   const exercisesDoneToday = (S.exercisesDone || []).length
   const totalExercisesToday = todayWO ? (todayWO.workout_exercises || []).length : 0
   const foodsCheckedToday = (S.foodsChecked || []).length
-  const totalFoodsToday = DIET_MEALS.filter(m => m.day_index == null || m.day_index === todayIdx).reduce((acc, m) => acc + (m.diet_foods || []).length, 0)
+  const totalFoodsToday = DIET_MEALS.filter(m => m.day_index == null || m.day_index === 0 || m.day_index === todayIdx).reduce((acc, m) => acc + (m.diet_foods || []).length, 0)
 
   const statusSection = `\nESTADO DE HOY (${today}):\n` +
     `• Pasos: ${todaySteps}${CLIENT.steps_goal ? ` / ${CLIENT.steps_goal}` : ''}\n` +
