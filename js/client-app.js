@@ -262,12 +262,15 @@ async function loadWeekCardio() {
     }
   }
 
-  // Calcular racha
+  injectRestDays()
+
+  // Calcular racha (done y rest cuentan como día completado)
   let streak = 0
   const check = new Date()
   for (let i = 0; i < 60; i++) {
     const key = check.toISOString().split('T')[0]
-    if (S.calDays[key] === 'done') { streak++ } else break
+    const st = S.calDays[key]
+    if (st === 'done' || st === 'rest') { streak++ } else break
     check.setDate(check.getDate() - 1)
   }
   S.streak = streak
@@ -292,6 +295,25 @@ async function loadMonthLogs() {
     if (log.calendar_status) S.calDays[log.log_date] = log.calendar_status
     if (log.score != null) {
       S.calScores[log.log_date] = { total: log.score, training: log.score_training, nutrition: log.score_nutrition, cardio: log.score_cardio }
+    }
+  }
+  injectRestDays()
+}
+
+// Marca como 'rest' los días de descanso pasados que no tengan registro
+function injectRestDays() {
+  if (!WORKOUT_DAYS.length) return
+  const workoutIndices = new Set(WORKOUT_DAYS.map(d => d.day_index))
+  const now = new Date()
+  const today = now.toISOString().split('T')[0]
+  const yr = now.getFullYear(), mo = now.getMonth()
+  const days = new Date(yr, mo + 1, 0).getDate()
+  for (let d = 1; d <= now.getDate(); d++) {
+    const date = new Date(yr, mo, d)
+    const euroDay = (date.getDay() + 6) % 7  // 0=lun … 6=dom
+    const key = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    if (!workoutIndices.has(euroDay) && !S.calDays[key]) {
+      S.calDays[key] = 'rest'
     }
   }
 }
@@ -1147,7 +1169,8 @@ window.finishWorkout = async function() {
   S.trainingDone = true
   S.calDays[today] = 'done'
   const prev = new Date(); prev.setDate(prev.getDate() - 1)
-  S.streak = S.calDays[prev.toISOString().split('T')[0]] === 'done' ? S.streak + 1 : 1
+  const prevSt2 = S.calDays[prev.toISOString().split('T')[0]]
+  S.streak = (prevSt2 === 'done' || prevSt2 === 'rest') ? S.streak + 1 : 1
 
   await supabase.from('daily_logs').upsert({
     client_id: USER_ID, log_date: today, calendar_status: 'done',
@@ -1462,26 +1485,30 @@ function renderCalendar() {
   for (let i = 0; i < offset; i++) {
     const e = document.createElement('div'); e.className = 'cal-day empty'; g.appendChild(e)
   }
+  let doneCount = 0
   for (let d = 1; d <= days; d++) {
     const el = document.createElement('div')
     const key = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     const st = S.calDays[key]
     const sc = S.calScores[key]
-    el.className = 'cal-day' + (st === 'done' ? ' done' : st === 'miss' ? ' miss' : '') + (d === now.getDate() ? ' today-c' : '')
-    if (st === 'done' && sc?.total != null) {
+    const isRest = st === 'rest'
+    el.className = 'cal-day' + ((st === 'done' || isRest) ? ' done' : st === 'miss' ? ' miss' : '') + (d === now.getDate() ? ' today-c' : '')
+    if (isRest) {
+      el.innerHTML = `<span style="display:block;font-size:12px;font-weight:600">${d}</span><span style="display:block;font-size:10px;line-height:1">💤</span>`
+    } else if (st === 'done' && sc?.total != null) {
       const pctColor = sc.total >= 80 ? '#1D9E75' : sc.total >= 50 ? '#BA7517' : '#E24B4A'
       el.innerHTML = `<span style="display:block;font-size:12px;font-weight:600">${d}</span><span style="display:block;font-size:9px;color:${pctColor};font-weight:700;line-height:1">${sc.total}%</span>`
     } else {
       el.textContent = d
     }
+    if (st === 'done' || isRest) doneCount++
     g.appendChild(el)
   }
 
-  const done = Object.values(S.calDays).filter(v => v === 'done').length
   const passed = now.getDate()
   document.getElementById('cal-streak-big').textContent = S.streak
-  document.getElementById('cal-done').textContent = done
-  document.getElementById('cal-adher').textContent = Math.round(done / passed * 100) + '%'
+  document.getElementById('cal-done').textContent = doneCount
+  document.getElementById('cal-adher').textContent = Math.round(doneCount / passed * 100) + '%'
   document.getElementById('d-streak').textContent = S.streak + ' 🔥'
 }
 
@@ -1492,7 +1519,8 @@ window.markToday = async function(done) {
   if (done) {
     const prev = new Date(); prev.setDate(prev.getDate() - 1)
     const pk = prev.toISOString().split('T')[0]
-    S.streak = S.calDays[pk] === 'done' ? S.streak + 1 : 1
+    const prevSt = S.calDays[pk]
+    S.streak = (prevSt === 'done' || prevSt === 'rest') ? S.streak + 1 : 1
   } else {
     S.streak = 0
   }
