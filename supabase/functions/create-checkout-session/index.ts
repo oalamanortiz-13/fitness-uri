@@ -7,6 +7,13 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   httpClient: Stripe.createFetchHttpClient(),
 })
 
+const TIER_PRICE_MAP: Record<string, string> = {
+  starter: Deno.env.get('STRIPE_PRICE_STARTER') ?? '',
+  pro:     Deno.env.get('STRIPE_PRICE_PRO')     ?? '',
+  elite:   Deno.env.get('STRIPE_PRICE_ELITE')   ?? '',
+  studio:  Deno.env.get('STRIPE_PRICE_STUDIO')  ?? '',
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -21,13 +28,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // Verificar sesión del trainer
     const authHeader = req.headers.get('Authorization')!
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     if (authError || !user) throw new Error('No autorizado')
 
-    // Obtener datos del trainer
+    const { tier, successUrl, cancelUrl } = await req.json()
+    const normalizedTier = (tier || 'pro').toLowerCase()
+    const priceId = TIER_PRICE_MAP[normalizedTier]
+    if (!priceId) throw new Error(`Tier no válido: ${normalizedTier}`)
+
     const { data: trainer } = await supabase
       .from('trainers')
       .select('stripe_customer_id, profiles(full_name, email)')
@@ -35,9 +45,7 @@ serve(async (req) => {
       .single()
 
     const profile = (trainer as any)?.profiles
-    const activeClientCount = await getActiveClientCount(supabase, user.id)
 
-    // Crear o recuperar cliente de Stripe
     let customerId = trainer?.stripe_customer_id
     if (!customerId) {
       const customer = await stripe.customers.create({
@@ -49,18 +57,12 @@ serve(async (req) => {
       await supabase.from('trainers').update({ stripe_customer_id: customerId }).eq('id', user.id)
     }
 
-    const { successUrl, cancelUrl } = await req.json()
-
-    // Crear sesión de Stripe Checkout
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
-      line_items: [{
-        price: Deno.env.get('STRIPE_PRICE_ID')!,
-        quantity: Math.max(1, activeClientCount),
-      }],
+      line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
-        metadata: { trainer_id: user.id },
+        metadata: { trainer_id: user.id, plan_tier: normalizedTier },
       },
       success_url: successUrl || `${Deno.env.get('APP_URL')}/trainer.html?payment=success`,
       cancel_url:  cancelUrl  || `${Deno.env.get('APP_URL')}/trainer.html?payment=cancel`,
@@ -77,12 +79,3 @@ serve(async (req) => {
     })
   }
 })
-
-async function getActiveClientCount(supabase: any, trainerId: string): Promise<number> {
-  const { count } = await supabase
-    .from('clients')
-    .select('*', { count: 'exact', head: true })
-    .eq('trainer_id', trainerId)
-    .eq('active', true)
-  return count || 0
-}

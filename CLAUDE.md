@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **URL producción (temporal):** fitness-uri.vercel.app
 - **Supabase proyecto:** cwwvwrzqlavuyqhyeepu
 - **Stack:** Vanilla HTML/CSS/JS + Supabase (Auth + PostgreSQL) + Vercel (estático)
-- **Deploy:** push a `main` → Vercel despliega automáticamente. Desarrollar en `claude/wizardly-wright-kr57y`, mergear a `main` para ver cambios en producción.
+- **Deploy:** push a `main` → Vercel despliega automáticamente. Desarrollar en `claude/dazzling-galileo-93tiih`, mergear a `main` para ver cambios en producción.
 
 ## Estructura de archivos
 ```
@@ -53,7 +53,7 @@ Cada portal llama a `requireRole('rol')` al inicio. Si la sesión no coincide re
 `id` (= auth.uid), `role` (admin/trainer/client), `full_name`, `email`
 
 ### `trainers`
-`id`, `bio`, `specialty`, `max_clients`, `logo_url`, `subscription_status`, `trial_ends_at`, `stripe_customer_id`, `stripe_subscription_id`
+`id`, `bio`, `specialty`, `max_clients`, `logo_url`, `subscription_status`, `trial_ends_at`, `stripe_customer_id`, `stripe_subscription_id`, `plan_tier` (starter/pro/elite/studio)
 
 ### `clients`
 `id`, `trainer_id`, `age`, `height_cm`, `weight_start`, `weight_goal`, `kcal_goal`, `protein_goal`, `steps_goal`, `cardio_goal_min`, `plan_start_date`, `plan_weeks`, `phase_name`, `notes`, `golden_rules` (TEXT[]), `active`, `avatar_url`, `goal_label`, `reminder_interval_min`
@@ -118,10 +118,19 @@ Flujo principal:
 
 Sidebar superior: logo 72px (clickable para subir imagen, camera overlay), nombre del trainer en `#trainer-name-logo`.
 
-## Modelo de negocio Stripe (implementado, pendiente activar)
-- €9,90 por cliente activo / mes, trial 14 días
-- Edge Functions desplegadas: `create-checkout-session`, `stripe-webhook`
-- Variables de entorno pendientes en Supabase: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `APP_URL`
+## Modelo de negocio Stripe (implementado, pendiente activar en producción)
+
+### Tarifas planas (modelo tier, trial 14 días)
+| Tier | Precio mensual | Precio anual | Price ID (test) |
+|------|---------------|--------------|-----------------|
+| Starter | €29/mes | €24/mes | `price_1TgnGa46JZxeoowGgdKfIfn2` |
+| Pro | €59/mes | €49/mes | `price_1TgnGl46JZxeoowGIWH3kg1G` |
+| Elite | €99/mes | €82/mes | `price_1TgnGt46JZxeoowGpaYtgLbp` |
+| Studio | €149/mes | a medida | `price_1TgnGv46JZxeoowGI9kqdBPL` |
+
+- `create-checkout-session` acepta `{ tier: 'starter'|'pro'|'elite'|'studio' }`, usa `TIER_PRICE_MAP` con secrets `STRIPE_PRICE_STARTER/PRO/ELITE/STUDIO`
+- `stripe-webhook` lee `plan_tier` de `sub.metadata.plan_tier` y actualiza columna en `trainers`
+- Secrets pendientes en Supabase: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_ELITE`, `STRIPE_PRICE_STUDIO`, `STRIPE_WEBHOOK_SECRET`, `APP_URL`
 
 ## Design system
 ```css
@@ -178,6 +187,10 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - `008_supplement_timing` — `timing TEXT` en supplements
 - `009_section_notes` — `notes_workout`, `notes_diet`, `notes_cardio`, `notes_supls TEXT` en clients
 - `010_workout_day_notes` — `notes TEXT` en workout_days (instrucciones por día visibles en cliente)
+- `011_push_subscriptions` — tabla push_subscriptions: `client_id`, `endpoint`, `p256dh`, `auth`
+- `012_activity_level` — `activity_level TEXT CHECK(...)` en clients; valores: sedentaria/moderada/activo/muy_activo
+- `013_plan_tier` — `plan_tier TEXT` en trainers; valores: starter/pro/elite/studio
+- `014_auto_confirm_email` — trigger `AFTER INSERT ON auth.users` que auto-confirma email inmediatamente
 
 ## Funcionalidades implementadas (producción)
 - [x] Landing page pública (`index.html`) — hero, features, how-it-works, pricing, CTA, footer
@@ -201,7 +214,14 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - [x] Horario de suplementos (mañana/tarde/noche/pre-workout/post-workout) con tag de color en trainer y agrupación en cliente
 - [x] Instrucciones por sección (Nutrición, Cardio, Suplementación) — textarea + dictado por voz (Web Speech API, es-ES), guardado con feedback visual en botón; cliente ve instrucciones como caja azul al inicio de cada sección
 - [x] Instrucciones por día de entrenamiento — campo `notes` en workout_days, dictado por voz, se guarda con el día; cliente ve la nota dentro de la tarjeta del día
-- [x] Editor de plan con IA (Gemini 2.0 Flash) — trainer dicta instrucción en lenguaje natural, Edge Function `ai-plan-editor` la procesa y devuelve acciones JSON que se aplican al plan al momento (add/edit/remove_exercise, update_day)
+- [x] Editor de plan con IA (Gemini 2.5 Flash + fallback Claude Haiku) — trainer dicta instrucción en lenguaje natural, Edge Function `ai-plan-editor` la procesa y devuelve acciones JSON que se aplican al plan al momento (add/edit/remove_exercise, update_day)
+- [x] Editores IA para dieta (`ai-diet-editor`), cardio (`ai-cardio-editor`), suplementos (`ai-supls-editor`) y medidas (`ai-measures-editor`) — mismo patrón Gemini→Claude fallback
+- [x] Chat IA movido a Edge Function proxy (`ai-chat`) — API key Anthropic ya no expuesta en cliente
+- [x] Auto-confirmación de emails via trigger DB (migración `014`) — no requiere toggle en Supabase dashboard
+- [x] Pricing 4 tiers en landing page (Starter/Pro/Elite/Studio) — toggle mensual/anual con descuentos ~17%
+- [x] Pantalla de bienvenida para trainers sin clientes — wizard 3 pasos + CTA para añadir primer cliente
+- [x] Auto-carga Mi Perfil al login cuando hay clientes existentes
+- [x] Registro mejorado: campo ICP (rango de clientes), auto sign-in post-registro sin email confirmation
 
 ## Notas de arquitectura (sesión 23/05)
 - `SUPL_TIMINGS` y `CARDIO_TYPES` son constantes definidas en `trainer-app.js`; los mismos valores están duplicados inline en `client-app.js` (candidato a extraer a un módulo compartido)
@@ -218,7 +238,9 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - `notesCard(fieldId, value, dbColumn, icon, label)` — helper en trainer-app.js que genera tarjeta con textarea + mic + botón guardar; llama a `saveNotes(dbColumn, fieldId, btn)` que hace update directo a `clients`
 - `startVoice(targetId, btn)` — toggle: 1er click inicia SpeechRecognition (continuous, es-ES), 2º click para y resetea; acumula resultados isFinal en el textarea; `_activeRecognition` previene sesiones múltiples
 - `applyAIInstruction(btn)` — recoge plan completo de `SELECTED_CLIENT_DATA.workouts`, llama Edge Function `ai-plan-editor`, aplica acciones via `applyAIPlanActions(actions)`
-- Edge Function `ai-plan-editor` — Gemini 2.0 Flash, `verify_jwt:false`, usa `GEMINI_API_KEY` secret, fuerza `responseMimeType:'application/json'`; acciones: add_exercise, edit_exercise, remove_exercise, update_day
+- Edge Function `ai-plan-editor` — Gemini 2.5 Flash (`gemini-2.5-flash`), `responseMimeType:'application/json'`, retry exponencial 3s/8s/15s para 429/5xx; fallback automático a Claude Haiku (`claude-haiku-4-5-20251001`) si Gemini falla; acciones: add_exercise, edit_exercise (con `changes`), remove_exercise, update_day
+- Mismo patrón `callWithFallback()` en todos los editores IA: `ai-diet-editor`, `ai-cardio-editor`, `ai-supls-editor`, `ai-measures-editor`
+- `ai-chat`: Edge Function proxy para chat IA del cliente — usa `ANTHROPIC_API_KEY` secret, model `claude-haiku-4-5-20251001`, `verify_jwt:true`
 - Importación masiva: CSV parseado nativamente; Excel via SheetJS (cargado lazy desde CDN); columnas normalizadas (español/inglés); contraseñas auto-generadas si faltan; sesión trainer restaurada tras cada `signUp`
 
 ## Notas de arquitectura (sesión 09/06)
@@ -251,10 +273,42 @@ FROM body_measurements WHERE client_id = '<uuid>' ORDER BY measured_at DESC;
 - `.tab-btn.active`: `background:var(--blue)`, `box-shadow:0 0 18px rgba(55,138,221,0.45)`, color `#0c0c0c`
 - Cache-bust: `shared.css?v=20260609a`
 
-## Pendiente
-- [ ] Activar Stripe (añadir secrets en Supabase Edge Functions + crear webhook)
-- [ ] Confirmar emails automáticamente (Supabase → Auth → desactivar "Confirm email")
-- [ ] Chat IA — API key de Anthropic expuesta en cliente, mover a Edge Function proxy
-- [ ] Verificar editor IA de plan con Gemini (depurar si `actions` llega vacío — ver campo `debug` en respuesta)
-- [ ] Activar push notifications: configurar secrets VAPID en Supabase (VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY, VAPID_SUBJECT)
-- [ ] Evaluar resiliencia Gemini para producción: fallback a GPT-4o mini o migrar a Vertex AI
+## Notas de arquitectura (sesión 10/06)
+
+### Modelo de suscripción migrado a tiers planos
+- Antes: €9,90 × clientes activos (uso). Ahora: Starter €29 / Pro €59 / Elite €99 / Studio €149
+- `create-checkout-session` v17: acepta `tier`, `TIER_PRICE_MAP` resuelve a price_id via secrets
+- `stripe-webhook` v20: guarda `plan_tier` de `sub.metadata.plan_tier` en `trainers`
+- Migración `013_plan_tier`: columna `plan_tier TEXT` en `trainers`
+
+### Auto-confirmación de emails
+- Migración `014_auto_confirm_email`: trigger `AFTER INSERT ON auth.users` — auto-confirma sin necesidad de toggle en dashboard
+- SQL para confirmar usuarios existentes: `UPDATE auth.users SET email_confirmed_at = NOW() WHERE email_confirmed_at IS NULL;`
+
+### ICP y activación de nuevos trainers
+- `register.html`: campo `client_range` (0 / 1-5 / 6-15 / 16-30 / 30+) guardado en `user_metadata`
+- `loadClients()`: si `ALL_CLIENTS.length === 0` → `showWelcomeScreen()`; si hay clientes → `openMyProfile()`
+- `showWelcomeScreen()`: wizard 3-pasos con CTA que llama `openNewClientModal()`
+
+### Editores IA — arquitectura callWithFallback
+```typescript
+async function callWithFallback(prompt, maxTokens) {
+  try { return await callGemini(prompt, maxTokens) }
+  catch (e) {
+    try { return await callClaude(prompt, maxTokens) }
+    catch (e2) { throw e }  // relanza error original de Gemini
+  }
+}
+```
+- Gemini: `gemini-2.5-flash`, `responseMimeType:'application/json'`, retry 3s/8s/15s en 429/5xx
+- Claude: `claude-haiku-4-5-20251001`, `max_tokens: Math.min(maxTokens, 4096)`
+- `parseJsonResponse()`: intenta JSON.parse directo; si falla, limpia bloques ```json``` y reintenta
+
+## Pendiente — tareas manuales (requieren desktop)
+- [ ] **Stripe secrets en Supabase:** `STRIPE_SECRET_KEY`, `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_ELITE`, `STRIPE_PRICE_STUDIO`, `STRIPE_WEBHOOK_SECRET`, `APP_URL`
+- [ ] **Stripe webhook:** endpoint `https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/stripe-webhook`, eventos: `customer.subscription.created/updated/deleted`, `invoice.payment_succeeded/failed`
+- [ ] **Mergear** `claude/dazzling-galileo-93tiih` → `main` para desplegar en producción (Vercel)
+- [ ] Activar push notifications: secrets VAPID en Supabase (`VAPID_PRIVATE_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT`)
+
+## Pendiente — código
+- [ ] Verificar `ai-chat` en `client-app.js` — asegurarse de que las llamadas apuntan a la Edge Function (no a la API de Anthropic directamente)

@@ -17,13 +17,10 @@ serve(async (req) => {
   try {
     event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret)
   } catch (_err) {
-    // In test mode, skip signature verification and parse directly
-    // Log the signature format so we can debug later
     console.log('Sig header format:', sig.substring(0, 80))
     console.log('Secret defined:', !!webhookSecret)
     try {
       event = JSON.parse(body) as Stripe.Event
-      // Only allow test events to bypass verification
       if ((event as any).livemode === true) {
         return new Response('Signature required for live events', { status: 400 })
       }
@@ -49,9 +46,12 @@ serve(async (req) => {
         : sub.status === 'canceled' ? 'canceled'
         : 'unpaid'
 
+      const planTier = sub.metadata?.plan_tier || null
+
       await supabase.from('trainers').update({
         stripe_subscription_id: sub.id,
         subscription_status: status,
+        ...(planTier ? { plan_tier: planTier } : {}),
       }).eq('id', trainerId)
       break
     }
