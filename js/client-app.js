@@ -539,6 +539,17 @@ function applyClientConfig() {
   document.getElementById('d-steps-sub').textContent = `Obj: ${CLIENT.steps_goal?.toLocaleString('es-ES')}`
   document.getElementById('nut-kcal').textContent = CLIENT.kcal_goal?.toLocaleString('es-ES')
   document.getElementById('nut-prot').textContent = CLIENT.protein_goal + ' g'
+  document.getElementById('nut-prot-sub').textContent = `objetivo: ${CLIENT.protein_goal} g`
+  if (CLIENT.carbs_goal > 0) {
+    document.getElementById('nut-carbs').textContent = CLIENT.carbs_goal + ' g'
+    document.getElementById('nut-carbs-sub').textContent = `objetivo: ${CLIENT.carbs_goal} g`
+    document.getElementById('nut-carbs-metric').style.display = ''
+  }
+  if (CLIENT.fat_goal > 0) {
+    document.getElementById('nut-fat').textContent = CLIENT.fat_goal + ' g'
+    document.getElementById('nut-fat-sub').textContent = `objetivo: ${CLIENT.fat_goal} g`
+    document.getElementById('nut-fat-metric').style.display = ''
+  }
   document.getElementById('steps-goal-lbl').textContent = `Obj: ${CLIENT.steps_goal?.toLocaleString('es-ES')}`
   document.getElementById('wk-cardio-goal').textContent = CLIENT.cardio_goal_min || 185
 
@@ -743,12 +754,17 @@ function renderNutrition() {
     const foods = meal.diet_foods.map(food => {
       const checked = isToday && S.foodsChecked.includes(food.id)
       const interactStyle = isToday ? 'cursor:pointer' : 'pointer-events:none;opacity:0.6;'
-      return `<div class="meal-row row" data-food-id="${food.id}" data-prot="${food.protein_g}" data-kcal="${food.kcal}" onclick="toggleMeal(this)" style="${interactStyle}">
+      const macroTags = [
+        food.protein_g ? `${food.protein_g}g P` : '',
+        food.carbs_g   ? `${food.carbs_g}g C`   : '',
+        food.fat_g     ? `${food.fat_g}g G`      : '',
+        food.kcal      ? `${food.kcal} kcal`     : '',
+      ].filter(Boolean).join(' · ')
+      return `<div class="meal-row row" data-food-id="${food.id}" data-prot="${food.protein_g||0}" data-carbs="${food.carbs_g||0}" data-fat="${food.fat_g||0}" data-kcal="${food.kcal||0}" onclick="toggleMeal(this)" style="${interactStyle}">
         <button class="check-btn${checked ? ' on' : ''}" aria-label="Marcar">${checked ? '✓' : ''}</button>
-        <div style="flex:1;margin-left:10px"><div class="row-name">${food.name}</div></div>
-        <div style="text-align:right">
-          ${food.protein_g ? `<span class="tag">${food.protein_g}g prot</span>` : ''}
-          ${food.kcal ? `<div style="font-size:10px;color:var(--text2);margin-top:2px">~${food.kcal} kcal</div>` : ''}
+        <div style="flex:1;margin-left:10px">
+          <div class="row-name">${food.name}</div>
+          ${macroTags ? `<div style="font-size:10px;color:var(--text3);margin-top:2px">${macroTags}</div>` : ''}
         </div>
       </div>`
     }).join('')
@@ -785,7 +801,7 @@ function renderNutrition() {
       html += group.map(s => {
         const checked = isToday && S.foodsChecked.includes(s.id)
         const suplStyle = isToday ? 'cursor:pointer' : 'pointer-events:none;opacity:0.6;'
-        return `<div class="meal-row row" data-food-id="${s.id}" data-prot="${s.protein_g || 0}" data-kcal="${s.kcal || 0}" onclick="toggleMeal(this)" style="${suplStyle}">
+        return `<div class="meal-row row" data-food-id="${s.id}" data-prot="${s.protein_g||0}" data-carbs="0" data-fat="0" data-kcal="${s.kcal||0}" onclick="toggleMeal(this)" style="${suplStyle}">
           <button class="check-btn${checked ? ' on' : ''}" aria-label="Marcar">${checked ? '✓' : ''}</button>
           <div style="flex:1;margin-left:10px"><div class="row-name">${s.name}</div></div>
           ${s.protein_g > 0 ? `<span class="tag" style="margin-right:4px">${s.protein_g}g prot</span>` : ''}
@@ -825,38 +841,64 @@ window.toggleMeal = function(row) {
 }
 
 function updateMealTotals() {
-  let tp = 0, tk = 0
-  // Alimentos del plan marcados
+  let tp = 0, tc = 0, tf = 0, tk = 0
   document.querySelectorAll('.meal-row').forEach(r => {
     if (r.querySelector('.check-btn').classList.contains('on')) {
-      tp += parseInt(r.dataset.prot) || 0
-      tk += parseInt(r.dataset.kcal) || 0
+      tp += parseInt(r.dataset.prot)  || 0
+      tc += parseInt(r.dataset.carbs) || 0
+      tf += parseInt(r.dataset.fat)   || 0
+      tk += parseInt(r.dataset.kcal)  || 0
     }
   })
   // Extras manuales (siempre suman)
   tp += S.foods.reduce((a, f) => a + (f.p || 0), 0)
+  tc += S.foods.reduce((a, f) => a + (f.c || 0), 0)
+  tf += S.foods.reduce((a, f) => a + (f.ft || 0), 0)
   tk += S.foods.reduce((a, f) => a + (f.k || 0), 0)
 
-  const protGoal = CLIENT?.protein_goal || 175
-  const kcalGoal = CLIENT?.kcal_goal || 2500
+  const protGoal  = CLIENT?.protein_goal || 175
+  const carbsGoal = CLIENT?.carbs_goal || 0
+  const fatGoal   = CLIENT?.fat_goal || 0
+  const kcalGoal  = CLIENT?.kcal_goal || 2500
 
   document.getElementById('ms-prot').textContent = `${tp} / ${protGoal} g`
-  document.getElementById('ms-kcal').textContent = `${tk} / ${kcalGoal} kcal`
   document.getElementById('ms-prot-bar').style.width = Math.min(100, Math.round(tp / protGoal * 100)) + '%'
+
+  const carbsWrap = document.getElementById('ms-carbs-wrap')
+  if (carbsGoal > 0) {
+    document.getElementById('ms-carbs').textContent = `${tc} / ${carbsGoal} g`
+    document.getElementById('ms-carbs-bar').style.width = Math.min(100, Math.round(tc / carbsGoal * 100)) + '%'
+    if (carbsWrap) carbsWrap.style.display = 'block'
+  } else {
+    document.getElementById('ms-carbs').textContent = `${tc} g`
+    document.getElementById('ms-carbs-bar').style.width = Math.min(100, tc > 0 ? 60 : 0) + '%'
+  }
+
+  const fatWrap = document.getElementById('ms-fat-wrap')
+  if (fatGoal > 0) {
+    document.getElementById('ms-fat').textContent = `${tf} / ${fatGoal} g`
+    document.getElementById('ms-fat-bar').style.width = Math.min(100, Math.round(tf / fatGoal * 100)) + '%'
+    if (fatWrap) fatWrap.style.display = 'block'
+  } else {
+    document.getElementById('ms-fat').textContent = `${tf} g`
+    document.getElementById('ms-fat-bar').style.width = Math.min(100, tf > 0 ? 60 : 0) + '%'
+  }
+
+  document.getElementById('ms-kcal').textContent = `${tk} / ${kcalGoal} kcal`
   document.getElementById('ms-kcal-bar').style.width = Math.min(100, Math.round(tk / kcalGoal * 100)) + '%'
   document.getElementById('d-prot').textContent = tp + 'g'
   updateNutriFinishBtn()
 }
 
 window.addFood = function() {
-  const n = document.getElementById('food-name').value.trim()
-  const p = parseInt(document.getElementById('food-prot').value) || 0
-  const k = parseInt(document.getElementById('food-kcal').value) || 0
+  const n  = document.getElementById('food-name').value.trim()
+  const p  = parseInt(document.getElementById('food-prot').value)  || 0
+  const c  = parseInt(document.getElementById('food-carbs').value) || 0
+  const ft = parseInt(document.getElementById('food-fat').value)   || 0
+  const k  = parseInt(document.getElementById('food-kcal').value)  || 0
   if (!n) return
-  S.foods.push({ n, p, k })
-  document.getElementById('food-name').value = ''
-  document.getElementById('food-prot').value = ''
-  document.getElementById('food-kcal').value = ''
+  S.foods.push({ n, p, c, ft, k })
+  ;['food-name','food-prot','food-carbs','food-fat','food-kcal'].forEach(id => { document.getElementById(id).value = '' })
   renderExtraFoods()
 }
 
@@ -867,9 +909,10 @@ window.removeFood = function(i) {
 
 function renderExtraFoods() {
   document.getElementById('food-list').innerHTML = S.foods.length
-    ? S.foods.map((f, i) =>
-        `<div class="row"><span style="font-size:13px;flex:1">${f.n}</span>${f.p ? `<span class="tag" style="margin-right:4px">${f.p}g prot</span>` : ''}${f.k ? `<span class="tag" style="margin-right:6px">${f.k}kcal</span>` : ''}<button class="check-btn" onclick="removeFood(${i})" style="font-size:12px">×</button></div>`
-      ).join('')
+    ? S.foods.map((f, i) => {
+        const macros = [f.p ? `${f.p}g P` : '', f.c ? `${f.c}g C` : '', f.ft ? `${f.ft}g G` : '', f.k ? `${f.k}kcal` : ''].filter(Boolean).join(' · ')
+        return `<div class="row"><span style="font-size:13px;flex:1">${f.n}${macros ? `<span style="font-size:10px;color:var(--text3);margin-left:6px">${macros}</span>` : ''}</span><button class="check-btn" onclick="removeFood(${i})" style="font-size:12px">×</button></div>`
+      }).join('')
     : ''
   updateMealTotals()
 }

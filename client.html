@@ -262,12 +262,18 @@ input[type=text],input[type=number],input[type=email],textarea,select{background
   <div id="diet-day-sel-client" class="day-sel" style="margin-bottom:8px"></div>
   <div class="metric-grid">
     <div class="metric"><div class="metric-label">Kcal objetivo</div><div class="metric-val" id="nut-kcal">—</div><div class="metric-sub">objetivo diario</div></div>
-    <div class="metric"><div class="metric-label">Proteína</div><div class="metric-val" id="nut-prot">—</div><div class="metric-sub">prioridad absoluta</div></div>
+    <div class="metric"><div class="metric-label">Proteína</div><div class="metric-val" id="nut-prot">—</div><div class="metric-sub" id="nut-prot-sub">objetivo</div></div>
+    <div class="metric" id="nut-carbs-metric" style="display:none"><div class="metric-label">Carbohidratos</div><div class="metric-val" id="nut-carbs">—</div><div class="metric-sub" id="nut-carbs-sub">objetivo</div></div>
+    <div class="metric" id="nut-fat-metric" style="display:none"><div class="metric-label">Grasas</div><div class="metric-val" id="nut-fat">—</div><div class="metric-sub" id="nut-fat-sub">objetivo</div></div>
   </div>
   <div class="card" id="meal-summary-card">
     <div class="card-title"><i class="ti ti-calculator"></i> Total del día</div>
     <div class="lbl"><span>Proteína</span><span id="ms-prot">0 / — g</span></div>
     <div class="prog-wrap"><div class="prog-fill" id="ms-prot-bar" style="width:0%;background:var(--green)"></div></div>
+    <div class="lbl" style="margin-top:6px"><span>Carbohidratos</span><span id="ms-carbs">0 g</span></div>
+    <div class="prog-wrap" id="ms-carbs-wrap"><div class="prog-fill" id="ms-carbs-bar" style="width:0%;background:#f0a500"></div></div>
+    <div class="lbl" style="margin-top:6px"><span>Grasas</span><span id="ms-fat">0 g</span></div>
+    <div class="prog-wrap" id="ms-fat-wrap"><div class="prog-fill" id="ms-fat-bar" style="width:0%;background:#e07b39"></div></div>
     <div class="lbl" style="margin-top:6px"><span>Calorías</span><span id="ms-kcal">0 / — kcal</span></div>
     <div class="prog-wrap"><div class="prog-fill" id="ms-kcal-bar" style="width:0%;background:var(--blue)"></div></div>
   </div>
@@ -277,9 +283,11 @@ input[type=text],input[type=number],input[type=email],textarea,select{background
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <input type="text" id="food-name" placeholder="Alimento (ej: pollo 150g)" style="flex:1">
     </div>
-    <div style="display:flex;gap:6px">
-      <input type="number" id="food-prot" placeholder="Prot (g)" inputmode="numeric" style="flex:1">
-      <input type="number" id="food-kcal" placeholder="Kcal" inputmode="numeric" style="flex:1">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <input type="number" id="food-prot" placeholder="Prot (g)" inputmode="numeric" style="flex:1;min-width:70px">
+      <input type="number" id="food-carbs" placeholder="Carbs (g)" inputmode="numeric" style="flex:1;min-width:70px">
+      <input type="number" id="food-fat" placeholder="Grasas (g)" inputmode="numeric" style="flex:1;min-width:70px">
+      <input type="number" id="food-kcal" placeholder="Kcal" inputmode="numeric" style="flex:1;min-width:70px">
       <button class="btn btn-primary" onclick="addFood()" style="width:auto;white-space:nowrap">+ Añadir</button>
     </div>
     <div id="food-list" style="margin-top:8px"></div>
