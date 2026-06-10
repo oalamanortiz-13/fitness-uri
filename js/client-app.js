@@ -1,5 +1,6 @@
 import { supabase } from './supabase-client.js'
 import { requireRole, logout } from './auth.js'
+import { SUPL_TIMINGS, CARDIO_TYPE_BY_ID } from './constants.js'
 
 const DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const RPE_DESC = ['','Muy fácil','Fácil','Moderado fácil','Moderado','Algo duro','Duro','Muy duro','Extremo','Máximo','Límite absoluto']
@@ -96,8 +97,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const hdr = document.getElementById('client-header')
   if (hdr) hdr.style.display = 'flex'
 
-  // Register push notifications after UI is visible (non-blocking)
-  registerPushNotifications()
+  // Push notifications pendientes de activar (VAPID secrets no configurados en Supabase)
+  // registerPushNotifications()
 
   // Limpiar badge del icono PWA al abrir la app
   if ('clearAppBadge' in navigator) navigator.clearAppBadge().catch(() => {})
@@ -603,28 +604,12 @@ function applyClientConfig() {
     : '<div style="color:var(--text3)">Sin reglas asignadas</div>'
 
   // Tipos de cardio recomendados por el trainer
-  const CARDIO_TYPE_LABELS = {
-    correr:     { label: 'Correr',           icon: 'ti-run'              },
-    caminar:    { label: 'Caminar rápido',   icon: 'ti-walk'             },
-    cinta:      { label: 'Cinta',            icon: 'ti-treadmill'        },
-    eliptica:   { label: 'Elíptica',         icon: 'ti-arrows-right-left'},
-    bici:       { label: 'Bici estática',    icon: 'ti-bike'             },
-    spinning:   { label: 'Spinning',         icon: 'ti-brand-cycling'    },
-    remo:       { label: 'Remo',             icon: 'ti-ripple'           },
-    natacion:   { label: 'Natación',         icon: 'ti-swim'             },
-    escaladora: { label: 'Escaladora',       icon: 'ti-stairs-up'        },
-    comba:      { label: 'Comba',            icon: 'ti-circles-relation' },
-    hiit:       { label: 'HIIT',             icon: 'ti-flame'            },
-    boxing:     { label: 'Boxeo / saco',     icon: 'ti-ball-american-football'},
-    step:       { label: 'Step aeróbic',     icon: 'ti-steps'            },
-    senderismo: { label: 'Senderismo',       icon: 'ti-mountain'         },
-  }
   const ctypes = CLIENT.cardio_types || []
   const ctEl = document.getElementById('cardio-types-list')
   if (ctEl) {
     ctEl.innerHTML = ctypes.length
       ? ctypes.map(id => {
-          const t = CARDIO_TYPE_LABELS[id] || { label: id, icon: 'ti-run' }
+          const t = CARDIO_TYPE_BY_ID[id] || { label: id, icon: 'ti-run' }
           return `<div class="pill pill-s" style="display:inline-flex;align-items:center;gap:5px"><i class="ti ${t.icon}"></i>${t.label}</div>`
         }).join('')
       : '<span style="font-size:12px;color:var(--text3)">Tu preparador no ha asignado tipos todavía</span>'
@@ -778,13 +763,7 @@ function renderNutrition() {
   if (SUPPLEMENTS.length === 0) {
     document.getElementById('supls-card').style.display = 'none'
   } else {
-    const TIMING_META = {
-      'manana':       { label: 'Mañana',      icon: 'ti-sunrise',   color: '#BA7517' },
-      'tarde':        { label: 'Tarde',        icon: 'ti-sun',       color: '#378ADD' },
-      'noche':        { label: 'Noche',        icon: 'ti-moon',      color: '#7C5CBF' },
-      'pre-workout':  { label: 'Pre-workout',  icon: 'ti-bolt',      color: '#1D9E75' },
-      'post-workout': { label: 'Post-workout', icon: 'ti-check',     color: '#E24B4A' },
-    }
+    const TIMING_META = Object.fromEntries(SUPL_TIMINGS.map(t => [t.value, t]))
     // Agrupar por timing; sin timing al final
     const ORDER = ['manana','tarde','noche','pre-workout','post-workout', null]
     const grouped = {}
@@ -1828,9 +1807,10 @@ window.sendChat = async function() {
   scrollChat()
 
   try {
+    const { data: { session: chatSession } } = await supabase.auth.getSession()
     const res = await fetch('https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${chatSession?.access_token ?? ''}` },
       body: JSON.stringify({
         systemPrompt: buildSystemPrompt(),
         messages: S.chatHistory

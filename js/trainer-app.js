@@ -1,25 +1,10 @@
 import { supabase } from './supabase-client.js'
 import { requireRole, logout } from './auth.js'
+import { SUPL_TIMINGS, CARDIO_TYPE_META } from './constants.js'
 
 const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']
 const MEAL_ICONS = ['ti-coffee','ti-soup','ti-apple','ti-moon','ti-salad','ti-bread']
 
-const CARDIO_TYPES = [
-  { id: 'correr',       label: 'Correr',           icon: 'ti-run'             },
-  { id: 'caminar',      label: 'Caminar rápido',   icon: 'ti-walk'            },
-  { id: 'cinta',        label: 'Cinta',             icon: 'ti-treadmill'       },
-  { id: 'eliptica',     label: 'Elíptica',          icon: 'ti-arrows-right-left'},
-  { id: 'bici',         label: 'Bici estática',     icon: 'ti-bike'            },
-  { id: 'spinning',     label: 'Spinning',          icon: 'ti-brand-cycling'   },
-  { id: 'remo',         label: 'Remo',              icon: 'ti-ripple'          },
-  { id: 'natacion',     label: 'Natación',          icon: 'ti-swim'            },
-  { id: 'escaladora',   label: 'Escaladora',        icon: 'ti-stairs-up'       },
-  { id: 'comba',        label: 'Comba',             icon: 'ti-circles-relation'},
-  { id: 'hiit',         label: 'HIIT',              icon: 'ti-flame'           },
-  { id: 'boxing',       label: 'Boxeo / saco',      icon: 'ti-ball-american-football'},
-  { id: 'step',         label: 'Step aeróbic',      icon: 'ti-steps'           },
-  { id: 'senderismo',   label: 'Senderismo',        icon: 'ti-mountain'        },
-]
 
 let TRAINER_ID = null
 let TRAINER_NAME = ''
@@ -935,6 +920,13 @@ window.saveWorkoutDay = async function() {
   }
 }
 
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+async function getAuthToken() {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.access_token ?? ''
+}
+
 // ─── IA EDITOR DE PLAN ────────────────────────────────────────────────────────
 
 window.applyAIInstruction = async function(btn) {
@@ -964,11 +956,12 @@ window.applyAIInstruction = async function(btn) {
   }
 
   try {
+    const token = await getAuthToken()
     const res = await fetch(
       'https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-plan-editor',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ instruction, plan })
       }
     )
@@ -1465,11 +1458,12 @@ window.applyAIDietInstruction = async function(btn) {
   }
 
   try {
+    const token = await getAuthToken()
     const res = await fetch(
       'https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-diet-editor',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ instruction, plan })
       }
     )
@@ -1590,9 +1584,10 @@ window.applyAICardioInstruction = async function(btn) {
   }
 
   try {
+    const token = await getAuthToken()
     const res = await fetch('https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-cardio-editor', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ instruction, context })
     })
     const resData = await res.json()
@@ -1643,9 +1638,10 @@ window.applyAISuplsInstruction = async function(btn) {
   }
 
   try {
+    const token = await getAuthToken()
     const res = await fetch('https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-supls-editor', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ instruction, plan })
     })
     const resData = await res.json()
@@ -1694,9 +1690,10 @@ window.applyAIMeasuresInstruction = async function(btn) {
   resultEl.style.display = 'none'
 
   try {
+    const token = await getAuthToken()
     const res = await fetch('https://cwwvwrzqlavuyqhyeepu.supabase.co/functions/v1/ai-measures-editor', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ instruction })
     })
     const resData = await res.json()
@@ -1722,14 +1719,6 @@ window.applyAIMeasuresInstruction = async function(btn) {
 }
 
 // ─── TAB: SUPLEMENTOS ─────────────────────────────────────────────────────────
-
-const SUPL_TIMINGS = [
-  { value: 'manana',       label: 'Mañana',       icon: 'ti-sunrise',    color: '#BA7517' },
-  { value: 'tarde',        label: 'Tarde',         icon: 'ti-sun',        color: '#378ADD' },
-  { value: 'noche',        label: 'Noche',         icon: 'ti-moon',       color: '#7C5CBF' },
-  { value: 'pre-workout',  label: 'Pre-workout',   icon: 'ti-bolt',       color: '#1D9E75' },
-  { value: 'post-workout', label: 'Post-workout',  icon: 'ti-check',      color: '#E24B4A' },
-]
 
 function timingTag(timing) {
   if (!timing) return ''
