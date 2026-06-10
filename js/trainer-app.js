@@ -305,12 +305,65 @@ async function loadClients() {
   renderNavBadges()
   renderNavLabels()
   applyCurrentFilter()
+
+  if (!ALL_CLIENTS.length) showWelcomeScreen()
+}
+
+function showWelcomeScreen() {
+  const main = document.getElementById('main-content')
+  main.innerHTML = `
+    <div style="max-width:520px;margin:60px auto;padding:0 24px;text-align:center">
+      <div style="font-size:48px;margin-bottom:20px">🎉</div>
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:10px;letter-spacing:-.02em">¡Bienvenido a Tu Preparador!</h2>
+      <p style="color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:32px">
+        Todo listo para empezar. En menos de 5 minutos puedes tener a tu primer cliente registrado y viendo su plan desde el móvil.
+      </p>
+
+      <div style="display:flex;flex-direction:column;gap:12px;text-align:left;margin-bottom:32px">
+        <div class="card" style="padding:16px;display:flex;gap:14px;align-items:flex-start">
+          <div style="width:28px;height:28px;min-width:28px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#0c0c0c">1</div>
+          <div>
+            <div style="font-weight:600;font-size:14px;margin-bottom:3px">Añade tu primer cliente</div>
+            <div style="font-size:12px;color:var(--text3)">Pulsa el botón <strong style="color:var(--text2)">+ Nuevo cliente</strong> en la barra lateral y rellena sus datos básicos.</div>
+          </div>
+        </div>
+        <div class="card" style="padding:16px;display:flex;gap:14px;align-items:flex-start">
+          <div style="width:28px;height:28px;min-width:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text3)">2</div>
+          <div>
+            <div style="font-weight:600;font-size:14px;margin-bottom:3px;color:var(--text2)">Asigna un plan de entreno y dieta</div>
+            <div style="font-size:12px;color:var(--text3)">Desde las pestañas Entreno y Nutrición diseña su plan. Usa el editor de IA para ir más rápido.</div>
+          </div>
+        </div>
+        <div class="card" style="padding:16px;display:flex;gap:14px;align-items:flex-start">
+          <div style="width:28px;height:28px;min-width:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text3)">3</div>
+          <div>
+            <div style="font-weight:600;font-size:14px;margin-bottom:3px;color:var(--text2)">Invita al cliente a la app</div>
+            <div style="font-size:12px;color:var(--text3)">El cliente recibirá un email con su acceso al portal móvil donde verá su plan y registrará su progreso cada día.</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="openNewClientModal()" style="padding:12px 28px;font-size:15px">
+        <i class="ti ti-user-plus"></i> Añadir primer cliente
+      </button>
+
+      <p style="margin-top:20px;font-size:12px;color:var(--text3)">
+        ¿Tienes varios clientes? Usa la importación masiva desde CSV/Excel en el botón <i class="ti ti-upload" style="font-size:11px"></i> de la barra lateral.
+      </p>
+    </div>
+  `
 }
 
 function renderClientList(clients) {
   const el = document.getElementById('client-list')
   if (!clients.length) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:24px">Sin clientes</div>'
+    el.innerHTML = `
+      <div style="padding:20px 16px;text-align:center">
+        <div style="font-size:13px;color:var(--text3);margin-bottom:12px">Aún no tienes clientes</div>
+        <button class="btn btn-primary" style="width:100%;font-size:13px" onclick="openNewClientModal()">
+          <i class="ti ti-user-plus"></i> Añadir cliente
+        </button>
+      </div>`
     return
   }
   el.innerHTML = clients.map(c => {
