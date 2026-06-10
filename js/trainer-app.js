@@ -306,7 +306,11 @@ async function loadClients() {
   renderNavLabels()
   applyCurrentFilter()
 
-  if (!ALL_CLIENTS.length) showWelcomeScreen()
+  if (!ALL_CLIENTS.length) {
+    showWelcomeScreen()
+  } else {
+    openMyProfile()
+  }
 }
 
 function showWelcomeScreen() {
