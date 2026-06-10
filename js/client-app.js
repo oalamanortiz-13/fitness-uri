@@ -61,7 +61,7 @@ let trainerChatChannel = null
 let trainerMessages = []
 let activeChatTab = 'trainer'
 
-const VAPID_PUBLIC_KEY = 'BGe-gg91RY7uCLnoDRni7-cPamj9dwoQD1Bu7ERlDUfHgDXpmPrddKJPdB70Vuk0U7Lb1tu4qkA7BTPJtkSMRv4'
+const VAPID_PUBLIC_KEY = 'BLIlGSyaoetNkpYsw9HUCmm7jgeL81CUr2UJyI7njZK24g6B7sQZKlQtPemmFSGzz2KDW6kKiXFnkTRD1TOMJa4'
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 
@@ -97,8 +97,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const hdr = document.getElementById('client-header')
   if (hdr) hdr.style.display = 'flex'
 
-  // Push notifications pendientes de activar (VAPID secrets no configurados en Supabase)
-  // registerPushNotifications()
+  // Register push notifications after UI is visible (non-blocking)
+  registerPushNotifications()
 
   // Limpiar badge del icono PWA al abrir la app
   if ('clearAppBadge' in navigator) navigator.clearAppBadge().catch(() => {})
