@@ -26,15 +26,17 @@ ${JSON.stringify(plan, null, 2)}
 INSTRUCCIÓN DEL TRAINER:
 "${instruction}"
 
+CAMPOS DE MACROS: protein_g, carbs_g, fat_g, kcal (todos opcionales, enteros ≥0)
+
 TIPOS DE ACCIONES:
 1. Añadir comida: {"type":"add_meal","name":"Desayuno","icon":"ti-coffee"}
-2. Añadir alimento (usa meal_id del plan): {"type":"add_food","meal_id":"uuid","meal_name":"Desayuno","name":"Huevos revueltos 200g","kcal":300,"protein_g":25}
-3. Editar alimento: {"type":"edit_food","food_id":"uuid","changes":{"name":"nuevo nombre","kcal":200,"protein_g":20}}
+2. Añadir alimento (usa meal_id del plan): {"type":"add_food","meal_id":"uuid","meal_name":"Desayuno","name":"Huevos revueltos 200g","kcal":300,"protein_g":25,"carbs_g":0,"fat_g":18}
+3. Editar alimento: {"type":"edit_food","food_id":"uuid","changes":{"name":"nuevo nombre","kcal":200,"protein_g":20,"carbs_g":10,"fat_g":5}}
 4. Eliminar alimento: {"type":"remove_food","food_id":"uuid"}
 5. Renombrar comida: {"type":"rename_meal","meal_id":"uuid","name":"nuevo nombre"}
 6. Eliminar comida: {"type":"remove_meal","meal_id":"uuid"}
 
-REGLAS: usa IDs exactos del plan. Para add_food puedes usar meal_id o meal_name. Devuelve SOLO JSON válido.
+REGLAS: usa IDs exactos del plan. Para add_food puedes usar meal_id o meal_name. Incluye siempre los 4 macros si el trainer los menciona. Devuelve SOLO JSON válido.
 
 FORMATO: {"actions":[...], "debug":"descripción breve"}`
 
