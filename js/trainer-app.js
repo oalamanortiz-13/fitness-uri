@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client.js'
 import { requireRole, logout } from './auth.js'
-import { SUPL_TIMINGS, CARDIO_TYPE_META } from './constants.js'
+import { SUPL_TIMINGS, CARDIO_TYPE_BY_ID } from './constants.js'
 
 const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']
 const MEAL_ICONS = ['ti-coffee','ti-soup','ti-apple','ti-moon','ti-salad','ti-bread']
