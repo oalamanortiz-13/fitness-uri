@@ -21,6 +21,12 @@ let ACTIVE_DIET_DAY = 0
 let ACTIVE_MEAL_ID = null
 let EDITING_EX_ID = null
 let SUBSCRIPTION_STATUS = 'trial'
+let PLAN_TIER = null
+
+const TIER_LIMITS = { starter: 10, pro: 30, elite: 75, studio: 9999 }
+const TIER_LABELS = { starter: 'Starter', pro: 'Pro', elite: 'Elite', studio: 'Studio' }
+const TIER_PRICES = { starter: '€29', pro: '€59', elite: '€99', studio: '€149' }
+const TIER_MAX    = { starter: '10 clientes', pro: '30 clientes', elite: '75 clientes', studio: 'Ilimitado' }
 
 const LABEL_COLORS = ['#00d2ff','#1D9E75','#BA7517','#E24B4A','#9B59B6','#E67E22','#27AE60','#2980B9']
 function labelColor(str) {
@@ -81,29 +87,37 @@ window.doLogout = logout
 async function loadSubscriptionStatus() {
   const { data } = await supabase
     .from('trainers')
-    .select('subscription_status, trial_ends_at')
+    .select('subscription_status, trial_ends_at, plan_tier')
     .eq('id', TRAINER_ID)
     .single()
 
   if (!data) return
 
   SUBSCRIPTION_STATUS = data.subscription_status || 'trial'
+  PLAN_TIER = data.plan_tier || null
   const trialEnds = data.trial_ends_at ? new Date(data.trial_ends_at) : null
   const now = new Date()
   const trialExpired = trialEnds && trialEnds < now
 
-  if (SUBSCRIPTION_STATUS === 'trial' && !trialExpired) {
+  if (SUBSCRIPTION_STATUS === 'active') {
+    // Banner solo si está cerca del límite de clientes
+    if (PLAN_TIER && PLAN_TIER !== 'studio') {
+      const limit = TIER_LIMITS[PLAN_TIER] || 30
+      const activeCount = ALL_CLIENTS.filter(c => c.active !== false).length
+      if (activeCount >= limit * 0.9) showSubscriptionBanner('near_limit', 0, PLAN_TIER, activeCount, limit)
+    }
+  } else if (SUBSCRIPTION_STATUS === 'trial' && !trialExpired) {
     const daysLeft = trialEnds ? Math.ceil((trialEnds - now) / 86400000) : 14
     showSubscriptionBanner('trial', daysLeft)
   } else if (SUBSCRIPTION_STATUS === 'past_due') {
     showSubscriptionBanner('past_due')
-  } else if (SUBSCRIPTION_STATUS === 'canceled' || (SUBSCRIPTION_STATUS === 'trial' && trialExpired)) {
-    showSubscriptionBanner('expired')
+  } else if (SUBSCRIPTION_STATUS === 'canceled' || SUBSCRIPTION_STATUS === 'unpaid' || (SUBSCRIPTION_STATUS === 'trial' && trialExpired)) {
     SUBSCRIPTION_STATUS = 'expired'
+    showPaywall()
   }
 }
 
-function showSubscriptionBanner(type, daysLeft = 0) {
+function showSubscriptionBanner(type, daysLeft = 0, tier = null, activeCount = 0, limit = 0) {
   const sidebar = document.querySelector('.nav-sidebar')
   const existing = document.getElementById('sub-banner')
   if (existing) existing.remove()
@@ -114,20 +128,20 @@ function showSubscriptionBanner(type, daysLeft = 0) {
   banner.style.margin = '0 8px 8px'
 
   if (type === 'trial') {
-    banner.style.cssText += 'background:#1D9E7522;border:1px solid #1D9E7544;border-radius:8px;padding:10px 12px;margin:0 8px 8px;font-size:12px'
+    banner.style.cssText += 'background:#1D9E7522;border:1px solid #1D9E7544;border-radius:8px;padding:10px 12px;font-size:12px'
     banner.innerHTML = `<div style="color:#6fcfa8;font-weight:600;margin-bottom:4px">Prueba gratuita · ${daysLeft} día${daysLeft !== 1 ? 's' : ''} restante${daysLeft !== 1 ? 's' : ''}</div>
-      <div style="color:var(--text2);margin-bottom:8px">€4,90/cliente/mes al finalizar</div>
-      <button onclick="startCheckout()" class="btn btn-primary" style="width:100%;font-size:12px;padding:7px">Activar suscripción</button>`
+      <div style="color:var(--text2);margin-bottom:8px">Elige tu plan al finalizar</div>
+      <button onclick="showPaywall()" class="btn btn-primary" style="width:100%;font-size:12px;padding:7px">Ver planes</button>`
   } else if (type === 'past_due') {
-    banner.style.cssText += 'background:#BA751722;border:1px solid #BA751744;border-radius:8px;padding:10px 12px;margin:0 8px 8px;font-size:12px'
+    banner.style.cssText += 'background:#BA751722;border:1px solid #BA751744;border-radius:8px;padding:10px 12px;font-size:12px'
     banner.innerHTML = `<div style="color:#e8a83e;font-weight:600;margin-bottom:4px">Pago fallido</div>
-      <div style="color:var(--text2);margin-bottom:8px">Actualiza tu método de pago para continuar</div>
-      <button onclick="startCheckout()" class="btn" style="width:100%;font-size:12px;padding:7px;border-color:#BA7517;color:#e8a83e">Actualizar pago</button>`
-  } else {
-    banner.style.cssText += 'background:#E24B4A22;border:1px solid #E24B4A44;border-radius:8px;padding:10px 12px;margin:0 8px 8px;font-size:12px'
-    banner.innerHTML = `<div style="color:#F09595;font-weight:600;margin-bottom:4px">Suscripción inactiva</div>
-      <div style="color:var(--text2);margin-bottom:8px">Activa tu plan para gestionar clientes</div>
-      <button onclick="startCheckout()" class="btn btn-primary" style="width:100%;font-size:12px;padding:7px">Activar plan · €4,90/cliente</button>`
+      <div style="color:var(--text2);margin-bottom:8px">Actualiza tu método de pago</div>
+      <button onclick="startCheckout('${PLAN_TIER || 'pro'}')" class="btn" style="width:100%;font-size:12px;padding:7px;border-color:#BA7517;color:#e8a83e">Actualizar pago</button>`
+  } else if (type === 'near_limit') {
+    banner.style.cssText += 'background:#378ADD22;border:1px solid #378ADD44;border-radius:8px;padding:10px 12px;font-size:12px'
+    banner.innerHTML = `<div style="color:var(--blue);font-weight:600;margin-bottom:4px">Plan ${TIER_LABELS[tier]} · ${activeCount}/${limit} clientes</div>
+      <div style="color:var(--text2);margin-bottom:8px">Cerca del límite</div>
+      <button onclick="showPaywall()" class="btn" style="width:100%;font-size:12px;padding:7px;border-color:var(--blue);color:var(--blue)">Ampliar plan</button>`
   }
 
   const navBottom = sidebar.querySelector('.nav-bottom')
@@ -135,10 +149,73 @@ function showSubscriptionBanner(type, daysLeft = 0) {
   else sidebar.appendChild(banner)
 }
 
-window.startCheckout = async function() {
-  const btn = document.querySelector('#sub-banner button')
-  if (btn) { btn.textContent = 'Redirigiendo...'; btn.disabled = true }
+function showPaywall() {
+  const existing = document.getElementById('paywall-overlay')
+  if (existing) existing.remove()
 
+  const tierCard = (id, highlighted = false) => `
+    <div onclick="selectPaywallTier('${id}')" id="tier-card-${id}" style="cursor:pointer;padding:16px;border-radius:12px;border:2px solid ${highlighted ? 'var(--blue)' : 'rgba(255,255,255,0.12)'};background:${highlighted ? 'rgba(55,138,221,0.12)' : 'rgba(255,255,255,0.04)'};transition:all .15s;position:relative">
+      ${highlighted ? '<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--blue);color:#0c0c0c;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;white-space:nowrap">MÁS POPULAR</div>' : ''}
+      <div style="font-size:18px;font-weight:800;color:${highlighted ? 'var(--blue)' : '#fff'}">${TIER_LABELS[id]}</div>
+      <div style="font-size:24px;font-weight:700;margin:4px 0">${TIER_PRICES[id]}<span style="font-size:13px;font-weight:400;opacity:.6">/mes</span></div>
+      <div style="font-size:12px;color:var(--text2)">${TIER_MAX[id]}</div>
+    </div>`
+
+  const overlay = document.createElement('div')
+  overlay.id = 'paywall-overlay'
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)'
+  overlay.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:32px;max-width:560px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.6)">
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:28px;font-weight:800;margin-bottom:8px">Elige tu plan</div>
+        <div style="font-size:14px;color:var(--text2)">Tu periodo de prueba ha finalizado. Elige el plan que mejor se adapta a tu negocio.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+        ${tierCard('starter')}
+        ${tierCard('pro', true)}
+        ${tierCard('elite')}
+      </div>
+      <div id="paywall-selected" style="display:none;margin-bottom:16px;padding:12px;background:rgba(55,138,221,0.1);border:1px solid rgba(55,138,221,0.3);border-radius:10px;font-size:13px;color:var(--text2)">
+        Plan seleccionado: <strong id="paywall-tier-name" style="color:var(--blue)"></strong>
+      </div>
+      <button id="paywall-cta" onclick="confirmPaywallCheckout()" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;font-weight:700" disabled>
+        Continuar con el pago
+      </button>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--text3)">
+        Puedes cancelar en cualquier momento · Sin permanencia
+      </div>
+    </div>`
+
+  document.body.appendChild(overlay)
+}
+
+let _paywallTier = null
+window.selectPaywallTier = function(tier) {
+  _paywallTier = tier
+  document.querySelectorAll('[id^="tier-card-"]').forEach(el => {
+    const t = el.id.replace('tier-card-', '')
+    el.style.borderColor = t === tier ? 'var(--blue)' : 'rgba(255,255,255,0.12)'
+    el.style.background   = t === tier ? 'rgba(55,138,221,0.12)' : 'rgba(255,255,255,0.04)'
+  })
+  const sel = document.getElementById('paywall-selected')
+  const name = document.getElementById('paywall-tier-name')
+  const cta  = document.getElementById('paywall-cta')
+  if (sel && name && cta) {
+    sel.style.display = 'block'
+    name.textContent = `${TIER_LABELS[tier]} · ${TIER_PRICES[tier]}/mes · ${TIER_MAX[tier]}`
+    cta.disabled = false
+  }
+}
+
+window.confirmPaywallCheckout = async function() {
+  if (!_paywallTier) return
+  const btn = document.getElementById('paywall-cta')
+  if (btn) { btn.disabled = true; btn.textContent = 'Redirigiendo a pago...' }
+  await startCheckout(_paywallTier)
+}
+
+window.startCheckout = async function(tier = null) {
+  const selectedTier = tier || PLAN_TIER || 'pro'
   const { data: { session } } = await supabase.auth.getSession()
   const res = await fetch(`${supabase.supabaseUrl}/functions/v1/create-checkout-session`, {
     method: 'POST',
@@ -147,6 +224,7 @@ window.startCheckout = async function() {
       'Authorization': `Bearer ${session.access_token}`,
     },
     body: JSON.stringify({
+      tier: selectedTier,
       successUrl: `${window.location.origin}/trainer.html?payment=success`,
       cancelUrl: `${window.location.origin}/trainer.html`,
     }),
@@ -2304,6 +2382,17 @@ window.createClient = async function() {
   if (!name || !email || !password) { errEl.textContent = 'Nombre, email y contraseña son obligatorios'; errEl.style.display = 'block'; return }
   if (password.length < 8) { errEl.textContent = 'La contraseña debe tener al menos 8 caracteres'; errEl.style.display = 'block'; return }
 
+  // Verificar límite del plan
+  if (SUBSCRIPTION_STATUS === 'active' && PLAN_TIER && PLAN_TIER !== 'studio') {
+    const limit = TIER_LIMITS[PLAN_TIER] || 30
+    const activeCount = ALL_CLIENTS.filter(c => c.active !== false).length
+    if (activeCount >= limit) {
+      errEl.textContent = `Has alcanzado el límite de ${limit} clientes del plan ${TIER_LABELS[PLAN_TIER]}. Amplía tu plan para añadir más.`
+      errEl.style.display = 'block'
+      return
+    }
+  }
+
   btn.textContent = 'Creando...'
   btn.disabled = true
   errEl.style.display = 'none'
@@ -2472,6 +2561,8 @@ window.openMyProfile = async function() {
   const today = new Date().toISOString().split('T')[0]
   const sevenAgo = new Date(); sevenAgo.setDate(sevenAgo.getDate() - 6)
   const sevenAgoStr = sevenAgo.toISOString().split('T')[0]
+  const thirtyAgo = new Date(); thirtyAgo.setDate(thirtyAgo.getDate() - 29)
+  const thirtyAgoStr = thirtyAgo.toISOString().split('T')[0]
 
   const clientIds = ALL_CLIENTS.map(c => c.id)
 
@@ -2480,14 +2571,18 @@ window.openMyProfile = async function() {
     { data: profileData },
     { data: todayLogs },
     { data: weekLogs },
+    { data: monthLogs },
   ] = await Promise.all([
-    supabase.from('trainers').select('bio, specialty, max_clients, subscription_status, trial_ends_at').eq('id', TRAINER_ID).single(),
+    supabase.from('trainers').select('bio, specialty, max_clients, subscription_status, trial_ends_at, plan_tier').eq('id', TRAINER_ID).single(),
     supabase.from('profiles').select('full_name, email').eq('id', TRAINER_ID).single(),
     clientIds.length
       ? supabase.from('daily_logs').select('client_id, score').eq('log_date', today).in('client_id', clientIds)
       : Promise.resolve({ data: [] }),
     clientIds.length
       ? supabase.from('daily_logs').select('client_id, score').gte('log_date', sevenAgoStr).in('client_id', clientIds)
+      : Promise.resolve({ data: [] }),
+    clientIds.length
+      ? supabase.from('daily_logs').select('client_id, log_date').gte('log_date', thirtyAgoStr).in('client_id', clientIds)
       : Promise.resolve({ data: [] }),
   ])
 
@@ -2522,10 +2617,29 @@ window.openMyProfile = async function() {
   const loggedToday = new Set((todayLogs || []).map(l => l.client_id))
   const atRisk = activeClients.filter(c => !loggedToday.has(c.id))
 
+  // Retención: clientes activos con al menos 1 log en los últimos 7 días
+  const loggedD7 = new Set((weekLogs || []).map(l => l.client_id))
+  const retentionD7 = activeClients.length
+    ? Math.round((loggedD7.size / activeClients.length) * 100)
+    : null
+
+  // Retención D30: clientes con al menos 4 logs en los últimos 30 días (hábito)
+  const logsPerClientD30 = {}
+  ;(monthLogs || []).forEach(l => { logsPerClientD30[l.client_id] = (logsPerClientD30[l.client_id] || 0) + 1 })
+  const habitCount = activeClients.filter(c => (logsPerClientD30[c.id] || 0) >= 4).length
+  const retentionHabit = activeClients.length
+    ? Math.round((habitCount / activeClients.length) * 100)
+    : null
+
   // Suscripción
   const subStatus = trainerData?.subscription_status || 'trial'
-  const subColors = { trial: '#BA7517', active: '#1D9E75', inactive: '#E24B4A' }
-  const subLabels = { trial: 'Trial', active: 'Pro activo', inactive: 'Sin suscripción' }
+  const planTier  = trainerData?.plan_tier || null
+  const subColors = { trial: '#BA7517', active: '#1D9E75', past_due: '#BA7517', canceled: '#E24B4A', unpaid: '#E24B4A', expired: '#E24B4A' }
+  const subLabelText = subStatus === 'active' && planTier
+    ? `${TIER_LABELS[planTier]} · activo`
+    : subStatus === 'trial' ? 'Trial'
+    : subStatus === 'past_due' ? 'Pago fallido'
+    : 'Sin suscripción'
   const trialEnd = trainerData?.trial_ends_at
     ? new Date(trainerData.trial_ends_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
     : null
@@ -2535,12 +2649,14 @@ window.openMyProfile = async function() {
     email: profileData?.email || '',
     activeClients, inactiveClients,
     globalAvg, avgScores,
-    loggedToday, atRisk,
-    subStatus, subColors, subLabels, trialEnd,
+    loggedToday, loggedD7, atRisk,
+    subStatus, subColors, subLabelText, trialEnd,
+    retentionD7, retentionHabit, habitCount,
+    logsPerClientD30,
   })
 }
 
-function renderMyProfileView({ snap, email, activeClients, inactiveClients, globalAvg, avgScores, loggedToday, atRisk, subStatus, subColors, subLabels, trialEnd }) {
+function renderMyProfileView({ snap, email, activeClients, inactiveClients, globalAvg, avgScores, loggedToday, loggedD7, atRisk, subStatus, subColors, subLabelText, trialEnd, retentionD7, retentionHabit, habitCount, logsPerClientD30 }) {
   const main = document.getElementById('main-content')
 
   const scoreColor = s => s >= 80 ? 'var(--green)' : s >= 50 ? 'var(--amber)' : 'var(--red)'
@@ -2561,8 +2677,8 @@ function renderMyProfileView({ snap, email, activeClients, inactiveClients, glob
         ${snap.specialty ? `<div style="font-size:13px;color:var(--text2);margin-top:3px">${escHtml(snap.specialty)}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:${subColors[subStatus]}22;color:${subColors[subStatus]};border:1px solid ${subColors[subStatus]}44">
-          ● ${subLabels[subStatus]}${trialEnd ? ' · hasta ' + trialEnd : ''}
+        <span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:${(subColors[subStatus]||'#BA7517')}22;color:${(subColors[subStatus]||'#BA7517')};border:1px solid ${(subColors[subStatus]||'#BA7517')}44;cursor:pointer" onclick="showPaywall()">
+          ● ${subLabelText}${trialEnd ? ' · hasta ' + trialEnd : ''}
         </span>
         <button class="btn" onclick="openImportModal()" style="font-size:12px;gap:6px;border-color:var(--green);color:var(--green)">
           <i class="ti ti-file-import"></i> Importar clientes
@@ -2574,7 +2690,7 @@ function renderMyProfileView({ snap, email, activeClients, inactiveClients, glob
     </div>
 
     <!-- MÉTRICAS GRANDES -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">
       <div class="card" style="text-align:center;padding:16px 10px">
         <div style="font-size:36px;font-weight:800;color:var(--blue);line-height:1">${activeClients.length}</div>
         <div style="font-size:11px;color:var(--text2);margin-top:6px;font-weight:500">ACTIVOS</div>
@@ -2590,6 +2706,40 @@ function renderMyProfileView({ snap, email, activeClients, inactiveClients, glob
       <div class="card" style="text-align:center;padding:16px 10px">
         <div style="font-size:36px;font-weight:800;color:${atRisk.length > 0 ? 'var(--amber)' : 'var(--green)'};line-height:1">${atRisk.length}</div>
         <div style="font-size:11px;color:var(--text2);margin-top:6px;font-weight:500">SIN HOY</div>
+      </div>
+    </div>
+
+    <!-- MÉTRICAS DE RETENCIÓN -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+      <div class="card" style="padding:14px">
+        <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:6px;letter-spacing:.05em">RETENCIÓN D7</div>
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <div style="font-size:28px;font-weight:800;color:${retentionD7 == null ? 'var(--text3)' : retentionD7 >= 60 ? 'var(--green)' : retentionD7 >= 30 ? 'var(--amber)' : 'var(--red)'};line-height:1">
+            ${retentionD7 != null ? retentionD7 + '%' : '—'}
+          </div>
+          <div style="font-size:12px;color:var(--text3)">${retentionD7 != null ? `${loggedD7?.size || 0}/${activeClients.length} usan la app` : 'sin datos'}</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Clientes con ≥1 registro esta semana</div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:6px;letter-spacing:.05em">HÁBITO D30</div>
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <div style="font-size:28px;font-weight:800;color:${retentionHabit == null ? 'var(--text3)' : retentionHabit >= 50 ? 'var(--green)' : retentionHabit >= 25 ? 'var(--amber)' : 'var(--red)'};line-height:1">
+            ${retentionHabit != null ? retentionHabit + '%' : '—'}
+          </div>
+          <div style="font-size:12px;color:var(--text3)">${habitCount} cliente${habitCount !== 1 ? 's' : ''}</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Con ≥4 registros en los últimos 30 días</div>
+      </div>
+      <div class="card" style="padding:14px">
+        <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:6px;letter-spacing:.05em">EN RIESGO</div>
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <div style="font-size:28px;font-weight:800;color:${atRisk.length === 0 ? 'var(--green)' : atRisk.length <= 2 ? 'var(--amber)' : 'var(--red)'};line-height:1">
+            ${atRisk.length}
+          </div>
+          <div style="font-size:12px;color:var(--text3)">sin registrar hoy</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Clientes activos sin log hoy</div>
       </div>
     </div>
 
