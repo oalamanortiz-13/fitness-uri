@@ -783,6 +783,8 @@ function renderProfileTab(el) {
         <div class="form-group"><label class="form-label">Semanas plan</label><input type="number" id="p-weeks" value="${c.plan_weeks || 12}" min="4" max="52"></div>
         <div class="form-group"><label class="form-label">Kcal objetivo</label><input type="number" id="p-kcal" value="${c.kcal_goal || 2500}"></div>
         <div class="form-group"><label class="form-label">Proteína objetivo (g)</label><input type="number" id="p-protein" value="${c.protein_goal || 175}"></div>
+        <div class="form-group"><label class="form-label">Carbohidratos objetivo (g)</label><input type="number" id="p-carbs" value="${c.carbs_goal || ''}"></div>
+        <div class="form-group"><label class="form-label">Grasas objetivo (g)</label><input type="number" id="p-fat" value="${c.fat_goal || ''}"></div>
         <div class="form-group"><label class="form-label">Fase</label><input type="text" id="p-phase" value="${c.phase_name || 'Fase 1'}"></div>
       </div>
       <div class="form-group">
@@ -851,6 +853,8 @@ window.saveProfile = async function() {
     weight_goal: document.getElementById('p-weight-goal').value,
     kcal_goal: parseInt(document.getElementById('p-kcal').value) || 2500,
     protein_goal: parseInt(document.getElementById('p-protein').value) || 175,
+    carbs_goal: parseInt(document.getElementById('p-carbs').value) || 0,
+    fat_goal: parseInt(document.getElementById('p-fat').value) || 0,
     plan_weeks: parseInt(document.getElementById('p-weeks').value) || 12,
     plan_start_date: document.getElementById('p-start').value || null,
     phase_name: document.getElementById('p-phase').value,
@@ -1418,10 +1422,17 @@ async function saveMealOrder(meals) {
 }
 
 function renderFoodRow(food, mealId) {
+  const macros = [
+    food.protein_g ? `${food.protein_g}g P` : '',
+    food.carbs_g   ? `${food.carbs_g}g C`   : '',
+    food.fat_g     ? `${food.fat_g}g G`     : '',
+    food.kcal      ? `${food.kcal} kcal`    : '',
+  ].filter(Boolean).join(' · ')
   return `<div class="row" id="food-row-${food.id}">
-    <div style="flex:1"><div class="row-name" style="font-size:13px">${food.name}</div></div>
-    ${food.protein_g ? `<span class="tag" style="margin-right:4px">${food.protein_g}g prot</span>` : ''}
-    ${food.kcal ? `<span class="tag" style="margin-right:6px">${food.kcal}kcal</span>` : ''}
+    <div style="flex:1">
+      <div class="row-name" style="font-size:13px">${food.name}</div>
+      ${macros ? `<div style="font-size:11px;color:var(--text3);margin-top:2px">${macros}</div>` : ''}
+    </div>
     <button class="check-btn" onclick="openEditFood('${food.id}','${mealId}')" title="Editar" style="font-size:13px;margin-right:4px">✎</button>
     <button class="check-btn" onclick="deleteFood('${food.id}','${mealId}')" style="font-size:12px">×</button>
   </div>`
@@ -1479,9 +1490,7 @@ let EDITING_FOOD_ID = null
 window.openAddFood = function(mealId) {
   ACTIVE_MEAL_ID = mealId
   EDITING_FOOD_ID = null
-  document.getElementById('fd-name').value = ''
-  document.getElementById('fd-prot').value = ''
-  document.getElementById('fd-kcal').value = ''
+  ;['fd-name','fd-prot','fd-carbs','fd-fat','fd-kcal'].forEach(id => { document.getElementById(id).value = '' })
   document.querySelector('#food-modal .modal-title').textContent = 'Añadir alimento'
   document.getElementById('fd-save-btn').textContent = 'Guardar'
   document.getElementById('food-modal').classList.add('open')
@@ -1495,6 +1504,8 @@ window.openEditFood = function(foodId, mealId) {
   EDITING_FOOD_ID = foodId
   document.getElementById('fd-name').value = food.name
   document.getElementById('fd-prot').value = food.protein_g || ''
+  document.getElementById('fd-carbs').value = food.carbs_g || ''
+  document.getElementById('fd-fat').value = food.fat_g || ''
   document.getElementById('fd-kcal').value = food.kcal || ''
   document.querySelector('#food-modal .modal-title').textContent = 'Editar alimento'
   document.getElementById('fd-save-btn').textContent = 'Guardar cambios'
@@ -1508,7 +1519,9 @@ window.closeFoodModal = function() {
 window.saveFood = async function() {
   const name = document.getElementById('fd-name').value.trim()
   const protein_g = parseInt(document.getElementById('fd-prot').value) || 0
-  const kcal = parseInt(document.getElementById('fd-kcal').value) || 0
+  const carbs_g   = parseInt(document.getElementById('fd-carbs').value) || 0
+  const fat_g     = parseInt(document.getElementById('fd-fat').value) || 0
+  const kcal      = parseInt(document.getElementById('fd-kcal').value) || 0
   if (!name) { showNotif('El nombre es obligatorio'); return }
 
   const meal = SELECTED_CLIENT_DATA.diet?.diet_meals?.find(m => m.id === ACTIVE_MEAL_ID)
@@ -1516,11 +1529,11 @@ window.saveFood = async function() {
   if (EDITING_FOOD_ID) {
     const { error } = await supabase
       .from('diet_foods')
-      .update({ name, protein_g, kcal })
+      .update({ name, protein_g, carbs_g, fat_g, kcal })
       .eq('id', EDITING_FOOD_ID)
     if (!error && meal) {
       const food = meal.diet_foods.find(f => f.id === EDITING_FOOD_ID)
-      if (food) { food.name = name; food.protein_g = protein_g; food.kcal = kcal }
+      if (food) Object.assign(food, { name, protein_g, carbs_g, fat_g, kcal })
       const foodsEl = document.getElementById(`foods-in-${ACTIVE_MEAL_ID}`)
       if (foodsEl) foodsEl.innerHTML = meal.diet_foods.map(f => renderFoodRow(f, ACTIVE_MEAL_ID)).join('')
       closeFoodModal()
@@ -1530,7 +1543,7 @@ window.saveFood = async function() {
     const order_index = meal?.diet_foods?.length || 0
     const { data: food } = await supabase
       .from('diet_foods')
-      .insert({ diet_meal_id: ACTIVE_MEAL_ID, name, protein_g, kcal, order_index })
+      .insert({ diet_meal_id: ACTIVE_MEAL_ID, name, protein_g, carbs_g, fat_g, kcal, order_index })
       .select()
       .single()
     if (meal) {
@@ -1668,7 +1681,7 @@ async function applyAIDietActions(actions) {
       if (!meal) throw new Error(`add_food: comida no encontrada (id: ${action.meal_id}, nombre: ${action.meal_name})`)
       const { data: food, error } = await supabase
         .from('diet_foods')
-        .insert({ diet_meal_id: meal.id, name: action.name, kcal: action.kcal || 0, protein_g: action.protein_g || 0, order_index: meal.diet_foods?.length || 0 })
+        .insert({ diet_meal_id: meal.id, name: action.name, kcal: action.kcal || 0, protein_g: action.protein_g || 0, carbs_g: action.carbs_g || 0, fat_g: action.fat_g || 0, order_index: meal.diet_foods?.length || 0 })
         .select().single()
       if (error) throw new Error(`add_food "${action.name}": ${error.message}`)
       if (food) meal.diet_foods = [...(meal.diet_foods || []), food]
@@ -2497,6 +2510,8 @@ window.createClient = async function() {
     weight_goal: document.getElementById('nc-weight-goal').value,
     kcal_goal: parseInt(document.getElementById('nc-kcal').value) || 2500,
     protein_goal: parseInt(document.getElementById('nc-protein').value) || 175,
+    carbs_goal: parseInt(document.getElementById('nc-carbs').value) || 0,
+    fat_goal: parseInt(document.getElementById('nc-fat').value) || 0,
     notes: document.getElementById('nc-notes').value,
     activity_level: document.getElementById('nc-activity').value || null,
     plan_weeks: parseInt(document.getElementById('nc-weeks').value) || 12,
