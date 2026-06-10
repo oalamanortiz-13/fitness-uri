@@ -1788,7 +1788,7 @@ INSTRUCCIONES:
 }
 
 function setAIGreeting() {
-  const name = CLIENT ? '' : ''
+  const name = CLIENT_NAME && CLIENT_NAME !== '—' ? ` ${CLIENT_NAME.split(' ')[0]}` : ''
   document.getElementById('ai-greeting').textContent =
     `Hola${name}. Soy tu preparador personal. Estoy al tanto de tu plan completo. ¿Qué necesitas?`
 }

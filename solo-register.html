@@ -179,19 +179,17 @@ window.doRegister = async function() {
   document.getElementById('form-view').style.display = 'none'
   document.getElementById('success-view').style.display = 'block'
 
-  if (data.session) {
+  let session = data.session
+  if (!session) {
+    const { data: signInData } = await supabase.auth.signInWithPassword({ email, password })
+    session = signInData?.session
+  }
+
+  if (session) {
     setTimeout(() => window.location.href = 'onboarding.html', 1200)
   } else {
-    // Supabase tiene "Confirm email" activo — intentar login directo igualmente
-    // (funciona si el email ya está confirmado en BD o si la confirmación no es estricta)
-    const { data: loginData } = await supabase.auth.signInWithPassword({ email, password })
-    if (loginData?.session) {
-      document.getElementById('continue-btn').style.display = 'flex'
-      setTimeout(() => window.location.href = 'onboarding.html', 1500)
-    } else {
-      document.getElementById('success-msg').innerHTML =
-        `¡Cuenta creada! Hemos enviado un email de confirmación a <strong>${email}</strong>.<br><br>Confírmalo y después <a href="login.html" style="color:var(--blue)">inicia sesión aquí</a>.`
-    }
+    document.getElementById('success-msg').innerHTML =
+      `Cuenta creada. <a href="login.html" style="color:var(--blue)">Inicia sesión aquí</a> para continuar.`
   }
 }
 

@@ -2360,7 +2360,7 @@ async function renderProgressTab(el) {
 
   const { data: logs } = await supabase
     .from('daily_logs')
-    .select('log_date, weight_kg, steps, cardio_min, calendar_status')
+    .select('log_date, weight_kg, steps, cardio_min, calendar_status, score, score_training, score_nutrition, score_cardio')
     .eq('client_id', SELECTED_CLIENT)
     .gte('log_date', thirtyDaysAgo.toISOString().split('T')[0])
     .order('log_date', { ascending: true })
@@ -2371,33 +2371,69 @@ async function renderProgressTab(el) {
   const adherence = total > 0 ? Math.round(done / total * 100) : 0
   const latestWeight = allLogs.filter(l => l.weight_kg).slice(-1)[0]
   const pesos = allLogs.filter(l => l.weight_kg)
+  const withScore = allLogs.filter(l => l.score != null)
+  const avgScore30 = withScore.length ? Math.round(withScore.reduce((a, l) => a + l.score, 0) / withScore.length) : null
+  const last7 = withScore.slice(-7)
+  const avgScore7 = last7.length ? Math.round(last7.reduce((a, l) => a + l.score, 0) / last7.length) : null
+  const scoreColor = s => s == null ? 'var(--text3)' : s >= 80 ? 'var(--green)' : s >= 50 ? 'var(--amber)' : 'var(--red)'
 
   el.innerHTML = `
     <div class="metric-grid">
       <div class="metric"><div class="metric-label">Adherencia 30d</div><div class="metric-val">${adherence}%</div><div class="metric-sub">${done}/${total} días</div></div>
+      <div class="metric"><div class="metric-label">Score promedio 30d</div><div class="metric-val" style="color:${scoreColor(avgScore30)}">${avgScore30 != null ? avgScore30 + '%' : '—'}</div><div class="metric-sub">${withScore.length} registros</div></div>
+      <div class="metric"><div class="metric-label">Score últimos 7d</div><div class="metric-val" style="color:${scoreColor(avgScore7)}">${avgScore7 != null ? avgScore7 + '%' : '—'}</div><div class="metric-sub">${last7.length} días</div></div>
       <div class="metric"><div class="metric-label">Peso actual</div><div class="metric-val">${latestWeight ? latestWeight.weight_kg + ' kg' : '—'}</div><div class="metric-sub">último registro</div></div>
     </div>
+    ${withScore.length >= 2 ? `
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-bar"></i> Score diario (30 días)</div>
+      <div style="position:relative;height:160px">
+        <canvas id="trainer-score-chart"></canvas>
+      </div>
+    </div>` : ''}
+    ${pesos.length >= 2 ? `
     <div class="card">
       <div class="card-title"><i class="ti ti-chart-line"></i> Evolución de peso (30 días)</div>
-      <div style="position:relative;height:160px">
+      <div style="position:relative;height:140px">
         <canvas id="trainer-peso-chart"></canvas>
       </div>
-    </div>
+    </div>` : ''}
     <div class="card">
       <div class="card-title"><i class="ti ti-calendar"></i> Últimos registros</div>
-      ${allLogs.slice(-10).reverse().map(l =>
-        `<div class="row">
-          <span style="font-size:12px;color:var(--text2)">${l.log_date}</span>
-          <div style="display:flex;gap:8px;align-items:center">
+      ${allLogs.slice(-14).reverse().map(l => {
+        const sc = l.score != null ? l.score : null
+        return `<div class="row" style="gap:6px">
+          <span style="font-size:12px;color:var(--text2);flex-shrink:0">${l.log_date.slice(5)}</span>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;flex:1">
+            ${sc != null ? `<span style="font-size:12px;font-weight:700;color:${scoreColor(sc)}">${sc}%</span>` : ''}
             ${l.weight_kg ? `<span class="tag">${l.weight_kg} kg</span>` : ''}
-            ${l.steps ? `<span class="tag">${l.steps.toLocaleString('es-ES')} pasos</span>` : ''}
-            ${l.cardio_min ? `<span class="tag">${l.cardio_min} min</span>` : ''}
-            <span class="badge ${l.calendar_status === 'done' ? 'badge-green' : l.calendar_status === 'miss' ? 'badge-red' : 'badge-gray'}">${l.calendar_status || '—'}</span>
+            ${l.steps ? `<span class="tag">${(l.steps/1000).toFixed(1)}k</span>` : ''}
+            ${l.score_training != null ? `<span class="tag" style="color:var(--blue)">💪 ${l.score_training}%</span>` : ''}
+            ${l.score_nutrition != null ? `<span class="tag" style="color:var(--green)">🥗 ${l.score_nutrition}%</span>` : ''}
           </div>
         </div>`
-      ).join('') || '<div style="font-size:12px;color:var(--text3)">Sin registros</div>'}
+      }).join('') || '<div style="font-size:12px;color:var(--text3)">Sin registros</div>'}
     </div>
   `
+
+  if (withScore.length >= 2) {
+    // @ts-ignore
+    new Chart(document.getElementById('trainer-score-chart'), {
+      type: 'bar',
+      data: {
+        labels: withScore.map(l => l.log_date.slice(5)),
+        datasets: [{ data: withScore.map(l => l.score), backgroundColor: withScore.map(l => l.score >= 80 ? '#1D9E7599' : l.score >= 50 ? '#BA751799' : '#E24B4A99'), borderRadius: 3 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { min: 0, max: 100, ticks: { color: '#a0a0a0', callback: v => v + '%' }, grid: { color: '#2a2a2a' } },
+          x: { ticks: { color: '#a0a0a0', maxRotation: 0 }, grid: { display: false } }
+        }
+      }
+    })
+  }
 
   if (pesos.length >= 2) {
     // @ts-ignore
@@ -2405,7 +2441,7 @@ async function renderProgressTab(el) {
       type: 'line',
       data: {
         labels: pesos.map(l => l.log_date.slice(5)),
-        datasets: [{ label: 'Peso', data: pesos.map(l => l.weight_kg), borderColor: '#378ADD', backgroundColor: '#378ADD22', tension: .35, pointRadius: 4, fill: true }]
+        datasets: [{ data: pesos.map(l => l.weight_kg), borderColor: '#378ADD', backgroundColor: '#378ADD22', tension: .35, pointRadius: 3, fill: true }]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
